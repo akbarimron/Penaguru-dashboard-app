@@ -1,4 +1,5 @@
 export { AppText } from './AppText';
+export { MarkdownView } from './MarkdownView';
 export { Button, IconButton } from './Button';
 export { Chip } from './Chip';
 export { ConfirmHost, Dialog } from './Dialog';

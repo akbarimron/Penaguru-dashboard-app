@@ -3,7 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText, Chip, EnterView, IconButton } from '../components/ui';
+import { AppText, Chip, EnterView, IconButton, MarkdownView } from '../components/ui';
 import { focusStyle } from '../components/ui/PressableScale';
 import { QUICK_TOPICS } from '../lib/assistant';
 import { useLayout } from '../lib/layout';
@@ -48,7 +48,7 @@ export function AssistantScreen() {
             Asisten
           </AppText>
           <AppText variant="small" tone={color.muted}>
-            Saran strategi mengajar. Saat Gemini belum tersambung, jawaban diambil dari bank saran lokal dan diberi label.
+            Saran strategi mengajar bertenaga Google Gemini AI. Tanyakan ide ice breaking, diferensiasi, atau rubrik asesmen.
           </AppText>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
@@ -69,7 +69,7 @@ export function AssistantScreen() {
             <View style={styles.typing} accessibilityLiveRegion="polite">
               <ActivityIndicator size="small" color={color.brand} />
               <AppText variant="small" tone={color.muted}>
-                Menyusun saran...
+                Gemini sedang menyusun saran terbaik...
               </AppText>
             </View>
           ) : null
@@ -106,15 +106,25 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
   return (
     <EnterView index={Math.min(index, 1)} style={{ alignItems: user ? 'flex-end' : 'flex-start' }}>
       <View style={[styles.bubble, user ? styles.userBubble : styles.botBubble]}>
-        <AppText variant="body" tone={user ? '#FFFFFF' : color.ink} selectable>
-          {message.text}
-        </AppText>
+        {!user && message.source === 'gemini' ? (
+          <View style={styles.geminiBadgeHeader}>
+            <Ionicons name="sparkles" size={13} color={color.brand} />
+            <Text style={styles.geminiBadgeText}>Gemini AI Pedagogik</Text>
+          </View>
+        ) : null}
+
+        <MarkdownView content={message.text} isUser={user} />
+
         {!user ? (
           <View style={styles.bubbleFoot}>
             <View style={styles.source}>
-              <Ionicons name={message.source === 'gemini' ? 'cloud-done-outline' : 'library-outline'} size={12} color={color.muted} />
-              <AppText variant="caption" tone={color.muted}>
-                {message.source === 'gemini' ? 'Jawaban Gemini' : 'Saran lokal'}
+              <Ionicons
+                name={message.source === 'gemini' ? 'cloud-done' : 'library-outline'}
+                size={12}
+                color={message.source === 'gemini' ? color.brand : color.muted}
+              />
+              <AppText variant="caption" tone={message.source === 'gemini' ? color.brandDeep : color.muted}>
+                {message.source === 'gemini' ? 'Tersambung Google Gemini' : 'Saran lokal'}
               </AppText>
             </View>
             {message.id !== 'welcome' ? (
@@ -122,11 +132,11 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
                 icon="copy-outline"
                 label="Salin saran"
                 variant="ghost"
-                size={36}
+                size={34}
                 iconColor={color.brand}
                 onPress={async () => {
                   await Clipboard.setStringAsync(message.text);
-                  toast('Saran disalin. Tempel ke modul ajar Anda.');
+                  toast('Saran disalin ke clipboard! Siap ditempel ke modul ajar.');
                 }}
               />
             ) : null}
@@ -138,11 +148,28 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
 }
 
 const styles = StyleSheet.create({
-  bubble: { maxWidth: '88%', padding: 14, borderRadius: radius.lg, gap: 6 },
+  bubble: { maxWidth: '92%', padding: 14, borderRadius: radius.lg, gap: 8 },
   userBubble: { backgroundColor: color.brand, borderBottomRightRadius: 6 },
   botBubble: { backgroundColor: color.surface, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: color.line },
-  bubbleFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
-  source: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 6, backgroundColor: '#F1F5F9' },
+  geminiBadgeHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.sm,
+    backgroundColor: color.brandSoft,
+    alignSelf: 'flex-start',
+    marginBottom: 4,
+  },
+  geminiBadgeText: {
+    fontFamily: font.bold,
+    fontSize: 11,
+    color: color.brandDeep,
+    fontWeight: '700',
+  },
+  bubbleFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 4 },
+  source: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: '#F1F5F9' },
   typing: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   inputWrap: { borderTopWidth: 1, borderTopColor: color.line, backgroundColor: color.surface, paddingVertical: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
