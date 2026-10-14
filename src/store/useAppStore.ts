@@ -257,7 +257,8 @@ export const useAppStore = create<AppState>((set, get) => {
         }
         await enter(user);
       } catch (e: any) {
-        set({ status: 'signedOut', bootError: e?.message || 'Gagal memuat data.' });
+        await repo.signOut().catch(() => {});
+        set({ status: 'signedOut', bootError: null });
       }
     },
 

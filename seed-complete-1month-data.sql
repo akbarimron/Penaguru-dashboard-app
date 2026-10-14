@@ -140,7 +140,8 @@ begin
   -- Buat Akun Auth Baru
   insert into auth.users (
     id, instance_id, email, encrypted_password, email_confirmed_at,
-    raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at
+    raw_app_meta_data, raw_user_meta_data, aud, role, created_at, updated_at,
+    confirmation_token, recovery_token, email_change_token_new, email_change
   )
   values
     (
@@ -148,49 +149,82 @@ begin
       'admin@penaguru.sch.id', crypt('AdminPenaGuru2026!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"nama_lengkap":"Drs. H. Mulyadi, M.Pd."}'::jsonb,
-      'authenticated', 'authenticated', now(), now()
+      'authenticated', 'authenticated', now(), now(),
+      '', '', '', ''
     ),
     (
       v_budi_id, '00000000-0000-0000-0000-000000000000',
       'budi.santoso@penaguru.sch.id', crypt('GuruPena2026!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"nama_lengkap":"Budi Santoso, S.Kom."}'::jsonb,
-      'authenticated', 'authenticated', now(), now()
+      'authenticated', 'authenticated', now(), now(),
+      '', '', '', ''
     ),
     (
       v_siti_id, '00000000-0000-0000-0000-000000000000',
       'siti.aminah@penaguru.sch.id', crypt('GuruPena2026!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"nama_lengkap":"Siti Aminah, S.Pd."}'::jsonb,
-      'authenticated', 'authenticated', now(), now()
+      'authenticated', 'authenticated', now(), now(),
+      '', '', '', ''
     ),
     (
       v_dewi_id, '00000000-0000-0000-0000-000000000000',
       'dewi.lestari@penaguru.sch.id', crypt('GuruPena2026!', gen_salt('bf')), now(),
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"nama_lengkap":"Dewi Lestari, M.Kom."}'::jsonb,
-      'authenticated', 'authenticated', now(), now()
+      'authenticated', 'authenticated', now(), now(),
+      '', '', '', ''
     )
   on conflict (id) do update set
     encrypted_password = excluded.encrypted_password,
     email_confirmed_at = excluded.email_confirmed_at,
     raw_user_meta_data = excluded.raw_user_meta_data,
+    confirmation_token = '',
+    recovery_token = '',
+    email_change_token_new = '',
+    email_change = '',
     updated_at = now();
 
-  -- Tambahkan identitas login untuk kompatibilitas provider email GoTrue
-  begin
-    insert into auth.identities (
-      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
-    )
-    values
-      (v_admin_id, v_admin_id, json_build_object('sub', v_admin_id::text, 'email', 'admin@penaguru.sch.id')::jsonb, 'email', now(), now(), now()),
-      (v_budi_id,  v_budi_id,  json_build_object('sub', v_budi_id::text,  'email', 'budi.santoso@penaguru.sch.id')::jsonb, 'email', now(), now(), now()),
-      (v_siti_id,  v_siti_id,  json_build_object('sub', v_siti_id::text,  'email', 'siti.aminah@penaguru.sch.id')::jsonb,  'email', now(), now(), now()),
-      (v_dewi_id,  v_dewi_id,  json_build_object('sub', v_dewi_id::text,  'email', 'dewi.lestari@penaguru.sch.id')::jsonb, 'email', now(), now(), now())
-    on conflict do nothing;
-  exception when others then
-    -- Abaikan jika struktur kolom identities berbeda
-  end;
+  -- Tambahkan identitas login untuk provider email GoTrue
+  delete from auth.identities where user_id in (v_admin_id, v_budi_id, v_siti_id, v_dewi_id);
+
+  insert into auth.identities (
+    id, user_id, identity_data, provider, provider_id, last_sign_in_at, created_at, updated_at
+  )
+  values
+    (
+      v_admin_id,
+      v_admin_id,
+      format('{"sub":"%s","email":"%s"}', v_admin_id, 'admin@penaguru.sch.id')::jsonb,
+      'email',
+      v_admin_id::text,
+      now(), now(), now()
+    ),
+    (
+      v_budi_id,
+      v_budi_id,
+      format('{"sub":"%s","email":"%s"}', v_budi_id, 'budi.santoso@penaguru.sch.id')::jsonb,
+      'email',
+      v_budi_id::text,
+      now(), now(), now()
+    ),
+    (
+      v_siti_id,
+      v_siti_id,
+      format('{"sub":"%s","email":"%s"}', v_siti_id, 'siti.aminah@penaguru.sch.id')::jsonb,
+      'email',
+      v_siti_id::text,
+      now(), now(), now()
+    ),
+    (
+      v_dewi_id,
+      v_dewi_id,
+      format('{"sub":"%s","email":"%s"}', v_dewi_id, 'dewi.lestari@penaguru.sch.id')::jsonb,
+      'email',
+      v_dewi_id::text,
+      now(), now(), now()
+    );
 
   -- Buat / Perbarui Profil Sekolah
   select id into v_school_id from public.schools where npsn = '20219876' or kode_gabung = 'SMKBDG1' limit 1;
