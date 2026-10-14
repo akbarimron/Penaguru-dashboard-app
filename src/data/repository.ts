@@ -66,7 +66,8 @@ export interface Repository {
 
   askAssistant(
     question: string,
-    history?: { sender: 'user' | 'assistant'; text: string }[]
+    history?: { sender: 'user' | 'assistant'; text: string }[],
+    workspaceSummary?: string
   ): Promise<{ text: string; source: 'lokal' | 'gemini' }>;
 }
 

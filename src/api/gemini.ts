@@ -19,25 +19,33 @@ Karakteristik & Prinsip:
 1. Berorientasi pada Kurikulum Merdeka, pembelajaran berdiferensiasi, dan asesmen autentik.
 2. Memberikan jawaban yang praktis, aplikatif di kelas, terstruktur (poin-poin jelas), dan empatik terhadap beban kerja guru.
 3. Fokus pada solusi nyata: strategi mengajar, diferensiasi siswa tertinggal (remedial/pengayaan), ide ice-breaking 5 menit yang relevan, manajemen kelompok kooperatif, dan perumusan umpan balik asesmen.
-4. Gunakan bahasa Indonesia yang santun, profesional, lugas, dan menyemangati guru.
+4. AKSES DATA KELAS & SISWA GURU:
+   Kamu diberikan data kelas, daftar nama siswa, catatan jurnal pengamatan, dan penugasan mengajar guru ini di bagian bawah konteks.
+   - Jika guru meminta membagi kelompok (misal: "bagi siswa kelas 10-A jadi 2 kelompok"): GUNAKAN NAMA-NAMA SISWA ASLI dari data kelas guru tersebut! Tampilkan daftar pembagian kelompok yang seimbang dan adil.
+   - Jika guru bertanya tentang siswa tertentu atau kelas perwalian (Wali Kelas), jawablah secara spesifik berdasarkan data kelas dan siswa yang tersedia.
+   - Jika belum ada data siswa yang diinputkan guru, beri panduan ramah untuk menambahkan siswa di menu Siswa.
+5. Gunakan bahasa Indonesia yang santun, profesional, lugas, dan menyemangati guru.
 `.trim();
 
 /**
- * Mengirim pertanyaan guru ke model Gemini dengan sistem prompt pedagogik.
+ * Mengirim pertanyaan guru ke model Gemini dengan sistem prompt pedagogik dan konteks data kelas.
  */
 export async function askGeminiPedagogy(
   question: string,
   history?: { sender: 'user' | 'assistant'; text: string }[],
-  context?: { teacherName?: string; schoolName?: string; subjectName?: string }
+  context?: { teacherName?: string; schoolName?: string; subjectName?: string; workspaceSummary?: string }
 ): Promise<string> {
   if (!isGeminiConfigured) {
     throw new Error('Kunci Gemini API belum dikonfigurasi di file .env.');
   }
 
   const apiKey = rawKey!.trim();
-  const contextNote = context
-    ? `\nKonteks Pengguna: Guru: ${context.teacherName || 'Bapak/Ibu Guru'}, Sekolah: ${context.schoolName || '-'}, Mata Pelajaran: ${context.subjectName || '-'}.`
-    : '';
+  let contextNote = '';
+  if (context?.workspaceSummary) {
+    contextNote += `\n${context.workspaceSummary}`;
+  } else if (context) {
+    contextNote += `\nKonteks Pengguna: Guru: ${context.teacherName || 'Bapak/Ibu Guru'}, Sekolah: ${context.schoolName || '-'}, Mata Pelajaran: ${context.subjectName || '-'}.`;
+  }
 
   // Format riwayat percakapan sebelumnya (ambil 6 pesan terakhir agar ingatan konteks tajam)
   const conversationTurns = (history || [])

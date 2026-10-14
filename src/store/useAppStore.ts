@@ -125,6 +125,56 @@ const welcome = (): ChatMessage => ({
   text: 'Halo! Saya Asisten Guru siap membantu Anda menyusun strategi mengajar, ide pembuka kelas, dan cara menulis catatan rapor. Pilih topik di atas atau ketik pertanyaan.',
 });
 
+export function buildWorkspaceSummary(ws: Workspace | null): string {
+  if (!ws) return '';
+
+  const teacher = ws.teacher;
+  const schoolName = ws.school?.nama || 'Sekolah';
+  const homeroomClasses = ws.classes.filter((c) => c.homeroom_teacher_id === teacher.id);
+  const myAssignments = ws.assignments.filter((a) => a.teacher_id === teacher.id);
+
+  let text = `[DATA AKADEMIK & KELAS GURU SAAT INI]\n`;
+  text += `Nama Guru: ${teacher.nama_lengkap}\n`;
+  text += `Sekolah: ${schoolName}\n`;
+  if (homeroomClasses.length > 0) {
+    text += `Status Wali Kelas: Mengampu kelas perwalian ${homeroomClasses.map((c) => c.nama_kelas).join(', ')}\n`;
+  }
+
+  text += `\nDaftar Kelas & Siswa:\n`;
+  if (ws.classes.length === 0) {
+    text += `(Guru belum mendaftarkan kelas di sistem. Jika guru meminta membagi kelompok, arahkan untuk membuat kelas dan menambahkan siswa terlebih dahulu)\n`;
+  } else {
+    for (const c of ws.classes) {
+      const isHomeroom = c.homeroom_teacher_id === teacher.id;
+      const classStudents = ws.students.filter((s) => s.class_id === c.id);
+      text += `\n• Kelas: ${c.nama_kelas} (${c.tingkat})${isHomeroom ? ' [KELAS PERWALIAN ANDA]' : ''} - Total ${classStudents.length} Siswa:\n`;
+      if (classStudents.length === 0) {
+        text += `  - (Belum ada siswa terdaftar di kelas ini)\n`;
+      } else {
+        classStudents.forEach((s, idx) => {
+          const studentJournals = ws.journals.filter((j) => j.student_id === s.id);
+          const tags = [...new Set(studentJournals.flatMap((j) => j.tags))].slice(0, 3);
+          const tagInfo = tags.length > 0 ? ` [Catatan Jurnal: ${tags.join(', ')}]` : '';
+          const waliInfo = s.nama_wali ? ` (Wali: ${s.nama_wali})` : '';
+          text += `  ${idx + 1}. ${s.nama_lengkap} (${s.jenis_kelamin})${waliInfo}${tagInfo}\n`;
+        });
+      }
+    }
+  }
+
+  if (myAssignments.length > 0) {
+    text += `\nMata Pelajaran yang Diampu Guru:\n`;
+    for (const a of myAssignments) {
+      const subj = ws.subjects.find((s) => s.id === a.subject_id);
+      const cls = ws.classes.find((c) => c.id === a.class_id);
+      text += `• ${subj?.nama || 'Mapel'} di kelas ${cls?.nama_kelas || '-'}${a.materi_aktif ? ` (Materi aktif: ${a.materi_aktif})` : ''}\n`;
+    }
+  }
+
+  text += `[AKHIR DATA AKADEMIK]\n`;
+  return text;
+}
+
 export const useAppStore = create<AppState>((set, get) => {
   const patchWs = (fn: (ws: Workspace) => Partial<Workspace>) => {
     const ws = get().ws;
@@ -355,7 +405,8 @@ export const useAppStore = create<AppState>((set, get) => {
       set({ chat: nextChat, assistantBusy: true });
       persistChatHistory(nextChat, get().user?.id);
       try {
-        const reply = await repo.askAssistant(question, currentHistory);
+        const workspaceSummary = buildWorkspaceSummary(get().ws);
+        const reply = await repo.askAssistant(question, currentHistory, workspaceSummary);
         const finalChat: ChatMessage[] = [
           ...nextChat,
           { id: uid('m'), sender: 'assistant', text: reply.text, source: reply.source, created_at: new Date().toISOString() },
