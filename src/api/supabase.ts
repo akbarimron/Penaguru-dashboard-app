@@ -6,7 +6,9 @@ declare const process: { env: Record<string, string | undefined> };
 const url = process.env.EXPO_PUBLIC_SUPABASE_URL;
 const anonKey = process.env.EXPO_PUBLIC_SUPABASE_ANON_KEY;
 
-export const isSupabaseConfigured = Boolean(url && anonKey && !url.includes('your-project'));
+export const isSupabaseConfigured = Boolean(
+  url && anonKey && !url.includes('your-project') && !anonKey.includes('your-anon')
+);
 
 // Edge Function Gemini (generate-feedback, pedagogy-assistant) baru dipanggil
 // bila diaktifkan, agar aplikasi tidak menunggu fungsi yang belum di-deploy.
