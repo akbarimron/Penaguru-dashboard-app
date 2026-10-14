@@ -48,7 +48,7 @@ export function AssistantScreen() {
             Asisten
           </AppText>
           <AppText variant="small" tone={color.muted}>
-            Saran strategi mengajar bertenaga Google Gemini AI. Tanyakan ide ice breaking, diferensiasi, atau rubrik asesmen.
+            Saran strategi mengajar bertenaga AI Asisten Guru. Tanyakan ide ice breaking, diferensiasi, atau rubrik asesmen.
           </AppText>
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
@@ -69,7 +69,7 @@ export function AssistantScreen() {
             <View style={styles.typing} accessibilityLiveRegion="polite">
               <ActivityIndicator size="small" color={color.brand} />
               <AppText variant="small" tone={color.muted}>
-                Gemini sedang menyusun saran terbaik...
+                Asisten Guru sedang menyusun saran terbaik...
               </AppText>
             </View>
           ) : null
@@ -109,7 +109,7 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
         {!user && message.source === 'gemini' ? (
           <View style={styles.geminiBadgeHeader}>
             <Ionicons name="sparkles" size={13} color={color.brand} />
-            <Text style={styles.geminiBadgeText}>Gemini AI Pedagogik</Text>
+            <Text style={styles.geminiBadgeText}>Asisten Guru AI</Text>
           </View>
         ) : null}
 
@@ -124,7 +124,7 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
                 color={message.source === 'gemini' ? color.brand : color.muted}
               />
               <AppText variant="caption" tone={message.source === 'gemini' ? color.brandDeep : color.muted}>
-                {message.source === 'gemini' ? 'Tersambung Google Gemini' : 'Saran lokal'}
+                {message.source === 'gemini' ? 'Jawaban Asisten Guru' : 'Saran lokal'}
               </AppText>
             </View>
             {message.id !== 'welcome' ? (
