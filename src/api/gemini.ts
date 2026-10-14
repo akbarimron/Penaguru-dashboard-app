@@ -172,3 +172,122 @@ Berikan output HANYA dalam format JSON valid tanpa tag markdown lain, dengan str
   const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
   return JSON.parse(rawJson);
 }
+
+/**
+ * Menyusun draf catatan wali kelas berbasis capaian semua mapel & catatan jurnal menggunakan Gemini AI
+ */
+export async function generateHomeroomNoteAI(params: {
+  studentName: string;
+  className: string;
+  periode: string;
+  perSubjectSummary: string;
+  journalHighlights: string;
+}): Promise<string> {
+  if (!isGeminiConfigured) {
+    throw new Error('Kunci Gemini API belum dikonfigurasi.');
+  }
+
+  const prompt = `
+Sebagai Wali Kelas di sekolah Indonesia (Kurikulum Merdeka), susunlah narasi "Catatan Wali Kelas" resmi untuk rapor siswa berikut:
+Nama Siswa: ${params.studentName}
+Kelas: ${params.className}
+Periode: ${params.periode}
+Rangkuman Capaian per Mapel:
+${params.perSubjectSummary}
+Catatan Perilaku & Pengamatan Jurnal:
+${params.journalHighlights || '(Catatan umum)'}
+
+Pedoman Penulisan:
+1. Buat dalam 1 paragraf ringkas (sekitar 50-80 kata).
+2. Awali dengan apresiasi tulus atas usaha dan keunggulan siswa.
+3. Sebutkan aspek yang perlu pendampingan/peningkatan secara membangun, solutif, dan tidak menjatuhkan mental siswa.
+4. Akhiri dengan kalimat motivasi yang menyemangati ananda untuk semester berikutnya.
+5. Berikan HANYA teks narasi catatan, tanpa tanda kutip atau kalimat pembuka/penutup.
+`.trim();
+
+  const apiKey = rawKey!.trim();
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+
+  for (const model of models) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.5, maxOutputTokens: 500 },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+      }
+    } catch {
+      // coba model berikutnya
+    }
+  }
+
+  throw new Error('Gagal menghasilkan catatan wali kelas dari Gemini AI.');
+}
+
+/**
+ * Menyusun pesan personal WhatsApp untuk Wali Murid / Orang Tua berbasis riwayat perkembangan siswa
+ */
+export async function generateParentMessageAI(params: {
+  studentName: string;
+  parentName?: string;
+  className: string;
+  periode: string;
+  overviewSummary: string;
+}): Promise<string> {
+  if (!isGeminiConfigured) {
+    throw new Error('Kunci Gemini API belum dikonfigurasi.');
+  }
+
+  const prompt = `
+Sebagai Wali Kelas, susunlah draf pesan WhatsApp yang santun, hangat, dan profesional kepada orang tua/wali murid berikut:
+Nama Siswa: ${params.studentName}
+Nama Orang Tua/Wali: ${params.parentName || 'Bapak/Ibu Orang Tua/Wali'}
+Kelas: ${params.className}
+Periode: ${params.periode}
+Rangkuman Capaian & Pengamatan:
+${params.overviewSummary}
+
+Pedoman Format Pesan WhatsApp:
+1. Awali dengan salam pembuka yang ramah dan sopan (misal: "Selamat siang Bapak/Ibu...").
+2. Sampaikan kabar perkembangan ananda di sekolah secara apresiatif dan jujur.
+3. Sampaikan 1-2 saran konkret untuk pendampingan belajar di rumah.
+4. Tutup dengan ajakan kerjasama demi kesuksesan ananda dan doa terbaik.
+5. Berikan HANYA teks pesan WhatsApp lengkap (boleh gunakan emotikon wajar yang ramah).
+`.trim();
+
+  const apiKey = rawKey!.trim();
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+
+  for (const model of models) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          contents: [{ role: 'user', parts: [{ text: prompt }] }],
+          generationConfig: { temperature: 0.6, maxOutputTokens: 600 },
+        }),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+      }
+    } catch {
+      // coba model berikutnya
+    }
+  }
+
+  throw new Error('Gagal menghasilkan pesan untuk orang tua dari Gemini AI.');
+}

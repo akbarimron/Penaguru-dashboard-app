@@ -3,12 +3,14 @@ import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { RadarChart } from '../components/RadarChart';
 import { JournalItem } from '../components/Rows';
+import * as Clipboard from 'expo-clipboard';
 import {
   AppText,
   Avatar,
   Button,
   Card,
   Chip,
+  Dialog,
   EmptyState,
   EnterView,
   PressableScale,
@@ -20,6 +22,7 @@ import {
   StatusPill,
   TextField,
 } from '../components/ui';
+import { generateHomeroomNoteAI, generateParentMessageAI } from '../api/gemini';
 import { crossSubjectStats, isAttentionTag, journalsOf, statsFor } from '../lib/analytics';
 import { reportPeriods } from '../lib/dates';
 import { useLayout } from '../lib/layout';
@@ -82,7 +85,83 @@ export function StudentScreen({ route, navigation }: any) {
 }
 
 function Identity({ student, homeroom, navigation }: { student: Student; homeroom: boolean; navigation: any }) {
+  const ws = useAppStore((s) => s.ws)!;
   const wa = whatsappLink(student.no_whatsapp_wali, '');
+  const [parentModalVisible, setParentModalVisible] = useState(false);
+  const [parentMsg, setParentMsg] = useState('');
+  const [generatingMsg, setGeneratingMsg] = useState(false);
+
+  const cls = ws.classes.find((c) => c.id === student.class_id);
+  const [currentPeriode] = reportPeriods();
+
+  const handleGenerateAiMessage = async () => {
+    setGeneratingMsg(true);
+    try {
+      const studentJournals = journalsOf(ws.journals, { studentId: student.id });
+      const { perSubject } = crossSubjectStats(student, ws.assignments, ws.subjects, ws.journals);
+
+      const subjectSummaries = perSubject
+        .map((p) => `- ${p.subject.nama}: Status ${p.stats.status}, Skor gabungan: ${p.stats.composite ?? 'Belum ada nilai'}`)
+        .join('\n');
+
+      const recentJournals = studentJournals
+        .slice(0, 5)
+        .map((j) => `- [${j.tanggal}] ${j.materi}: ${j.catatan || 'Aktif mengikuti kegiatan'}`)
+        .join('\n');
+
+      const overviewSummary = `
+Capaian Mata Pelajaran:
+${subjectSummaries || '- Belum ada data mapel'}
+
+Catatan Pengamatan Guru:
+${recentJournals || '- Belum ada catatan pengamatan harian'}
+      `.trim();
+
+      const aiText = await generateParentMessageAI({
+        studentName: student.nama_lengkap,
+        parentName: student.nama_wali || undefined,
+        className: cls?.nama_kelas || 'Kelas',
+        periode: currentPeriode,
+        overviewSummary,
+      });
+
+      setParentMsg(aiText);
+      toast('Draf pesan untuk orang tua berhasil dibuat AI!');
+    } catch (err: any) {
+      toast(err?.message || 'Gagal generate AI, membuat draf standar...', 'error');
+      const standardMsg = `Yth. Bapak/Ibu ${student.nama_wali || 'Orang Tua'},\n\nSalam hangat dari sekolah. Kami mengabarkan perkembangan ananda ${student.nama_lengkap} di kelas ${cls?.nama_kelas || ''} untuk ${currentPeriode}. Ananda secara umum berpartisipasi dengan baik. Mohon pendampingan Bapak/Ibu untuk terus memotivasi ananda belajar di rumah.\n\nTerima kasih atas kerja samanya yang baik.`;
+      setParentMsg(standardMsg);
+    } finally {
+      setGeneratingMsg(false);
+    }
+  };
+
+  const handleOpenModal = () => {
+    setParentModalVisible(true);
+    if (!parentMsg) {
+      handleGenerateAiMessage();
+    }
+  };
+
+  const handleCopy = async () => {
+    if (!parentMsg.trim()) return;
+    await Clipboard.setStringAsync(parentMsg);
+    toast('Pesan berhasil disalin ke clipboard!');
+  };
+
+  const handleSendWA = () => {
+    if (!parentMsg.trim()) {
+      toast('Tulis atau generate pesan terlebih dahulu.', 'error');
+      return;
+    }
+    const link = whatsappLink(student.no_whatsapp_wali, parentMsg);
+    if (link) {
+      Linking.openURL(link);
+    } else {
+      toast('Nomor WhatsApp belum diisi atau tidak valid di data siswa.', 'error');
+    }
+  };
+
   return (
     <EnterView>
       <Card style={styles.identity}>
@@ -91,24 +170,61 @@ function Identity({ student, homeroom, navigation }: { student: Student; homeroo
           <AppText variant="small" tone={color.mutedOnWhite}>
             NISN {student.nisn} · {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
           </AppText>
-          {homeroom ? (
-            <>
-              <AppText variant="small" tone={color.inkSoft}>
-                Wali murid: {student.nama_wali || 'belum diisi'}
-              </AppText>
-              <AppText variant="small" tone={color.inkSoft}>
-                WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
-              </AppText>
-            </>
-          ) : null}
+          <AppText variant="small" tone={color.inkSoft}>
+            Wali murid: {student.nama_wali || 'belum diisi'}
+          </AppText>
+          <AppText variant="small" tone={color.inkSoft}>
+            WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
+          </AppText>
         </View>
-        {homeroom ? (
-          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+          {homeroom ? (
             <Button label="Ubah data" size="sm" variant="secondary" icon="create-outline" onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })} />
-            {wa ? <Button label="Chat wali" size="sm" variant="subtle" icon="logo-whatsapp" onPress={() => Linking.openURL(wa)} /> : null}
-          </View>
-        ) : null}
+          ) : null}
+          <Button label="💬 Pesan Ortu (AI)" size="sm" variant="subtle" icon="sparkles" onPress={handleOpenModal} />
+          {wa ? <Button label="Chat wali" size="sm" variant="ghost" icon="logo-whatsapp" onPress={() => Linking.openURL(wa)} /> : null}
+        </View>
       </Card>
+
+      <Dialog
+        visible={parentModalVisible}
+        onClose={() => setParentModalVisible(false)}
+        title="💬 Pesan untuk Wali Murid"
+        description={`Kepada ${student.nama_wali || 'Orang Tua/Wali'} (${student.nama_lengkap})`}
+        footer={
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', width: '100%' }}>
+            <Button label="Tutup" variant="ghost" size="sm" onPress={() => setParentModalVisible(false)} />
+            <Button label="Salin Pesan" variant="secondary" size="sm" icon="copy-outline" onPress={handleCopy} />
+            {student.no_whatsapp_wali ? (
+              <Button label="Kirim ke WhatsApp" size="sm" icon="logo-whatsapp" onPress={handleSendWA} />
+            ) : null}
+          </View>
+        }
+      >
+        <View style={{ gap: 12 }}>
+          <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' }}>
+            <AppText variant="caption" tone={color.mutedOnWhite}>
+              {student.no_whatsapp_wali ? `Tujuan WA: ${student.no_whatsapp_wali}` : 'Nomor WA belum terdaftar di profil siswa'}
+            </AppText>
+            <Button
+              label="Generate Ulang"
+              size="sm"
+              variant="ghost"
+              icon="sparkles"
+              loading={generatingMsg}
+              onPress={handleGenerateAiMessage}
+            />
+          </View>
+          <TextField
+            multiline
+            label="Draf pesan WhatsApp (bisa Anda sesuaikan)"
+            value={parentMsg}
+            onChangeText={setParentMsg}
+            placeholder="Menyusun pesan dengan AI..."
+            numberOfLines={6}
+          />
+        </View>
+      </Dialog>
     </EnterView>
   );
 }
@@ -233,6 +349,40 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
     setNote(existing?.catatan || '');
   }, [existing?.id, periode]); // eslint-disable-line react-hooks/exhaustive-deps
 
+  const [generatingAI, setGeneratingAI] = useState(false);
+
+  // Draf AI catatan wali kelas dari rekap semua guru mapel & jurnal
+  const composeAI = async () => {
+    setGeneratingAI(true);
+    try {
+      const cls = ws.classes.find((c) => c.id === student.class_id);
+      const perSubjectSummary = perSubject
+        .map((p) => `- Mapel ${p.subject.nama}: Status ${p.stats.status}, Skor gabungan: ${p.stats.composite ?? 'Belum ada data'}, Dari: ${p.stats.count} catatan jurnal`)
+        .join('\n');
+
+      const journalHighlights = allJournals
+        .slice(0, 8)
+        .map((j) => `- [${j.tanggal}] ${j.materi}: ${j.catatan || 'Tanpa catatan'}`)
+        .join('\n');
+
+      const generated = await generateHomeroomNoteAI({
+        studentName: student.nama_lengkap,
+        className: cls?.nama_kelas || 'Kelas',
+        periode,
+        perSubjectSummary,
+        journalHighlights,
+      });
+
+      setNote(generated);
+      toast('Catatan wali kelas berhasil disusun oleh AI!');
+    } catch (err: any) {
+      toast(err?.message || 'Gagal generate AI, beralih ke draf template...', 'error');
+      compose();
+    } finally {
+      setGeneratingAI(false);
+    }
+  };
+
   // Draf catatan wali kelas disusun dari status tiap mapel yang tercatat.
   const compose = () => {
     const name = student.nama_lengkap.split(' ')[0];
@@ -349,7 +499,8 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
               <Button label="Buka kunci untuk diubah" size="sm" variant="ghost" icon="lock-open-outline" onPress={() => save('Draft')} loading={saving === 'Draft'} />
             ) : (
               <>
-                <Button label="Susun dari data mapel" size="sm" variant="subtle" icon="document-text-outline" onPress={compose} />
+                <Button label="✨ Susun dengan AI" size="sm" icon="sparkles" onPress={composeAI} loading={generatingAI} />
+                <Button label="Draf template" size="sm" variant="subtle" icon="document-text-outline" onPress={compose} />
                 <Button label="Simpan draf" size="sm" variant="secondary" onPress={() => save('Draft')} loading={saving === 'Draft'} />
                 <Button label="Finalkan" size="sm" icon="lock-closed-outline" onPress={() => save('Final')} loading={saving === 'Final'} />
               </>

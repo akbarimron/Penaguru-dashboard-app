@@ -3,7 +3,8 @@ import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { AppText, Button, Card, Dialog, EmptyState, EnterView, Screen, ScreenHeader, Segmented, StatusPill, TextField } from '../components/ui';
-import { journalsOf } from '../lib/analytics';
+import { generateGeminiReportDraft, isGeminiConfigured } from '../api/gemini';
+import { journalsOf, statsFor } from '../lib/analytics';
 import { formatShortDate } from '../lib/dates';
 import { useLayout } from '../lib/layout';
 import { whatsappLink } from '../lib/phone';
@@ -67,6 +68,62 @@ export function ReportScreen({ route, navigation }: any) {
   const set = (k: keyof Fields) => (t: string) => {
     setFields((f) => ({ ...f, [k]: t }));
     setDirty(true);
+  };
+
+  const [generatingAI, setGeneratingAI] = useState(false);
+
+  const generateWithAI = async () => {
+    if (!journals.length) {
+      toast('Belum ada jurnal untuk siswa ini. Catat pengamatan dulu.', 'error');
+      return;
+    }
+    setGeneratingAI(true);
+    try {
+      const stats = statsFor(journals);
+      const journalsSummary = journals
+        .map(
+          (j) =>
+            `- Tanggal ${j.tanggal}: Materi "${j.materi}", Nilai (Kognitif ${j.nilai_kognitif}, Keterampilan ${j.nilai_keterampilan}, Sikap ${j.skor_sikap}), Tag: [${j.tags.join(', ')}], Catatan: "${j.catatan || '-'}"`
+        )
+        .join('\n');
+
+      const scores = {
+        kognitif: Math.round(((stats.scores?.kognitif || 3) / 5) * 100),
+        keterampilan: Math.round(((stats.scores?.keterampilan || 3) / 5) * 100),
+        sikap: Math.round(((stats.scores?.sikap || 3) / 5) * 100),
+      };
+
+      const aiDraft = await generateGeminiReportDraft({
+        studentName: student.nama_lengkap,
+        subjectName: subject.nama,
+        periode,
+        journalsSummary,
+        scores,
+      });
+
+      if (Object.values(fields).some((v) => v.trim())) {
+        const ok = await confirmDialog({
+          title: 'Ganti isi dengan draf AI?',
+          message: 'Teks yang sudah Anda tulis akan diganti dengan hasil generate AI.',
+          confirmLabel: 'Ganti',
+        });
+        if (!ok) return;
+      }
+
+      setFields({
+        keunggulan: aiDraft.keunggulan,
+        rekomendasi: aiDraft.rekomendasi,
+        narasi: aiDraft.narasi,
+        pesan_wali: aiDraft.pesan_wali,
+      });
+      setDirty(true);
+      toast('Draf narasi rapor berhasil disusun oleh AI!');
+    } catch (err: any) {
+      toast(err?.message || 'Gagal generate AI, menyusun via lokal...', 'error');
+      generate();
+    } finally {
+      setGeneratingAI(false);
+    }
   };
 
   const generate = async () => {
@@ -226,7 +283,10 @@ export function ReportScreen({ route, navigation }: any) {
             <AppText variant="small" tone={color.inkSoft} style={{ flex: 1, minWidth: 180 }}>
               {journals.length ? `${journals.length} catatan jurnal tersedia sebagai bahan.` : 'Belum ada jurnal untuk siswa ini di mapel Anda.'}
             </AppText>
-            <Button label="Susun draf dari jurnal" icon="document-text-outline" variant="subtle" size="sm" onPress={generate} disabled={!journals.length} />
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+              <Button label="✨ Susun dengan AI" icon="sparkles" variant="brand" size="sm" onPress={generateWithAI} disabled={!journals.length} loading={generatingAI} />
+              <Button label="Susun draf lokal" icon="document-text-outline" variant="subtle" size="sm" onPress={generate} disabled={!journals.length} />
+            </View>
           </View>
         ) : null}
       </Card>
