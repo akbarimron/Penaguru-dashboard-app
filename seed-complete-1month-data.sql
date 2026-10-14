@@ -3,7 +3,7 @@
 -- Versi: 2026 - Lengkap Admin Dashboard, Guru, Kelas, Siswa, & Jurnal
 -- 
 -- Akun yang dibuat:
--- 1. Admin: admin@penaguru.sch.id        | Sandi: AdminPenaGuru2026!
+-- 1. Admin:  admin@penaguru.sch.id        | Sandi: AdminPenaGuru2026!
 -- 2. Guru 1: budi.santoso@penaguru.sch.id  | Sandi: GuruPena2026! (Wali X PPLG 1 & Guru Informatika)
 -- 3. Guru 2: siti.aminah@penaguru.sch.id   | Sandi: GuruPena2026! (Wali X PPLG 2 & Guru Pemrograman Web)
 -- 4. Guru 3: dewi.lestari@penaguru.sch.id  | Sandi: GuruPena2026! (Guru Basis Data & Matematika)
@@ -14,7 +14,31 @@ create extension if not exists "pgcrypto";
 -- 1. Pastikan kolom role ada pada public.teachers
 alter table public.teachers add column if not exists role varchar(20) not null default 'guru';
 
--- 2. Fungsi helper keamanan untuk mendeteksi hak admin
+-- 2. Perbarui fungsi trigger user baru agar menyertakan role
+create or replace function public.handle_new_user() returns trigger
+language plpgsql security definer set search_path = public as $$
+begin
+  insert into public.teachers (id, nama_lengkap, nip, email, role)
+  values (
+    new.id,
+    coalesce(new.raw_user_meta_data ->> 'nama_lengkap', split_part(new.email, '@', 1)),
+    nullif(new.raw_user_meta_data ->> 'nip', ''),
+    new.email,
+    case when new.email like '%admin%' then 'admin' else 'guru' end
+  )
+  on conflict (id) do update set
+    nama_lengkap = excluded.nama_lengkap,
+    nip = excluded.nip,
+    email = excluded.email,
+    role = case when excluded.email like '%admin%' then 'admin' else public.teachers.role end;
+  return new;
+end $$;
+
+drop trigger if exists on_auth_user_created on auth.users;
+create trigger on_auth_user_created after insert on auth.users
+for each row execute function public.handle_new_user();
+
+-- 3. Fungsi helper keamanan untuk mendeteksi hak admin
 create or replace function public.is_admin()
 returns boolean as $$
 begin
@@ -56,7 +80,7 @@ create policy "admin_manage_reports" on public.subject_reports for all using (pu
 drop policy if exists "admin_manage_homeroom_reports" on public.homeroom_reports;
 create policy "admin_manage_homeroom_reports" on public.homeroom_reports for all using (public.is_admin()) with check (public.is_admin());
 
--- 3. Eksekusi Reset Data & Pengisian Ulang Data Baru
+-- 4. Eksekusi Reset Data & Pengisian Ulang Data Baru
 do $$
 declare
   v_admin_id uuid := '00000000-0000-0000-0000-000000000001';
@@ -81,12 +105,9 @@ declare
   v_asg_db_x2  uuid;
   v_asg_mat_x1 uuid;
 
-  v_s_ids uuid[] := array[]::uuid[];
-  v_curr_sid uuid;
   v_day_offset int;
   v_tgl date;
   v_dow int;
-  v_idx int;
   v_base_date date := current_date;
 begin
   -- Hapus data operasional lama secara berurutan
@@ -102,7 +123,13 @@ begin
   delete from public.classes;
   delete from public.teachers;
 
-  -- Bersihkan akun auth lama jika ada
+  -- Bersihkan identitas auth lama jika ada
+  begin
+    delete from auth.identities where user_id in (v_admin_id, v_budi_id, v_siti_id, v_dewi_id);
+  exception when others then
+    -- Abaikan jika skema auth tidak memiliki tabel identities
+  end;
+
   delete from auth.users where email in (
     'admin@penaguru.sch.id',
     'budi.santoso@penaguru.sch.id',
@@ -143,10 +170,34 @@ begin
       '{"provider":"email","providers":["email"]}'::jsonb,
       '{"nama_lengkap":"Dewi Lestari, M.Kom."}'::jsonb,
       'authenticated', 'authenticated', now(), now()
-    );
+    )
+  on conflict (id) do update set
+    encrypted_password = excluded.encrypted_password,
+    email_confirmed_at = excluded.email_confirmed_at,
+    raw_user_meta_data = excluded.raw_user_meta_data,
+    updated_at = now();
+
+  -- Tambahkan identitas login untuk kompatibilitas provider email GoTrue
+  begin
+    insert into auth.identities (
+      id, user_id, identity_data, provider, last_sign_in_at, created_at, updated_at
+    )
+    values
+      (v_admin_id, v_admin_id, json_build_object('sub', v_admin_id::text, 'email', 'admin@penaguru.sch.id')::jsonb, 'email', now(), now(), now()),
+      (v_budi_id,  v_budi_id,  json_build_object('sub', v_budi_id::text,  'email', 'budi.santoso@penaguru.sch.id')::jsonb, 'email', now(), now(), now()),
+      (v_siti_id,  v_siti_id,  json_build_object('sub', v_siti_id::text,  'email', 'siti.aminah@penaguru.sch.id')::jsonb,  'email', now(), now(), now()),
+      (v_dewi_id,  v_dewi_id,  json_build_object('sub', v_dewi_id::text,  'email', 'dewi.lestari@penaguru.sch.id')::jsonb, 'email', now(), now(), now())
+    on conflict do nothing;
+  exception when others then
+    -- Abaikan jika struktur kolom identities berbeda
+  end;
 
   -- Buat / Perbarui Profil Sekolah
-  select id into v_school_id from public.schools limit 1;
+  select id into v_school_id from public.schools where npsn = '20219876' or kode_gabung = 'SMKBDG1' limit 1;
+  if v_school_id is null then
+    select id into v_school_id from public.schools limit 1;
+  end if;
+
   if v_school_id is null then
     insert into public.schools (nama, npsn, kode_gabung)
     values ('SMK Negeri 1 Bandung', '20219876', 'SMKBDG1')
@@ -157,84 +208,136 @@ begin
     where id = v_school_id;
   end if;
 
-  -- Buat Profil Guru di public.teachers
+  -- Perbarui Profil Guru di public.teachers (IDEMPOTEN dengan ON CONFLICT ID)
   insert into public.teachers (id, school_id, nama_lengkap, nip, email, role)
   values
     (v_admin_id, v_school_id, 'Drs. H. Mulyadi, M.Pd.', '197204121998021001', 'admin@penaguru.sch.id', 'admin'),
     (v_budi_id,  v_school_id, 'Budi Santoso, S.Kom.',  '198503152010011012', 'budi.santoso@penaguru.sch.id', 'guru'),
     (v_siti_id,  v_school_id, 'Siti Aminah, S.Pd.',   '198907222014022005', 'siti.aminah@penaguru.sch.id',  'guru'),
-    (v_dewi_id,  v_school_id, 'Dewi Lestari, M.Kom.',  '199211052019032018', 'dewi.lestari@penaguru.sch.id',  'guru');
+    (v_dewi_id,  v_school_id, 'Dewi Lestari, M.Kom.',  '199211052019032018', 'dewi.lestari@penaguru.sch.id',  'guru')
+  on conflict (id) do update set
+    school_id = excluded.school_id,
+    nama_lengkap = excluded.nama_lengkap,
+    nip = excluded.nip,
+    email = excluded.email,
+    role = excluded.role;
 
   -- Buat Kelas X PPLG 1 & X PPLG 2
-  insert into public.classes (school_id, nama_kelas, tingkat, tahun_ajaran, semester, homeroom_teacher_id)
-  values (v_school_id, 'X PPLG 1', 'X', '2026/2027', 'Ganjil', v_budi_id)
-  returning id into v_class_x1;
+  select id into v_class_x1 from public.classes where school_id = v_school_id and nama_kelas = 'X PPLG 1' and tahun_ajaran = '2026/2027';
+  if v_class_x1 is null then
+    insert into public.classes (school_id, nama_kelas, tingkat, tahun_ajaran, semester, homeroom_teacher_id)
+    values (v_school_id, 'X PPLG 1', 'X', '2026/2027', 'Ganjil', v_budi_id)
+    returning id into v_class_x1;
+  else
+    update public.classes
+    set homeroom_teacher_id = v_budi_id, tingkat = 'X', semester = 'Ganjil'
+    where id = v_class_x1;
+  end if;
 
-  insert into public.classes (school_id, nama_kelas, tingkat, tahun_ajaran, semester, homeroom_teacher_id)
-  values (v_school_id, 'X PPLG 2', 'X', '2026/2027', 'Ganjil', v_siti_id)
-  returning id into v_class_x2;
+  select id into v_class_x2 from public.classes where school_id = v_school_id and nama_kelas = 'X PPLG 2' and tahun_ajaran = '2026/2027';
+  if v_class_x2 is null then
+    insert into public.classes (school_id, nama_kelas, tingkat, tahun_ajaran, semester, homeroom_teacher_id)
+    values (v_school_id, 'X PPLG 2', 'X', '2026/2027', 'Ganjil', v_siti_id)
+    returning id into v_class_x2;
+  else
+    update public.classes
+    set homeroom_teacher_id = v_siti_id, tingkat = 'X', semester = 'Ganjil'
+    where id = v_class_x2;
+  end if;
 
   -- Buat Mata Pelajaran
-  insert into public.subjects (school_id, nama, warna)
-  values (v_school_id, 'Informatika', 'violet')
-  returning id into v_sub_inf;
+  select id into v_sub_inf from public.subjects where school_id = v_school_id and nama = 'Informatika';
+  if v_sub_inf is null then
+    insert into public.subjects (school_id, nama, warna) values (v_school_id, 'Informatika', 'violet') returning id into v_sub_inf;
+  end if;
 
-  insert into public.subjects (school_id, nama, warna)
-  values (v_school_id, 'Pemrograman Web', 'blue')
-  returning id into v_sub_web;
+  select id into v_sub_web from public.subjects where school_id = v_school_id and nama = 'Pemrograman Web';
+  if v_sub_web is null then
+    insert into public.subjects (school_id, nama, warna) values (v_school_id, 'Pemrograman Web', 'blue') returning id into v_sub_web;
+  end if;
 
-  insert into public.subjects (school_id, nama, warna)
-  values (v_school_id, 'Basis Data', 'green')
-  returning id into v_sub_db;
+  select id into v_sub_db from public.subjects where school_id = v_school_id and nama = 'Basis Data';
+  if v_sub_db is null then
+    insert into public.subjects (school_id, nama, warna) values (v_school_id, 'Basis Data', 'green') returning id into v_sub_db;
+  end if;
 
-  insert into public.subjects (school_id, nama, warna)
-  values (v_school_id, 'Matematika Terapan', 'yellow')
-  returning id into v_sub_mat;
+  select id into v_sub_mat from public.subjects where school_id = v_school_id and nama = 'Matematika Terapan';
+  if v_sub_mat is null then
+    insert into public.subjects (school_id, nama, warna) values (v_school_id, 'Matematika Terapan', 'yellow') returning id into v_sub_mat;
+  end if;
 
   -- Buat Pembagian Jam Mengajar (Teaching Assignments)
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_budi_id, v_class_x1, v_sub_inf, 'Struktur Percabangan dan Perulangan Algoritma',
      '[{"hari":2,"jam_mulai":"07:00","jam_selesai":"09:15"},{"hari":4,"jam_mulai":"09:30","jam_selesai":"11:00"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_inf_x1;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_budi_id, v_class_x2, v_sub_inf, 'Algoritma Pencarian Linear & Binary Search',
      '[{"hari":3,"jam_mulai":"07:00","jam_selesai":"08:30"},{"hari":5,"jam_mulai":"08:30","jam_selesai":"10:00"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_inf_x2;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_siti_id, v_class_x1, v_sub_web, 'Modern CSS Layout (Flexbox, Grid) & DOM Logic',
      '[{"hari":1,"jam_mulai":"07:00","jam_selesai":"09:15"},{"hari":5,"jam_mulai":"07:00","jam_selesai":"08:30"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_web_x1;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_siti_id, v_class_x2, v_sub_web, 'Desain Web Responsif & JavaScript Form Events',
      '[{"hari":2,"jam_mulai":"09:30","jam_selesai":"11:45"},{"hari":4,"jam_mulai":"07:00","jam_selesai":"08:30"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_web_x2;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_dewi_id, v_class_x1, v_sub_db, 'Perancangan ERD, Normalisasi, & Relasi SQL',
      '[{"hari":3,"jam_mulai":"09:30","jam_selesai":"11:45"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_db_x1;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_dewi_id, v_class_x2, v_sub_db, 'Query SELECT JOIN, GROUP BY, & Agregasi SQL',
      '[{"hari":1,"jam_mulai":"09:30","jam_selesai":"11:45"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_db_x2;
 
   insert into public.teaching_assignments (teacher_id, class_id, subject_id, materi_aktif, jadwal)
   values
     (v_dewi_id, v_class_x1, v_sub_mat, 'Aljabar Boolean, Logika Proposisi, & Gerbang Logika',
      '[{"hari":4,"jam_mulai":"11:00","jam_selesai":"12:30"}]'::jsonb)
+  on conflict (class_id, subject_id) do update set
+    teacher_id = excluded.teacher_id,
+    materi_aktif = excluded.materi_aktif,
+    jadwal = excluded.jadwal
   returning id into v_asg_mat_x1;
 
-  -- 4. Masukkan 24 Siswa Beserta Data Kontak Wali Murid
+  -- 5. Masukkan 24 Siswa Beserta Data Kontak Wali Murid
   -- =================== KELAS X PPLG 1 (12 Siswa) ===================
   insert into public.students (class_id, nisn, nama_lengkap, jenis_kelamin) values
     (v_class_x1, '0081234001', 'Ahmad Rizki Pratama', 'L'),
@@ -248,33 +351,30 @@ begin
     (v_class_x1, '0081234009', 'Indah Permatasari', 'P'),
     (v_class_x1, '0081234010', 'Jovan Kevin Ardiansyah', 'L'),
     (v_class_x1, '0081234011', 'Kurnia Mega Sasmita', 'P'),
-    (v_class_x1, '0081234012', 'Lukman Hakim', 'L');
+    (v_class_x1, '0081234012', 'Lukman Hakim', 'L')
+  on conflict (nisn) do update set
+    class_id = excluded.class_id,
+    nama_lengkap = excluded.nama_lengkap,
+    jenis_kelamin = excluded.jenis_kelamin;
 
   -- Kontak Wali X PPLG 1
   insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Bambang Pratama', '081234567890' from public.students where nisn = '0081234001';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Suryo Santoso', '081234567891' from public.students where nisn = '0081234002';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Dewi Sartika', '081234567892' from public.students where nisn = '0081234003';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Arya Saputra', '081234567893' from public.students where nisn = '0081234004';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Rahmawati Utami', '081234567894' from public.students where nisn = '0081234005';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Hidayatullah', '081234567895' from public.students where nisn = '0081234006';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Nurul Hidayah', '081234567896' from public.students where nisn = '0081234007';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Rahman Hakim', '081234567897' from public.students where nisn = '0081234008';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Joko Wahyudi', '081234567898' from public.students where nisn = '0081234009';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Ardiansyah', '081234567899' from public.students where nisn = '0081234010';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Sasmita Hadi', '081234567800' from public.students where nisn = '0081234011';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Hasan Basri', '081234567801' from public.students where nisn = '0081234012';
+  values
+    ((select id from public.students where nisn = '0081234001'), 'Bambang Pratama', '081234567890'),
+    ((select id from public.students where nisn = '0081234002'), 'Suryo Santoso', '081234567891'),
+    ((select id from public.students where nisn = '0081234003'), 'Dewi Sartika', '081234567892'),
+    ((select id from public.students where nisn = '0081234004'), 'Arya Saputra', '081234567893'),
+    ((select id from public.students where nisn = '0081234005'), 'Rahmawati Utami', '081234567894'),
+    ((select id from public.students where nisn = '0081234006'), 'Hidayatullah', '081234567895'),
+    ((select id from public.students where nisn = '0081234007'), 'Nurul Hidayah', '081234567896'),
+    ((select id from public.students where nisn = '0081234008'), 'Rahman Hakim', '081234567897'),
+    ((select id from public.students where nisn = '0081234009'), 'Joko Wahyudi', '081234567898'),
+    ((select id from public.students where nisn = '0081234010'), 'Ardiansyah', '081234567899'),
+    ((select id from public.students where nisn = '0081234011'), 'Sasmita Hadi', '081234567800'),
+    ((select id from public.students where nisn = '0081234012'), 'Hasan Basri', '081234567801')
+  on conflict (student_id) do update set
+    nama_wali = excluded.nama_wali,
+    no_whatsapp_wali = excluded.no_whatsapp_wali;
 
   -- =================== KELAS X PPLG 2 (12 Siswa) ===================
   insert into public.students (class_id, nisn, nama_lengkap, jenis_kelamin) values
@@ -289,39 +389,34 @@ begin
     (v_class_x2, '0081234021', 'Vino Bastian Akbar', 'L'),
     (v_class_x2, '0081234022', 'Wulan Dari Saputri', 'P'),
     (v_class_x2, '0081234023', 'Yusuf Habibie', 'L'),
-    (v_class_x2, '0081234024', 'Zahra Nadira', 'P');
+    (v_class_x2, '0081234024', 'Zahra Nadira', 'P')
+  on conflict (nisn) do update set
+    class_id = excluded.class_id,
+    nama_lengkap = excluded.nama_lengkap,
+    jenis_kelamin = excluded.jenis_kelamin;
 
   -- Kontak Wali X PPLG 2
   insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Fikri Ramadhan', '081234567802' from public.students where nisn = '0081234013';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Endang Susilawati', '081234567803' from public.students where nisn = '0081234014';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Setiawan Budi', '081234567804' from public.students where nisn = '0081234015';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Hendra Gunawan', '081234567805' from public.students where nisn = '0081234016';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Yusuf Hidayat', '081234567806' from public.students where nisn = '0081234017';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Ahmad Fauzi', '081234567807' from public.students where nisn = '0081234018';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Mansyur Hidayat', '081234567808' from public.students where nisn = '0081234019';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Zainal Abidin', '081234567809' from public.students where nisn = '0081234020';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Bastian Gunawan', '081234567810' from public.students where nisn = '0081234021';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Agus Saputra', '081234567811' from public.students where nisn = '0081234022';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Ilham Habibie', '081234567812' from public.students where nisn = '0081234023';
-  insert into public.student_contacts (student_id, nama_wali, no_whatsapp_wali)
-  select id, 'Irfan Nadira', '081234567813' from public.students where nisn = '0081234024';
+  values
+    ((select id from public.students where nisn = '0081234013'), 'Fikri Ramadhan', '081234567802'),
+    ((select id from public.students where nisn = '0081234014'), 'Endang Susilawati', '081234567803'),
+    ((select id from public.students where nisn = '0081234015'), 'Setiawan Budi', '081234567804'),
+    ((select id from public.students where nisn = '0081234016'), 'Hendra Gunawan', '081234567805'),
+    ((select id from public.students where nisn = '0081234017'), 'Yusuf Hidayat', '081234567806'),
+    ((select id from public.students where nisn = '0081234018'), 'Ahmad Fauzi', '081234567807'),
+    ((select id from public.students where nisn = '0081234019'), 'Mansyur Hidayat', '081234567808'),
+    ((select id from public.students where nisn = '0081234020'), 'Zainal Abidin', '081234567809'),
+    ((select id from public.students where nisn = '0081234021'), 'Bastian Gunawan', '081234567810'),
+    ((select id from public.students where nisn = '0081234022'), 'Agus Saputra', '081234567811'),
+    ((select id from public.students where nisn = '0081234023'), 'Ilham Habibie', '081234567812'),
+    ((select id from public.students where nisn = '0081234024'), 'Irfan Nadira', '081234567813')
+  on conflict (student_id) do update set
+    nama_wali = excluded.nama_wali,
+    no_whatsapp_wali = excluded.no_whatsapp_wali;
 
-  -- 5. Buat 1 BULAN HISTORI JURNAL HARIAN (30 Hari ke Belakang)
-  -- Loop dari hari ke-30 mundur sampai hari ini
+  -- 6. Buat 1 BULAN HISTORI JURNAL HARIAN (30 Hari ke Belakang)
   for v_day_offset in reverse 30..1 loop
     v_tgl := v_base_date - v_day_offset;
-    -- Dapatkan hari dalam minggu: 0=Minggu, 1=Senin, 2=Selasa, 3=Rabu, 4=Kamis, 5=Jumat, 6=Sabtu
     v_dow := extract(dow from v_tgl);
 
     -- Hanya catat di hari sekolah (Senin - Jumat)
@@ -535,7 +630,7 @@ begin
     end if;
   end loop;
 
-  -- 6. Masukkan Rapor & Catatan Wali Kelas (Status Beragam: Draft, Diajukan, Disetujui, Revisi)
+  -- 7. Masukkan Rapor & Catatan Wali Kelas (Status Beragam: Draft, Diajukan, Disetujui, Revisi)
   insert into public.subject_reports (
     assignment_id, class_id, subject_id, teacher_id, student_id, periode,
     keunggulan, rekomendasi, narasi, pesan_wali, status, catatan_wali_kelas,
@@ -561,7 +656,10 @@ begin
     case when (row_number() over (order by s.id)) % 4 = 0 then now() - interval '1 day' else null end,
     case when (row_number() over (order by s.id)) % 4 = 0 then v_budi_id else null end,
     now()
-  from public.students s where s.class_id = v_class_x1 limit 8;
+  from public.students s where s.class_id = v_class_x1 limit 8
+  on conflict (assignment_id, student_id, periode) do update set
+    status = excluded.status,
+    narasi = excluded.narasi;
 
   -- Catatan Wali Kelas (Homeroom Reports)
   insert into public.homeroom_reports (class_id, student_id, periode, catatan, status, updated_at)
@@ -570,6 +668,9 @@ begin
     'Menunjukkan perkembangan karakter yang sangat positif, aktif dalam kegiatan kelas, dan menjaga hubungan pertemanan yang harmonis.',
     'Final',
     now()
-  from public.students s where s.class_id = v_class_x1 limit 6;
+  from public.students s where s.class_id = v_class_x1 limit 6
+  on conflict (student_id, periode) do update set
+    catatan = excluded.catatan,
+    status = excluded.status;
 
 end $$;
