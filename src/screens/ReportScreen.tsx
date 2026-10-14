@@ -284,7 +284,7 @@ export function ReportScreen({ route, navigation }: any) {
               {journals.length ? `${journals.length} catatan jurnal tersedia sebagai bahan.` : 'Belum ada jurnal untuk siswa ini di mapel Anda.'}
             </AppText>
             <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
-              <Button label="✨ Susun dengan AI" icon="sparkles" variant="brand" size="sm" onPress={generateWithAI} disabled={!journals.length} loading={generatingAI} />
+              <Button label="✨ Susun dengan AI" icon="sparkles" variant="primary" size="sm" onPress={generateWithAI} disabled={!journals.length} loading={generatingAI} />
               <Button label="Susun draf lokal" icon="document-text-outline" variant="subtle" size="sm" onPress={generate} disabled={!journals.length} />
             </View>
           </View>

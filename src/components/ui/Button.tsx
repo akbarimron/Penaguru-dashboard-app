@@ -6,10 +6,11 @@ import { AppText } from './AppText';
 import { PressableScale } from './PressableScale';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
-type Variant = 'primary' | 'secondary' | 'subtle' | 'ghost' | 'danger' | 'onColor';
+type Variant = 'primary' | 'brand' | 'secondary' | 'subtle' | 'ghost' | 'danger' | 'onColor';
 
-const VARIANTS: Record<Variant, { bg: string; fg: string; border?: string }> = {
+const VARIANTS: Record<string, { bg: string; fg: string; border?: string }> = {
   primary: { bg: color.brand, fg: color.onBrand },
+  brand: { bg: color.brand, fg: color.onBrand },
   secondary: { bg: color.surface, fg: color.brand, border: color.brand },
   subtle: { bg: color.brandSoft, fg: color.brandDeep },
   ghost: { bg: 'transparent', fg: color.brand },
@@ -32,7 +33,7 @@ interface ButtonProps {
 }
 
 export function Button({ label, onPress, variant = 'primary', icon, size = 'md', loading, disabled, fullWidth, style, accessibilityHint, fg }: ButtonProps) {
-  const v = VARIANTS[variant];
+  const v = VARIANTS[variant] || VARIANTS.primary;
   const textColor = fg || v.fg;
   return (
     <PressableScale
