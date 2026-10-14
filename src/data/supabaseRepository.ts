@@ -241,11 +241,11 @@ export const supabaseRepository: Repository = {
     return ((data as any[]) || []).map((g) => ({ ...g, members: g.members || [] }));
   },
 
-  async askAssistant(question) {
+  async askAssistant(question, history) {
     // 1. Coba panggil Gemini API langsung bila kunci EXPO_PUBLIC_GEMINI_API_KEY terpasang
     if (isGeminiConfigured) {
       try {
-        const text = await askGeminiPedagogy(question);
+        const text = await askGeminiPedagogy(question, history);
         return { text, source: 'gemini' };
       } catch (err) {
         console.warn('Gemini direct call failed, checking fallback...', err);

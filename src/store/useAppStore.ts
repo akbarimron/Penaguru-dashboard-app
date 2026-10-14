@@ -72,6 +72,7 @@ interface AppState {
   saveGroups: (assignmentId: string, groups: Pick<StudyGroup, 'nama_kelompok' | 'members'>[]) => Promise<void>;
 
   askAssistant: (question: string) => Promise<void>;
+  clearChat: () => Promise<void>;
   resetDemo: () => Promise<void>;
 }
 
@@ -91,12 +92,37 @@ async function persistPending(pending: DailyJournal[], offline: boolean) {
   }
 }
 
+const CHAT_KEY = '@penaguru/chat-history';
+
+async function loadChatHistory(userId?: string): Promise<ChatMessage[]> {
+  try {
+    const key = userId ? `${CHAT_KEY}:${userId}` : CHAT_KEY;
+    const raw = await AsyncStorage.getItem(key);
+    if (raw) {
+      const parsed = JSON.parse(raw);
+      if (Array.isArray(parsed) && parsed.length > 0) return parsed;
+    }
+  } catch (e) {
+    console.warn('Failed to load chat history:', e);
+  }
+  return [welcome()];
+}
+
+async function persistChatHistory(chat: ChatMessage[], userId?: string): Promise<void> {
+  try {
+    const key = userId ? `${CHAT_KEY}:${userId}` : CHAT_KEY;
+    await AsyncStorage.setItem(key, JSON.stringify(chat));
+  } catch (e) {
+    console.warn('Failed to save chat history:', e);
+  }
+}
+
 const welcome = (): ChatMessage => ({
   id: 'welcome',
   sender: 'assistant',
   source: 'lokal',
   created_at: new Date().toISOString(),
-  text: 'Halo! Saya bisa membantu menyusun strategi mengajar, ide pembuka kelas, dan cara menulis catatan rapor. Pilih topik di atas atau ketik pertanyaan.',
+  text: 'Halo! Saya Asisten Guru siap membantu Anda menyusun strategi mengajar, ide pembuka kelas, dan cara menulis catatan rapor. Pilih topik di atas atau ketik pertanyaan.',
 });
 
 export const useAppStore = create<AppState>((set, get) => {
@@ -113,7 +139,8 @@ export const useAppStore = create<AppState>((set, get) => {
     const pending = get().pending.filter((p) => p.teacher_id === user.id);
     const merged = { ...ws, journals: [...pending, ...ws.journals] };
     const status = keepStatus ? get().status : needsSetup(merged) ? 'setup' : 'ready';
-    set({ user, ws: merged, status, bootError: null, chat: get().user?.id === user.id && get().chat.length ? get().chat : [welcome()] });
+    const savedChat = await loadChatHistory(user.id);
+    set({ user, ws: merged, status, bootError: null, chat: savedChat });
   };
 
   return {
@@ -323,15 +350,27 @@ export const useAppStore = create<AppState>((set, get) => {
 
     askAssistant: async (question) => {
       const userMsg: ChatMessage = { id: uid('m'), sender: 'user', text: question, created_at: new Date().toISOString() };
-      set({ chat: [...get().chat, userMsg], assistantBusy: true });
+      const currentHistory = get().chat;
+      const nextChat = [...currentHistory, userMsg];
+      set({ chat: nextChat, assistantBusy: true });
+      persistChatHistory(nextChat, get().user?.id);
       try {
-        const reply = await repo.askAssistant(question);
-        set({
-          chat: [...get().chat, { id: uid('m'), sender: 'assistant', text: reply.text, source: reply.source, created_at: new Date().toISOString() }],
-        });
+        const reply = await repo.askAssistant(question, currentHistory);
+        const finalChat: ChatMessage[] = [
+          ...nextChat,
+          { id: uid('m'), sender: 'assistant', text: reply.text, source: reply.source, created_at: new Date().toISOString() },
+        ];
+        set({ chat: finalChat });
+        persistChatHistory(finalChat, get().user?.id);
       } finally {
         set({ assistantBusy: false });
       }
+    },
+
+    clearChat: async () => {
+      const initial = [welcome()];
+      set({ chat: initial });
+      await persistChatHistory(initial, get().user?.id);
     },
 
     resetDemo: async () => {

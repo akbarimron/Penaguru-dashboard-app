@@ -27,6 +27,7 @@ Karakteristik & Prinsip:
  */
 export async function askGeminiPedagogy(
   question: string,
+  history?: { sender: 'user' | 'assistant'; text: string }[],
   context?: { teacherName?: string; schoolName?: string; subjectName?: string }
 ): Promise<string> {
   if (!isGeminiConfigured) {
@@ -38,6 +39,23 @@ export async function askGeminiPedagogy(
     ? `\nKonteks Pengguna: Guru: ${context.teacherName || 'Bapak/Ibu Guru'}, Sekolah: ${context.schoolName || '-'}, Mata Pelajaran: ${context.subjectName || '-'}.`
     : '';
 
+  // Format riwayat percakapan sebelumnya (ambil 6 pesan terakhir agar ingatan konteks tajam)
+  const conversationTurns = (history || [])
+    .filter((h) => h.text && h.text.trim().length > 0 && h.text !== question && !h.text.startsWith('Halo! Saya bisa membantu'))
+    .slice(-6)
+    .map((h) => ({
+      role: h.sender === 'user' ? 'user' : 'model',
+      parts: [{ text: h.text }],
+    }));
+
+  const contents = [
+    ...conversationTurns,
+    {
+      role: 'user',
+      parts: [{ text: `${question}${contextNote}` }],
+    },
+  ];
+
   // Menggunakan model Gemini terbaru: gemini-3.5-flash-lite (cepat & stabil) dan gemini-3.8-flash
   const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
 
@@ -47,12 +65,7 @@ export async function askGeminiPedagogy(
     try {
       const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
       const payload = {
-        contents: [
-          {
-            role: 'user',
-            parts: [{ text: `${question}${contextNote}` }],
-          },
-        ],
+        contents,
         systemInstruction: {
           parts: [{ text: GEMINI_SYSTEM_PROMPT }],
         },

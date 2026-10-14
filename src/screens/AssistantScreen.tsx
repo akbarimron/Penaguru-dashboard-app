@@ -16,6 +16,7 @@ export function AssistantScreen() {
   const chat = useAppStore((s) => s.chat);
   const busy = useAppStore((s) => s.assistantBusy);
   const ask = useAppStore((s) => s.askAssistant);
+  const clearChat = useAppStore((s) => s.clearChat);
   const layout = useLayout();
   const insets = useSafeAreaInsets();
   const [text, setText] = useState('');
@@ -43,13 +44,28 @@ export function AssistantScreen() {
   return (
     <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.bg, paddingTop: insets.top }}>
       <View style={[inner, { paddingTop: space.md, gap: 10 }]}>
-        <View>
-          <AppText variant="display" accessibilityRole="header">
-            Asisten
-          </AppText>
-          <AppText variant="small" tone={color.muted}>
-            Saran strategi mengajar bertenaga AI Asisten Guru. Tanyakan ide ice breaking, diferensiasi, atau rubrik asesmen.
-          </AppText>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+          <View style={{ flex: 1 }}>
+            <AppText variant="display" accessibilityRole="header">
+              Asisten
+            </AppText>
+            <AppText variant="small" tone={color.muted}>
+              Saran strategi mengajar bertenaga AI Asisten Guru. Riwayat tersimpan otomatis.
+            </AppText>
+          </View>
+          {chat.length > 1 ? (
+            <IconButton
+              icon="trash-outline"
+              label="Hapus Riwayat Chat"
+              variant="ghost"
+              size={36}
+              iconColor={color.muted}
+              onPress={async () => {
+                await clearChat();
+                toast('Riwayat percakapan telah dibersihkan.');
+              }}
+            />
+          ) : null}
         </View>
         <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8, paddingBottom: 4 }}>
           {QUICK_TOPICS.map((t) => (
@@ -109,7 +125,9 @@ function Bubble({ message, index }: { message: ChatMessage; index: number }) {
         {!user && message.source === 'gemini' ? (
           <View style={styles.geminiBadgeHeader}>
             <Ionicons name="sparkles" size={13} color={color.brand} />
-            <Text style={styles.geminiBadgeText}>Asisten Guru AI</Text>
+            <AppText variant="caption" weight="bold" tone={color.brandDeep} style={styles.geminiBadgeText}>
+              Asisten Guru AI
+            </AppText>
           </View>
         ) : null}
 

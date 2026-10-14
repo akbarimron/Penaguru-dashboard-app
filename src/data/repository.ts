@@ -64,7 +64,10 @@ export interface Repository {
 
   saveGroups(assignmentId: string, groups: Pick<StudyGroup, 'nama_kelompok' | 'members'>[]): Promise<StudyGroup[]>;
 
-  askAssistant(question: string): Promise<{ text: string; source: 'lokal' | 'gemini' }>;
+  askAssistant(
+    question: string,
+    history?: { sender: 'user' | 'assistant'; text: string }[]
+  ): Promise<{ text: string; source: 'lokal' | 'gemini' }>;
 }
 
 export class RepoError extends Error {

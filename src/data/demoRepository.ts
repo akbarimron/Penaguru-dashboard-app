@@ -366,10 +366,10 @@ export const demoRepository: Repository = {
     return rows;
   },
 
-  async askAssistant(question) {
+  async askAssistant(question, history) {
     if (isGeminiConfigured) {
       try {
-        const text = await askGeminiPedagogy(question);
+        const text = await askGeminiPedagogy(question, history);
         return { text, source: 'gemini' };
       } catch (err) {
         console.warn('Gemini call failed in demo, using fallback...', err);
