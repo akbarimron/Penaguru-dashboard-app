@@ -1,5 +1,6 @@
 import { PostgrestError } from '@supabase/supabase-js';
 import { aiFunctionsEnabled, supabase } from '../api/supabase';
+import { askGeminiPedagogy, isGeminiConfigured } from '../api/gemini';
 import { localAssistantReply } from '../lib/assistant';
 import { StudyGroup, Workspace } from '../types';
 import { Repository, RepoError } from './repository';
@@ -241,10 +242,27 @@ export const supabaseRepository: Repository = {
   },
 
   async askAssistant(question) {
-    if (aiFunctionsEnabled) {
-      const { data, error } = await sb().functions.invoke('pedagogy-assistant', { body: { message: question } });
-      if (!error && data?.reply) return { text: String(data.reply), source: 'gemini' };
+    // 1. Coba panggil Gemini API langsung bila kunci EXPO_PUBLIC_GEMINI_API_KEY terpasang
+    if (isGeminiConfigured) {
+      try {
+        const text = await askGeminiPedagogy(question);
+        return { text, source: 'gemini' };
+      } catch (err) {
+        console.warn('Gemini direct call failed, checking fallback...', err);
+      }
     }
+
+    // 2. Coba Supabase Edge Function jika diaktifkan
+    if (aiFunctionsEnabled) {
+      try {
+        const { data, error } = await sb().functions.invoke('pedagogy-assistant', { body: { message: question } });
+        if (!error && data?.reply) return { text: String(data.reply), source: 'gemini' };
+      } catch (err) {
+        console.warn('Edge function failed...', err);
+      }
+    }
+
+    // 3. Fallback ke bank saran pedagogik lokal
     return { text: localAssistantReply(question), source: 'lokal' };
   },
 };

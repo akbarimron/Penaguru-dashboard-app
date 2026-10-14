@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import * as Crypto from 'expo-crypto';
+import { askGeminiPedagogy, isGeminiConfigured } from '../api/gemini';
 import { localAssistantReply } from '../lib/assistant';
 import { uid } from '../lib/phone';
 import { DailyJournal, SubjectReport } from '../types';
@@ -366,6 +367,14 @@ export const demoRepository: Repository = {
   },
 
   async askAssistant(question) {
+    if (isGeminiConfigured) {
+      try {
+        const text = await askGeminiPedagogy(question);
+        return { text, source: 'gemini' };
+      } catch (err) {
+        console.warn('Gemini call failed in demo, using fallback...', err);
+      }
+    }
     await pause(500);
     return { text: localAssistantReply(question), source: 'lokal' };
   },
