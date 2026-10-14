@@ -23,6 +23,7 @@ export type RootStackParamList = {
   Student: { studentId: string; assignmentId?: string };
   Report: { assignmentId: string; studentId: string; periode: string };
   StudentForm: { classId: string; studentId?: string };
+  AdminDashboard: undefined;
 };
 
 declare global {

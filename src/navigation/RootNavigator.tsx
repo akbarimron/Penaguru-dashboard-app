@@ -4,6 +4,7 @@ import React from 'react';
 import { ActivityIndicator, View } from 'react-native';
 import { AppText, Button } from '../components/ui';
 import { useLayout } from '../lib/layout';
+import { AdminDashboardScreen } from '../screens/AdminDashboardScreen';
 import { AgendaScreen } from '../screens/AgendaScreen';
 import { AssistantScreen } from '../screens/AssistantScreen';
 import { ForgotPasswordScreen } from '../screens/auth/ForgotPasswordScreen';
@@ -92,6 +93,7 @@ export function RootNavigator() {
           <Stack.Screen name="Report" component={ReportScreen} options={{ title: 'Rapor mapel' }} />
           <Stack.Screen name="StudentForm" component={StudentFormScreen} options={{ title: 'Data siswa', animation: 'slide_from_bottom' }} />
           <Stack.Screen name="ManageRoles" component={SetupScreen} options={{ title: 'Kelola peran mengajar' }} />
+          <Stack.Screen name="AdminDashboard" component={AdminDashboardScreen} options={{ title: 'Panel Admin' }} />
         </Stack.Group>
       )}
     </Stack.Navigator>

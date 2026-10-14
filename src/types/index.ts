@@ -24,6 +24,7 @@ export interface Teacher {
   nama_lengkap: string;
   nip: string | null;
   email: string;
+  role?: 'admin' | 'guru';
 }
 
 export interface ClassRoom {
@@ -155,7 +156,7 @@ export interface PresetTag {
 export interface Workspace {
   teacher: Teacher;
   school: School | null;
-  colleagues: Pick<Teacher, 'id' | 'nama_lengkap'>[];
+  colleagues: Teacher[];
   classes: ClassRoom[];
   subjects: Subject[];
   assignments: TeachingAssignment[]; // semua penugasan di sekolah (untuk tahu mapel mana yang sudah diampu)

@@ -11,11 +11,14 @@ import {
   ClassRoom,
   DailyJournal,
   HomeroomReport,
+  ScheduleSlot,
   SessionUser,
   Student,
   StudyGroup,
   Subject,
+  SubjectColor,
   SubjectReport,
+  Teacher,
   TeachingAssignment,
   Workspace,
 } from '../types';
@@ -74,6 +77,23 @@ interface AppState {
   askAssistant: (question: string) => Promise<void>;
   clearChat: () => Promise<void>;
   resetDemo: () => Promise<void>;
+
+  // Admin Actions
+  adminUpdateSchool: (input: { nama?: string; npsn?: string | null; kode_gabung?: string }) => Promise<void>;
+  adminSaveTeacher: (input: { id?: string; nama_lengkap: string; nip: string | null; email: string; role?: 'admin' | 'guru' }) => Promise<void>;
+  adminDeleteTeacher: (id: string) => Promise<void>;
+  adminSaveClass: (input: { id?: string; nama_kelas: string; tingkat: 'X' | 'XI' | 'XII'; tahun_ajaran: string; semester: 'Ganjil' | 'Genap'; homeroom_teacher_id: string | null }) => Promise<void>;
+  adminDeleteClass: (id: string) => Promise<void>;
+  adminSaveSubject: (input: { id?: string; nama: string; warna: SubjectColor }) => Promise<void>;
+  adminDeleteSubject: (id: string) => Promise<void>;
+  adminSaveAssignment: (input: { id?: string; teacher_id: string; class_id: string; subject_id: string; materi_aktif: string; jadwal: ScheduleSlot[] }) => Promise<void>;
+  adminDeleteAssignment: (id: string) => Promise<void>;
+  adminSaveJournal: (input: Partial<DailyJournal> & { id?: string; student_id: string; assignment_id: string }) => Promise<void>;
+  adminDeleteJournal: (id: string) => Promise<void>;
+  adminSaveReport: (input: Partial<SubjectReport> & { id: string }) => Promise<void>;
+  adminDeleteReport: (id: string) => Promise<void>;
+  adminSaveHomeroomReport: (input: Partial<HomeroomReport> & { class_id: string; student_id: string; periode: string; catatan: string }) => Promise<void>;
+  adminDeleteHomeroomReport: (id: string) => Promise<void>;
 }
 
 export function needsSetup(ws: Workspace | null): boolean {
@@ -445,6 +465,120 @@ export const useAppStore = create<AppState>((set, get) => {
       await resetDemoData();
       set({ pending: [], offline: false, ws: null, user: null, status: 'signedOut' });
       persistPending([], false);
+    },
+
+    adminUpdateSchool: async (input) => {
+      const sch = await repo.updateSchool(input);
+      patchWs(() => ({ school: sch }));
+    },
+
+    adminSaveTeacher: async (input) => {
+      const row = await repo.adminSaveTeacher(input);
+      patchWs((ws) => {
+        const isSelf = ws.teacher.id === row.id;
+        const colleagues = ws.colleagues.filter((c) => c.id !== row.id);
+        colleagues.push(row);
+        return {
+          teacher: isSelf ? { ...ws.teacher, ...row } : ws.teacher,
+          colleagues,
+        };
+      });
+    },
+
+    adminDeleteTeacher: async (id) => {
+      await repo.adminDeleteTeacher(id);
+      patchWs((ws) => ({
+        colleagues: ws.colleagues.filter((c) => c.id !== id),
+        classes: ws.classes.map((c) => (c.homeroom_teacher_id === id ? { ...c, homeroom_teacher_id: null } : c)),
+        assignments: ws.assignments.filter((a) => a.teacher_id !== id),
+      }));
+    },
+
+    adminSaveClass: async (input) => {
+      const row = await repo.adminSaveClass(input);
+      patchWs((ws) => ({
+        classes: [...ws.classes.filter((c) => c.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteClass: async (id) => {
+      await repo.adminDeleteClass(id);
+      patchWs((ws) => ({
+        classes: ws.classes.filter((c) => c.id !== id),
+        students: ws.students.filter((s) => s.class_id !== id),
+        assignments: ws.assignments.filter((a) => a.class_id !== id),
+      }));
+    },
+
+    adminSaveSubject: async (input) => {
+      const row = await repo.adminSaveSubject(input);
+      patchWs((ws) => ({
+        subjects: [...ws.subjects.filter((s) => s.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteSubject: async (id) => {
+      await repo.adminDeleteSubject(id);
+      patchWs((ws) => ({
+        subjects: ws.subjects.filter((s) => s.id !== id),
+        assignments: ws.assignments.filter((a) => a.subject_id !== id),
+      }));
+    },
+
+    adminSaveAssignment: async (input) => {
+      const row = await repo.adminSaveAssignment(input);
+      patchWs((ws) => ({
+        assignments: [...ws.assignments.filter((a) => a.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteAssignment: async (id) => {
+      await repo.adminDeleteAssignment(id);
+      patchWs((ws) => ({
+        assignments: ws.assignments.filter((a) => a.id !== id),
+      }));
+    },
+
+    adminSaveJournal: async (input) => {
+      const row = await repo.adminSaveJournal(input);
+      patchWs((ws) => ({
+        journals: [...ws.journals.filter((j) => j.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteJournal: async (id) => {
+      await repo.adminDeleteJournal(id);
+      patchWs((ws) => ({
+        journals: ws.journals.filter((j) => j.id !== id),
+      }));
+    },
+
+    adminSaveReport: async (input) => {
+      const row = await repo.adminSaveReport(input);
+      patchWs((ws) => ({
+        reports: [...ws.reports.filter((r) => r.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteReport: async (id) => {
+      await repo.adminDeleteReport(id);
+      patchWs((ws) => ({
+        reports: ws.reports.filter((r) => r.id !== id),
+      }));
+    },
+
+    adminSaveHomeroomReport: async (input) => {
+      const row = await repo.adminSaveHomeroomReport(input);
+      patchWs((ws) => ({
+        homeroomReports: [...ws.homeroomReports.filter((hr) => hr.id !== row.id), row],
+      }));
+    },
+
+    adminDeleteHomeroomReport: async (id) => {
+      await repo.adminDeleteHomeroomReport(id);
+      patchWs((ws) => ({
+        homeroomReports: ws.homeroomReports.filter((hr) => hr.id !== id),
+      }));
     },
   };
 });

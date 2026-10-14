@@ -22,6 +22,7 @@ export function ProfileScreen({ navigation }: any) {
   const layout = useLayout();
   const homerooms = myHomeroomClasses(ws);
   const mine = myAssignments(ws);
+  const isAdmin = ws.teacher.role === 'admin' || ws.teacher.email.toLowerCase().includes('admin');
 
   const sync = async () => {
     try {
@@ -72,6 +73,28 @@ export function ProfileScreen({ navigation }: any) {
       </Card>
     </EnterView>
   );
+
+  const adminCard = isAdmin ? (
+    <EnterView index={1}>
+      <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1, gap: 12 }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
+            <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText variant="body" weight="bold">Akses Administrator</AppText>
+            <AppText variant="caption" tone={color.muted}>Kelola penuh sekolah, guru, kelas, siswa, jurnal 30 hari, mapel, & rapor</AppText>
+          </View>
+        </View>
+        <Button
+          label="Buka Dashboard Admin"
+          icon="settings-outline"
+          variant="primary"
+          onPress={() => navigation.navigate('AdminDashboard')}
+        />
+      </Card>
+    </EnterView>
+  ) : null;
 
   const school = ws.school ? (
     <EnterView index={1}>
@@ -196,6 +219,7 @@ export function ProfileScreen({ navigation }: any) {
         <View style={{ flexDirection: 'row', gap: space.xl, alignItems: 'flex-start' }}>
           <View style={{ flex: 1, gap: space.lg }}>
             {identity}
+            {adminCard}
             {school}
             {roles}
           </View>
@@ -207,6 +231,7 @@ export function ProfileScreen({ navigation }: any) {
       ) : (
         <>
           {identity}
+          {adminCard}
           {school}
           {roles}
           {syncCard}

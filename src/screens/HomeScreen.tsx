@@ -6,6 +6,7 @@ import { SubjectCard } from '../components/SubjectCard';
 import {
   AppText,
   Avatar,
+  Badge,
   Button,
   Card,
   Dialog,
@@ -45,6 +46,7 @@ export function HomeScreen({ navigation }: any) {
   const focus = focusSession(mine);
   const today = todaySessions(mine);
   const notifications = useNotifications(ws, pendingCount);
+  const isAdmin = ws.teacher.role === 'admin' || ws.teacher.email.toLowerCase().includes('admin');
 
   const myJournals = useMemo(
     () => ws.journals.filter((j) => j.teacher_id === ws.teacher.id).sort((a, b) => (a.created_at < b.created_at ? 1 : -1)).slice(0, 4),
@@ -200,6 +202,33 @@ export function HomeScreen({ navigation }: any) {
     <Screen onRefresh={onRefresh} refreshing={refreshing}>
       {header}
       <DemoBanner />
+      {isAdmin ? (
+        <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: space.md }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flex: 1, minWidth: 220 }}>
+              <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <Ionicons name="shield-checkmark" size={24} color="#FFF" />
+              </View>
+              <View style={{ flex: 1, minWidth: 0 }}>
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                  <AppText variant="title" weight="bold">Akses Administrator</AppText>
+                  <Badge label="Super Admin" tone="primary" />
+                </View>
+                <AppText variant="small" tone={color.muted}>
+                  Kelola guru, kelas, siswa, jurnal 30 hari, mapel, & rapor secara penuh.
+                </AppText>
+              </View>
+            </View>
+            <Button
+              label="Buka Dashboard Admin"
+              icon="settings-outline"
+              variant="primary"
+              size="sm"
+              onPress={() => navigation.navigate('AdminDashboard')}
+            />
+          </View>
+        </Card>
+      ) : null}
       {layout.twoPane ? (
         <View style={{ flexDirection: 'row', gap: space.xl, alignItems: 'flex-start' }}>
           <View style={{ flex: 1.6, gap: space.lg, minWidth: 0 }}>

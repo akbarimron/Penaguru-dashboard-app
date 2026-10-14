@@ -76,7 +76,7 @@ export const supabaseRepository: Repository = {
 
   async loadWorkspace(user) {
     const client = sb();
-    const teacher = await one(client.from('teachers').select('id, school_id, nama_lengkap, nip, email').eq('id', user.id).single());
+    const teacher = await one(client.from('teachers').select('id, school_id, nama_lengkap, nip, email, role').eq('id', user.id).single());
     const empty: Workspace = {
       teacher,
       school: null,
@@ -96,7 +96,7 @@ export const supabaseRepository: Repository = {
     const [school, colleagues, classes, subjects, assignments, students, contacts, journals, reports, homeroomReports, assessments, groups] =
       await Promise.all([
         one(client.from('schools').select('*').eq('id', teacher.school_id).single()),
-        rows(client.from('teachers').select('id, nama_lengkap')),
+        rows(client.from('teachers').select('id, school_id, nama_lengkap, nip, email, role')),
         rows(client.from('classes').select('*').order('nama_kelas')),
         rows(client.from('subjects').select('*').order('nama')),
         rows(client.from('teaching_assignments').select('*')),
@@ -264,5 +264,101 @@ export const supabaseRepository: Repository = {
 
     // 3. Fallback ke bank saran pedagogik lokal
     return { text: localAssistantReply(question), source: 'lokal' };
+  },
+
+  async updateSchool(input) {
+    return one(sb().from('schools').update(input).select().single());
+  },
+
+  async adminSaveTeacher(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('teachers').update(rest).eq('id', id).select().single());
+    }
+    return one(sb().from('teachers').insert(rest).select().single());
+  },
+
+  async adminDeleteTeacher(id) {
+    const { error } = await sb().from('teachers').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveClass(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('classes').update(rest).eq('id', id).select().single());
+    }
+    const user = (await sb().auth.getUser()).data.user;
+    const mySchool = await one(sb().from('teachers').select('school_id').eq('id', user?.id).single());
+    return one(sb().from('classes').insert({ ...rest, school_id: mySchool.school_id }).select().single());
+  },
+
+  async adminDeleteClass(id) {
+    const { error } = await sb().from('classes').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveSubject(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('subjects').update(rest).eq('id', id).select().single());
+    }
+    const user = (await sb().auth.getUser()).data.user;
+    const mySchool = await one(sb().from('teachers').select('school_id').eq('id', user?.id).single());
+    return one(sb().from('subjects').insert({ ...rest, school_id: mySchool.school_id }).select().single());
+  },
+
+  async adminDeleteSubject(id) {
+    const { error } = await sb().from('subjects').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveAssignment(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('teaching_assignments').update(rest).eq('id', id).select().single());
+    }
+    return one(sb().from('teaching_assignments').insert(rest).select().single());
+  },
+
+  async adminDeleteAssignment(id) {
+    const { error } = await sb().from('teaching_assignments').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveJournal(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('daily_journals').update(rest).eq('id', id).select().single());
+    }
+    return one(sb().from('daily_journals').insert(rest).select().single());
+  },
+
+  async adminDeleteJournal(id) {
+    const { error } = await sb().from('daily_journals').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveReport(input) {
+    const { id, ...rest } = input;
+    return one(sb().from('subject_reports').update(rest).eq('id', id).select().single());
+  },
+
+  async adminDeleteReport(id) {
+    const { error } = await sb().from('subject_reports').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async adminSaveHomeroomReport(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('homeroom_reports').update(rest).eq('id', id).select().single());
+    }
+    return one(sb().from('homeroom_reports').upsert(rest, { onConflict: 'student_id,periode' }).select().single());
+  },
+
+  async adminDeleteHomeroomReport(id) {
+    const { error } = await sb().from('homeroom_reports').delete().eq('id', id);
+    if (error) fail(error);
   },
 };

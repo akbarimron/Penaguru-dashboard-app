@@ -64,6 +64,23 @@ export interface Repository {
 
   saveGroups(assignmentId: string, groups: Pick<StudyGroup, 'nama_kelompok' | 'members'>[]): Promise<StudyGroup[]>;
 
+  // Admin Methods (Pengelolaan Penuh oleh Admin)
+  updateSchool(input: { nama?: string; npsn?: string | null; kode_gabung?: string }): Promise<School>;
+  adminSaveTeacher(input: { id?: string; nama_lengkap: string; nip: string | null; email: string; role?: 'admin' | 'guru' }): Promise<Teacher>;
+  adminDeleteTeacher(id: string): Promise<void>;
+  adminSaveClass(input: { id?: string; nama_kelas: string; tingkat: 'X' | 'XI' | 'XII'; tahun_ajaran: string; semester: 'Ganjil' | 'Genap'; homeroom_teacher_id: string | null }): Promise<ClassRoom>;
+  adminDeleteClass(id: string): Promise<void>;
+  adminSaveSubject(input: { id?: string; nama: string; warna: SubjectColor }): Promise<Subject>;
+  adminDeleteSubject(id: string): Promise<void>;
+  adminSaveAssignment(input: { id?: string; teacher_id: string; class_id: string; subject_id: string; materi_aktif: string; jadwal: ScheduleSlot[] }): Promise<TeachingAssignment>;
+  adminDeleteAssignment(id: string): Promise<void>;
+  adminSaveJournal(input: Partial<DailyJournal> & { id?: string; student_id: string; assignment_id: string }): Promise<DailyJournal>;
+  adminDeleteJournal(id: string): Promise<void>;
+  adminSaveReport(input: Partial<SubjectReport> & { id: string }): Promise<SubjectReport>;
+  adminDeleteReport(id: string): Promise<void>;
+  adminSaveHomeroomReport(input: Partial<HomeroomReport> & { class_id: string; student_id: string; periode: string; catatan: string }): Promise<HomeroomReport>;
+  adminDeleteHomeroomReport(id: string): Promise<void>;
+
   askAssistant(
     question: string,
     history?: { sender: 'user' | 'assistant'; text: string }[],
