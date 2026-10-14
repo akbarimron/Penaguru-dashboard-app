@@ -2,18 +2,7 @@
 -- SKEMA SUPABASE POSTGRESQL - PENAGURU (versi 2: peran wali kelas & guru mapel)
 -- IK300 Mobile Programming - Universitas Pendidikan Indonesia 2026
 --
--- Model akses:
---   * Data dipisah per sekolah -> per kelas. Setiap baris siswa, jurnal,
---     rapor, dan agenda membawa class_id.
---   * Guru mapel  : punya satu atau lebih teaching_assignments (guru x mapel x
---                   kelas). Hanya melihat siswa di kelas yang ia ajar dan hanya
---                   jurnal / rapor yang ia tulis sendiri.
---   * Wali kelas  : classes.homeroom_teacher_id. Melihat SEMUA siswa, jurnal,
---                   rapor mapel, dan agenda di kelas perwaliannya dari guru mapel
---                   mana pun, lalu menyetujui atau mengembalikan rapor mapel.
---   * Guru yang sekaligus wali kelas mendapat kedua akses di atas.
---
--- Jalankan seluruh berkas ini di Supabase SQL Editor pada proyek kosong.
+-- File ini IDEMPOTENT (aman dijalankan berulang kali tanpa error duplikasi).
 -- =====================================================================
 
 create extension if not exists "pgcrypto";
@@ -22,7 +11,7 @@ create extension if not exists "pgcrypto";
 -- 1. TABEL
 -- ---------------------------------------------------------------------
 
-create table public.schools (
+create table if not exists public.schools (
   id uuid primary key default gen_random_uuid(),
   nama varchar(150) not null,
   npsn varchar(8) unique,
@@ -31,7 +20,7 @@ create table public.schools (
   created_at timestamptz not null default now()
 );
 
-create table public.teachers (
+create table if not exists public.teachers (
   id uuid primary key references auth.users(id) on delete cascade,
   school_id uuid references public.schools(id) on delete set null,
   nama_lengkap varchar(150) not null,
@@ -40,7 +29,7 @@ create table public.teachers (
   created_at timestamptz not null default now()
 );
 
-create table public.classes (
+create table if not exists public.classes (
   id uuid primary key default gen_random_uuid(),
   school_id uuid not null references public.schools(id) on delete cascade,
   nama_kelas varchar(50) not null,
@@ -52,7 +41,7 @@ create table public.classes (
   unique (school_id, nama_kelas, tahun_ajaran)
 );
 
-create table public.subjects (
+create table if not exists public.subjects (
   id uuid primary key default gen_random_uuid(),
   school_id uuid not null references public.schools(id) on delete cascade,
   nama varchar(80) not null,
@@ -61,19 +50,18 @@ create table public.subjects (
   unique (school_id, nama)
 );
 
--- Satu mapel di satu kelas diampu satu guru.
-create table public.teaching_assignments (
+create table if not exists public.teaching_assignments (
   id uuid primary key default gen_random_uuid(),
   teacher_id uuid not null references public.teachers(id) on delete cascade,
   class_id uuid not null references public.classes(id) on delete cascade,
   subject_id uuid not null references public.subjects(id) on delete cascade,
   materi_aktif varchar(150) not null default '',
-  jadwal jsonb not null default '[]'::jsonb, -- [{hari:1..6, jam_mulai:"07:00", jam_selesai:"08:30"}]
+  jadwal jsonb not null default '[]'::jsonb,
   created_at timestamptz not null default now(),
   unique (class_id, subject_id)
 );
 
-create table public.students (
+create table if not exists public.students (
   id uuid primary key default gen_random_uuid(),
   class_id uuid not null references public.classes(id) on delete cascade,
   nisn varchar(10) not null unique,
@@ -82,15 +70,13 @@ create table public.students (
   created_at timestamptz not null default now()
 );
 
--- Kontak orang tua dipisah agar hanya wali kelas yang bisa membacanya
--- (guru mapel tetap bisa membaca tabel students tanpa data pribadi wali).
-create table public.student_contacts (
+create table if not exists public.student_contacts (
   student_id uuid primary key references public.students(id) on delete cascade,
   nama_wali varchar(150),
   no_whatsapp_wali varchar(20)
 );
 
-create table public.daily_journals (
+create table if not exists public.daily_journals (
   id uuid primary key default gen_random_uuid(),
   assignment_id uuid not null references public.teaching_assignments(id) on delete cascade,
   class_id uuid not null references public.classes(id) on delete cascade,
@@ -107,7 +93,7 @@ create table public.daily_journals (
   created_at timestamptz not null default now()
 );
 
-create table public.subject_reports (
+create table if not exists public.subject_reports (
   id uuid primary key default gen_random_uuid(),
   assignment_id uuid not null references public.teaching_assignments(id) on delete cascade,
   class_id uuid not null references public.classes(id) on delete cascade,
@@ -128,7 +114,7 @@ create table public.subject_reports (
   unique (assignment_id, student_id, periode)
 );
 
-create table public.homeroom_reports (
+create table if not exists public.homeroom_reports (
   id uuid primary key default gen_random_uuid(),
   class_id uuid not null references public.classes(id) on delete cascade,
   student_id uuid not null references public.students(id) on delete cascade,
@@ -139,7 +125,7 @@ create table public.homeroom_reports (
   unique (student_id, periode)
 );
 
-create table public.assessments (
+create table if not exists public.assessments (
   id uuid primary key default gen_random_uuid(),
   assignment_id uuid not null references public.teaching_assignments(id) on delete cascade,
   class_id uuid not null references public.classes(id) on delete cascade,
@@ -150,14 +136,14 @@ create table public.assessments (
   created_at timestamptz not null default now()
 );
 
-create table public.study_groups (
+create table if not exists public.study_groups (
   id uuid primary key default gen_random_uuid(),
   assignment_id uuid not null references public.teaching_assignments(id) on delete cascade,
   nama_kelompok varchar(50) not null,
   created_at timestamptz not null default now()
 );
 
-create table public.group_members (
+create table if not exists public.group_members (
   group_id uuid not null references public.study_groups(id) on delete cascade,
   student_id uuid not null references public.students(id) on delete cascade,
   peran varchar(15) not null default 'Anggota' check (peran in ('Ketua', 'Anggota', 'Mentor Sebaya')),
@@ -165,20 +151,20 @@ create table public.group_members (
 );
 
 -- ---------------------------------------------------------------------
--- 2. INDEKS (semua query aplikasi menyaring per kelas / per penugasan)
+-- 2. INDEKS
 -- ---------------------------------------------------------------------
-create index on public.teachers (school_id);
-create index on public.classes (school_id);
-create index on public.classes (homeroom_teacher_id);
-create index on public.teaching_assignments (teacher_id);
-create index on public.students (class_id);
-create index on public.daily_journals (class_id, tanggal desc);
-create index on public.daily_journals (assignment_id, student_id);
-create index on public.subject_reports (class_id, status);
-create index on public.assessments (class_id, tanggal);
+create index if not exists idx_teachers_school on public.teachers (school_id);
+create index if not exists idx_classes_school on public.classes (school_id);
+create index if not exists idx_classes_homeroom on public.classes (homeroom_teacher_id);
+create index if not exists idx_assignments_teacher on public.teaching_assignments (teacher_id);
+create index if not exists idx_students_class on public.students (class_id);
+create index if not exists idx_journals_class_date on public.daily_journals (class_id, tanggal desc);
+create index if not exists idx_journals_assignment_student on public.daily_journals (assignment_id, student_id);
+create index if not exists idx_reports_class_status on public.subject_reports (class_id, status);
+create index if not exists idx_assessments_class_date on public.assessments (class_id, tanggal);
 
 -- ---------------------------------------------------------------------
--- 3. FUNGSI BANTU AKSES (security definer agar tidak rekursif dengan RLS)
+-- 3. HELPER FUNCTIONS
 -- ---------------------------------------------------------------------
 create or replace function public.my_school_id() returns uuid
 language sql stable security definer set search_path = public as $$
@@ -208,8 +194,6 @@ $$;
 -- ---------------------------------------------------------------------
 -- 4. TRIGGER
 -- ---------------------------------------------------------------------
-
--- Profil guru dibuat otomatis saat mendaftar lewat Supabase Auth.
 create or replace function public.handle_new_user() returns trigger
 language plpgsql security definer set search_path = public as $$
 begin
@@ -219,15 +203,17 @@ begin
     coalesce(new.raw_user_meta_data ->> 'nama_lengkap', split_part(new.email, '@', 1)),
     nullif(new.raw_user_meta_data ->> 'nip', ''),
     new.email
-  );
+  )
+  on conflict (id) do update set
+    nama_lengkap = excluded.nama_lengkap,
+    nip = excluded.nip;
   return new;
 end $$;
 
+drop trigger if exists on_auth_user_created on auth.users;
 create trigger on_auth_user_created after insert on auth.users
 for each row execute function public.handle_new_user();
 
--- class_id / subject_id / teacher_id selalu diambil dari penugasan, sehingga
--- guru tidak bisa menulis jurnal atau rapor atas nama mapel/kelas lain.
 create or replace function public.fill_from_assignment() returns trigger
 language plpgsql security definer set search_path = public as $$
 declare a public.teaching_assignments;
@@ -245,25 +231,32 @@ begin
   return new;
 end $$;
 
+drop trigger if exists journals_fill on public.daily_journals;
 create trigger journals_fill before insert on public.daily_journals
 for each row execute function public.fill_from_assignment();
+
+drop trigger if exists reports_fill on public.subject_reports;
 create trigger reports_fill before insert on public.subject_reports
 for each row execute function public.fill_from_assignment();
+
+drop trigger if exists assessments_fill on public.assessments;
 create trigger assessments_fill before insert on public.assessments
 for each row execute function public.fill_from_assignment();
 
 create or replace function public.touch_updated_at() returns trigger
 language plpgsql as $$ begin new.updated_at := now(); return new; end $$;
 
+drop trigger if exists reports_touch on public.subject_reports;
 create trigger reports_touch before update on public.subject_reports
 for each row execute function public.touch_updated_at();
+
+drop trigger if exists homeroom_touch on public.homeroom_reports;
 create trigger homeroom_touch before update on public.homeroom_reports
 for each row execute function public.touch_updated_at();
 
 -- ---------------------------------------------------------------------
--- 5. RPC (aksi yang butuh aturan lebih dari sekadar RLS)
+-- 5. RPC (Stored Procedures)
 -- ---------------------------------------------------------------------
-
 create or replace function public.create_school(p_nama text, p_npsn text default null)
 returns public.schools language plpgsql security definer set search_path = public as $$
 declare s public.schools;
@@ -283,7 +276,6 @@ begin
   return s;
 end $$;
 
--- Mengambil atau melepas peran wali kelas.
 create or replace function public.set_homeroom(p_class_id uuid, p_claim boolean)
 returns void language plpgsql security definer set search_path = public as $$
 declare c public.classes;
@@ -300,7 +292,6 @@ begin
   end if;
 end $$;
 
--- Guru mapel: ajukan ke wali kelas atau tarik kembali.
 create or replace function public.set_subject_report_status(p_report_id uuid, p_status text)
 returns public.subject_reports language plpgsql security definer set search_path = public as $$
 declare r public.subject_reports;
@@ -317,7 +308,6 @@ begin
   return r;
 end $$;
 
--- Wali kelas: setujui atau kembalikan rapor mapel di kelas perwaliannya.
 create or replace function public.review_subject_report(p_report_id uuid, p_decision text, p_note text default null)
 returns public.subject_reports language plpgsql security definer set search_path = public as $$
 declare r public.subject_reports;
@@ -333,7 +323,6 @@ begin
   return r;
 end $$;
 
--- Mengganti seluruh kelompok belajar satu penugasan dalam satu transaksi.
 create or replace function public.replace_study_groups(p_assignment_id uuid, p_groups jsonb)
 returns jsonb language plpgsql security definer set search_path = public as $$
 declare g jsonb; m jsonb; gid uuid; result jsonb := '[]'::jsonb;
@@ -351,7 +340,7 @@ begin
 end $$;
 
 -- ---------------------------------------------------------------------
--- 6. ROW LEVEL SECURITY
+-- 6. ROW LEVEL SECURITY (RLS)
 -- ---------------------------------------------------------------------
 alter table public.schools enable row level security;
 alter table public.teachers enable row level security;
@@ -367,77 +356,112 @@ alter table public.assessments enable row level security;
 alter table public.study_groups enable row level security;
 alter table public.group_members enable row level security;
 
--- Sekolah & rekan guru: hanya sekolah sendiri.
+-- Drop existing policies if any before re-creating
+drop policy if exists schools_select on public.schools;
 create policy schools_select on public.schools for select using (id = public.my_school_id());
+
+drop policy if exists teachers_select on public.teachers;
 create policy teachers_select on public.teachers for select using (id = auth.uid() or school_id = public.my_school_id());
+
+drop policy if exists teachers_update on public.teachers;
 create policy teachers_update on public.teachers for update using (id = auth.uid()) with check (id = auth.uid());
 
--- Kelas & mapel: terlihat se-sekolah (untuk memilih saat mengatur peran).
--- Wali kelas hanya bisa diubah lewat RPC set_homeroom.
+drop policy if exists classes_select on public.classes;
 create policy classes_select on public.classes for select using (school_id = public.my_school_id());
-create policy classes_insert on public.classes for insert
-  with check (school_id = public.my_school_id() and homeroom_teacher_id is null);
+
+drop policy if exists classes_insert on public.classes;
+create policy classes_insert on public.classes for insert with check (school_id = public.my_school_id() and homeroom_teacher_id is null);
+
+drop policy if exists subjects_select on public.subjects;
 create policy subjects_select on public.subjects for select using (school_id = public.my_school_id());
+
+drop policy if exists subjects_insert on public.subjects;
 create policy subjects_insert on public.subjects for insert with check (school_id = public.my_school_id());
 
--- Penugasan: terlihat se-sekolah, diubah hanya oleh pemiliknya.
+drop policy if exists assignments_select on public.teaching_assignments;
 create policy assignments_select on public.teaching_assignments for select
   using (exists (select 1 from public.classes c where c.id = class_id and c.school_id = public.my_school_id()));
+
+drop policy if exists assignments_insert on public.teaching_assignments;
 create policy assignments_insert on public.teaching_assignments for insert
   with check (teacher_id = auth.uid() and exists (select 1 from public.classes c where c.id = class_id and c.school_id = public.my_school_id()));
+
+drop policy if exists assignments_update on public.teaching_assignments;
 create policy assignments_update on public.teaching_assignments for update
   using (teacher_id = auth.uid()) with check (teacher_id = auth.uid());
+
+drop policy if exists assignments_delete on public.teaching_assignments;
 create policy assignments_delete on public.teaching_assignments for delete using (teacher_id = auth.uid());
 
--- Siswa: dilihat guru mapel kelas itu & wali kelas; dikelola wali kelas saja.
+drop policy if exists students_select on public.students;
 create policy students_select on public.students for select using (public.can_view_class(class_id));
+
+drop policy if exists students_insert on public.students;
 create policy students_insert on public.students for insert with check (public.is_homeroom(class_id));
+
+drop policy if exists students_update on public.students;
 create policy students_update on public.students for update using (public.is_homeroom(class_id)) with check (public.is_homeroom(class_id));
+
+drop policy if exists students_delete on public.students;
 create policy students_delete on public.students for delete using (public.is_homeroom(class_id));
 
--- Kontak wali murid: hanya wali kelas.
+drop policy if exists contacts_all on public.student_contacts;
 create policy contacts_all on public.student_contacts for all
   using (exists (select 1 from public.students s where s.id = student_id and public.is_homeroom(s.class_id)))
   with check (exists (select 1 from public.students s where s.id = student_id and public.is_homeroom(s.class_id)));
 
--- Jurnal: penulis + wali kelas membaca; hanya penulis yang menulis.
+drop policy if exists journals_select on public.daily_journals;
 create policy journals_select on public.daily_journals for select
   using (teacher_id = auth.uid() or public.is_homeroom(class_id));
+
+drop policy if exists journals_insert on public.daily_journals;
 create policy journals_insert on public.daily_journals for insert
   with check (public.owns_assignment(assignment_id));
+
+drop policy if exists journals_update on public.daily_journals;
 create policy journals_update on public.daily_journals for update
   using (teacher_id = auth.uid()) with check (teacher_id = auth.uid());
+
+drop policy if exists journals_delete on public.daily_journals;
 create policy journals_delete on public.daily_journals for delete using (teacher_id = auth.uid());
 
--- Rapor mapel: guru mapel menulis selama Draft/Revisi; wali kelas membaca dan
--- meninjau lewat RPC review_subject_report.
+drop policy if exists reports_select on public.subject_reports;
 create policy reports_select on public.subject_reports for select
   using (teacher_id = auth.uid() or public.is_homeroom(class_id));
+
+drop policy if exists reports_insert on public.subject_reports;
 create policy reports_insert on public.subject_reports for insert
   with check (public.owns_assignment(assignment_id) and status = 'Draft');
+
+drop policy if exists reports_update on public.subject_reports;
 create policy reports_update on public.subject_reports for update
   using (teacher_id = auth.uid() and status in ('Draft', 'Revisi'))
   with check (teacher_id = auth.uid() and status in ('Draft', 'Revisi'));
 
--- Catatan wali kelas: milik wali kelas saja.
+drop policy if exists homeroom_reports_all on public.homeroom_reports;
 create policy homeroom_reports_all on public.homeroom_reports for all
   using (public.is_homeroom(class_id)) with check (public.is_homeroom(class_id));
 
--- Agenda asesmen: terlihat oleh semua guru di kelas itu (supaya jadwal ujian
--- tidak bentrok), diubah oleh guru pengampu.
+drop policy if exists assessments_select on public.assessments;
 create policy assessments_select on public.assessments for select using (public.can_view_class(class_id));
+
+drop policy if exists assessments_write on public.assessments;
 create policy assessments_write on public.assessments for insert with check (public.owns_assignment(assignment_id));
+
+drop policy if exists assessments_delete on public.assessments;
 create policy assessments_delete on public.assessments for delete using (public.owns_assignment(assignment_id));
 
--- Kelompok belajar: guru pengampu + wali kelas membaca; tulis lewat RPC.
+drop policy if exists groups_select on public.study_groups;
 create policy groups_select on public.study_groups for select
   using (public.owns_assignment(assignment_id)
          or exists (select 1 from public.teaching_assignments a where a.id = assignment_id and public.is_homeroom(a.class_id)));
+
+drop policy if exists group_members_select on public.group_members;
 create policy group_members_select on public.group_members for select
   using (exists (select 1 from public.study_groups g where g.id = group_id));
 
 -- ---------------------------------------------------------------------
--- 7. VIEW RINGKASAN UNTUK WALI KELAS (mengikuti RLS pemanggil)
+-- 7. VIEW RINGKASAN
 -- ---------------------------------------------------------------------
 create or replace view public.v_report_progress with (security_invoker = true) as
 select r.class_id, r.subject_id, r.periode,
