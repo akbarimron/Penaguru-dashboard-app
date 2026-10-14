@@ -38,8 +38,8 @@ export async function askGeminiPedagogy(
     ? `\nKonteks Pengguna: Guru: ${context.teacherName || 'Bapak/Ibu Guru'}, Sekolah: ${context.schoolName || '-'}, Mata Pelajaran: ${context.subjectName || '-'}.`
     : '';
 
-  // Mencoba model gemini-2.5-flash terlebih dahulu, lalu fallback ke gemini-1.5-flash jika perlu
-  const models = ['gemini-2.5-flash', 'gemini-1.5-flash', 'gemini-2.0-flash'];
+  // Menggunakan model Gemini terbaru: gemini-3.5-flash-lite (cepat & stabil) dan gemini-3.8-flash
+  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
 
   let lastError: Error | null = null;
 
@@ -129,7 +129,7 @@ Berikan output HANYA dalam format JSON valid tanpa tag markdown lain, dengan str
 `.trim();
 
   const apiKey = rawKey!.trim();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent?key=${apiKey}`;
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
 
   const res = await fetch(endpoint, {
     method: 'POST',
