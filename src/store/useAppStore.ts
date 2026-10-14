@@ -171,6 +171,23 @@ export function buildWorkspaceSummary(ws: Workspace | null): string {
     }
   }
 
+  // Riwayat lengkap seluruh daily journal yang telah dicatat guru
+  if (ws.journals.length > 0) {
+    text += `\n[SELURUH RIWAYAT CATATAN DAILY JOURNAL & OBSERVASI GURU]:\n`;
+    const sortedJournals = [...ws.journals].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1));
+    for (const j of sortedJournals) {
+      const student = ws.students.find((s) => s.id === j.student_id);
+      const subject = ws.subjects.find((s) => s.id === j.subject_id);
+      const cls = student ? ws.classes.find((c) => c.id === student.class_id) : null;
+      const tagStr = j.tags && j.tags.length ? ` | Tag: [${j.tags.join(', ')}]` : '';
+      const scoreStr = ` | Skor: Kognitif=${j.nilai_kognitif}, Terampil=${j.nilai_keterampilan}, Sikap=${j.skor_sikap}`;
+      const noteStr = j.catatan ? ` | Catatan Observasi Guru: "${j.catatan}"` : ' | (Tidak ada catatan khusus)';
+      text += `- [Tanggal ${j.tanggal}] Siswa: ${student?.nama_lengkap || 'Siswa'} (${cls?.nama_kelas || '-'}, Mapel ${subject?.nama || 'Mapel'}) | Materi: "${j.materi}"${scoreStr}${tagStr}${noteStr}\n`;
+    }
+  } else {
+    text += `\n[CATATAN DAILY JOURNAL]: Belum ada catatan daily journal di sistem.\n`;
+  }
+
   text += `[AKHIR DATA AKADEMIK]\n`;
   return text;
 }

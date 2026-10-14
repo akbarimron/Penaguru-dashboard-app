@@ -80,10 +80,11 @@ export function ReportScreen({ route, navigation }: any) {
     setGeneratingAI(true);
     try {
       const stats = statsFor(journals);
-      const journalsSummary = journals
+      const sortedJournals = [...journals].sort((x, y) => (x.tanggal > y.tanggal ? 1 : -1));
+      const journalsSummary = sortedJournals
         .map(
-          (j) =>
-            `- Tanggal ${j.tanggal}: Materi "${j.materi}", Nilai (Kognitif ${j.nilai_kognitif}, Keterampilan ${j.nilai_keterampilan}, Sikap ${j.skor_sikap}), Tag: [${j.tags.join(', ')}], Catatan: "${j.catatan || '-'}"`
+          (j, idx) =>
+            `${idx + 1}. [Tanggal ${j.tanggal}] Materi "${j.materi}": Nilai (Pengetahuan=${j.nilai_kognitif}, Keterampilan=${j.nilai_keterampilan}, Sikap=${j.skor_sikap}) | Tag: [${j.tags.join(', ')}] | Catatan Observasi Guru: "${j.catatan || 'Aktif mengikuti proses pembelajaran'}"`
         )
         .join('\n');
 

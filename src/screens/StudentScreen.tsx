@@ -104,17 +104,24 @@ function Identity({ student, homeroom, navigation }: { student: Student; homeroo
         .map((p) => `- ${p.subject.nama}: Status ${p.stats.status}, Skor gabungan: ${p.stats.composite ?? 'Belum ada nilai'}`)
         .join('\n');
 
-      const recentJournals = studentJournals
-        .slice(0, 5)
-        .map((j) => `- [${j.tanggal}] ${j.materi}: ${j.catatan || 'Aktif mengikuti kegiatan'}`)
-        .join('\n');
+      const allJournalsList = studentJournals.length > 0
+        ? studentJournals
+            .map((j) => {
+              const subj = ws.subjects.find((s) => s.id === j.subject_id)?.nama || 'Mapel';
+              const tagStr = j.tags && j.tags.length ? ` | Tag: [${j.tags.join(', ')}]` : '';
+              const scoreStr = ` | Skor: Kog=${j.nilai_kognitif}, Terampil=${j.nilai_keterampilan}, Sikap=${j.skor_sikap}`;
+              const noteStr = j.catatan ? ` | Catatan Observasi Guru: "${j.catatan}"` : ' | (Tidak ada catatan khusus)';
+              return `- [Tanggal ${j.tanggal}] Mapel ${subj} - Materi "${j.materi}"${scoreStr}${tagStr}${noteStr}`;
+            })
+            .join('\n')
+        : '- Belum ada catatan pengamatan harian';
 
       const overviewSummary = `
-Capaian Mata Pelajaran:
+Capaian Ringkas Mata Pelajaran:
 ${subjectSummaries || '- Belum ada data mapel'}
 
-Catatan Pengamatan Guru:
-${recentJournals || '- Belum ada catatan pengamatan harian'}
+Seluruh Riwayat Catatan Pengamatan Daily Journal Guru:
+${allJournalsList}
       `.trim();
 
       const aiText = await generateParentMessageAI({
@@ -360,10 +367,17 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
         .map((p) => `- Mapel ${p.subject.nama}: Status ${p.stats.status}, Skor gabungan: ${p.stats.composite ?? 'Belum ada data'}, Dari: ${p.stats.count} catatan jurnal`)
         .join('\n');
 
-      const journalHighlights = allJournals
-        .slice(0, 8)
-        .map((j) => `- [${j.tanggal}] ${j.materi}: ${j.catatan || 'Tanpa catatan'}`)
-        .join('\n');
+      const journalHighlights = allJournals.length > 0
+        ? allJournals
+            .map((j) => {
+              const subj = ws.subjects.find((s) => s.id === j.subject_id)?.nama || 'Mapel';
+              const tagStr = j.tags && j.tags.length ? ` | Tag: [${j.tags.join(', ')}]` : '';
+              const scoreStr = ` | Skor: Kog=${j.nilai_kognitif}, Terampil=${j.nilai_keterampilan}, Sikap=${j.skor_sikap}`;
+              const noteStr = j.catatan ? ` | Catatan Observasi Guru: "${j.catatan}"` : ' | (Tanpa catatan khusus)';
+              return `- [Tanggal ${j.tanggal}] Mapel ${subj} - Materi "${j.materi}"${scoreStr}${tagStr}${noteStr}`;
+            })
+            .join('\n')
+        : '(Belum ada catatan jurnal harian dari guru mapel)';
 
       const generated = await generateHomeroomNoteAI({
         studentName: student.nama_lengkap,
