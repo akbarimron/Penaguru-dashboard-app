@@ -6,7 +6,6 @@ import { SubjectCard } from '../components/SubjectCard';
 import {
   AppText,
   Avatar,
-  Badge,
   Button,
   Card,
   Dialog,
@@ -203,33 +202,128 @@ export function HomeScreen({ navigation }: any) {
       {header}
       <DemoBanner />
       {isAdmin ? (
-        <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: space.md }}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flex: 1, minWidth: 220 }}>
-              <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
-                <Ionicons name="shield-checkmark" size={24} color="#FFF" />
-              </View>
-              <View style={{ flex: 1, minWidth: 0 }}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
-                  <AppText variant="title" weight="bold">Akses Administrator</AppText>
-                  <Badge label="Super Admin" tone="primary" />
+        <View style={{ gap: space.lg }}>
+          <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: space.md }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flex: 1, minWidth: 220 }}>
+                <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
+                  <Ionicons name="shield-checkmark" size={24} color="#FFF" />
                 </View>
-                <AppText variant="small" tone={color.muted}>
-                  Kelola guru, kelas, siswa, jurnal 30 hari, mapel, & rapor secara penuh.
-                </AppText>
+                <View style={{ flex: 1, minWidth: 0 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
+                    <AppText variant="title" weight="bold">Akses Administrator</AppText>
+                    <View style={{ backgroundColor: color.primary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill }}>
+                      <AppText variant="caption" weight="bold" tone="#FFFFFF">Super Admin</AppText>
+                    </View>
+                  </View>
+                  <AppText variant="small" tone={color.muted}>
+                    Kelola guru, kelas, siswa, jurnal 30 hari, mapel, & rapor secara penuh.
+                  </AppText>
+                </View>
               </View>
+              <Button
+                label="Buka Dashboard Admin"
+                icon="settings-outline"
+                variant="primary"
+                size="sm"
+                onPress={() => navigation.navigate('AdminDashboard')}
+              />
             </View>
-            <Button
-              label="Buka Dashboard Admin"
-              icon="settings-outline"
-              variant="primary"
-              size="sm"
-              onPress={() => navigation.navigate('AdminDashboard')}
+          </Card>
+
+          {/* KPI Ringkasan Sekolah */}
+          <Grid columns={layout.isExpanded ? 4 : 2}>
+            <Card style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <AppText variant="caption" tone={color.muted}>TOTAL GURU</AppText>
+                <Ionicons name="people-outline" size={18} color={color.primary} />
+              </View>
+              <AppText variant="display" weight="bold">{ws.colleagues.length || 4}</AppText>
+              <AppText variant="caption" tone={color.muted}>Tenaga Pendidik</AppText>
+            </Card>
+            <Card style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <AppText variant="caption" tone={color.muted}>TOTAL KELAS</AppText>
+                <Ionicons name="business-outline" size={18} color={color.brandDeep} />
+              </View>
+              <AppText variant="display" weight="bold">{ws.classes.length}</AppText>
+              <AppText variant="caption" tone={color.muted}>Rombongan Belajar</AppText>
+            </Card>
+            <Card style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <AppText variant="caption" tone={color.muted}>TOTAL SISWA</AppText>
+                <Ionicons name="school-outline" size={18} color={color.success} />
+              </View>
+              <AppText variant="display" weight="bold">{ws.students.length}</AppText>
+              <AppText variant="caption" tone={color.muted}>Terdaftar Aktif</AppText>
+            </Card>
+            <Card style={{ gap: 4 }}>
+              <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                <AppText variant="caption" tone={color.muted}>JURNAL 30 HARI</AppText>
+                <Ionicons name="journal-outline" size={18} color={color.warning} />
+              </View>
+              <AppText variant="display" weight="bold">{ws.journals.length}</AppText>
+              <AppText variant="caption" tone={color.muted}>Catatan Observasi</AppText>
+            </Card>
+          </Grid>
+
+          {/* Daftar Kelas di Sekolah */}
+          <View style={{ gap: space.sm }}>
+            <SectionHeader
+              title="Daftar Kelas di Sekolah"
+              subtitle={`${ws.classes.length} rombel aktif`}
+              action={<Button label="Kelola di Admin" size="sm" variant="ghost" onPress={() => navigation.navigate('AdminDashboard')} />}
             />
+            <Grid columns={layout.isExpanded ? 2 : 1}>
+              {ws.classes.map((cls) => {
+                const wali = ws.colleagues.find((t) => t.id === cls.homeroom_teacher_id);
+                const count = ws.students.filter((s) => s.class_id === cls.id).length;
+                const jCount = ws.journals.filter((j) => j.class_id === cls.id).length;
+                return (
+                  <Card key={cls.id} style={{ gap: 12 }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                      <View>
+                        <AppText variant="title" weight="bold">{cls.nama_kelas}</AppText>
+                        <AppText variant="caption" tone={color.muted}>Tingkat {cls.tingkat} · {cls.tahun_ajaran} ({cls.semester})</AppText>
+                      </View>
+                      <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: color.primarySoft }}>
+                        <AppText variant="caption" weight="bold" tone={color.primary}>{count} Siswa</AppText>
+                      </View>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+                      <Ionicons name="ribbon-outline" size={16} color={color.brandDeep} />
+                      <AppText variant="small" tone={color.muted}>Wali Kelas: <AppText variant="small" weight="bold">{wali?.nama_lengkap || 'Belum ditentukan'}</AppText></AppText>
+                    </View>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', paddingTop: 8, borderTopWidth: 1, borderTopColor: color.line }}>
+                      <AppText variant="caption" tone={color.muted}>{jCount} jurnal tercatat</AppText>
+                      <Button label="Buka Perwalian" size="sm" variant="ghost" onPress={() => navigation.navigate('Homeroom', { classId: cls.id })} />
+                    </View>
+                  </Card>
+                );
+              })}
+            </Grid>
           </View>
-        </Card>
-      ) : null}
-      {layout.twoPane ? (
+
+          {/* Feed Jurnal Sekolah Terkini */}
+          <View style={{ gap: space.sm }}>
+            <SectionHeader
+              title="Feed Jurnal Observasi Sekolah Terbaru"
+              subtitle="Catatan langsung dari para guru mata pelajaran"
+              action={<Button label="Buka Panel Admin" size="sm" variant="ghost" onPress={() => navigation.navigate('AdminDashboard')} />}
+            />
+            {ws.journals.slice(0, 6).map((j) => (
+              <JournalItem
+                key={j.id}
+                journal={j}
+                student={ws.students.find((s) => s.id === j.student_id)}
+                subject={ws.subjects.find((s) => s.id === j.subject_id)}
+                showSubject
+                onPress={() => navigation.navigate('Student', { studentId: j.student_id, assignmentId: j.assignment_id })}
+              />
+            ))}
+          </View>
+        </View>
+      ) : layout.twoPane ? (
         <View style={{ flexDirection: 'row', gap: space.xl, alignItems: 'flex-start' }}>
           <View style={{ flex: 1.6, gap: space.lg, minWidth: 0 }}>
             {hero}

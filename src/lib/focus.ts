@@ -15,7 +15,7 @@ if (Platform.OS === 'web' && doc) {
     listeners.forEach((l) => l(v));
   };
   doc.addEventListener('keydown', (e: any) => {
-    if (e.key === 'Tab' || e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === ' ') setMode(true);
+    if (e?.key && (e.key === 'Tab' || e.key.startsWith('Arrow') || e.key === 'Enter' || e.key === ' ')) setMode(true);
   }, true);
   doc.addEventListener('pointerdown', () => setMode(false), true);
 }

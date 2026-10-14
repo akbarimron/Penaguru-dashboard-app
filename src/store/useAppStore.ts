@@ -98,6 +98,10 @@ interface AppState {
 
 export function needsSetup(ws: Workspace | null): boolean {
   if (!ws) return true;
+  // Administrator tidak perlu setup peran mengajar/perwalian
+  if (ws.teacher.role === 'admin' || ws.teacher.email.toLowerCase().includes('admin')) {
+    return false;
+  }
   if (!ws.school) return true;
   const teaches = ws.assignments.some((a) => a.teacher_id === ws.teacher.id);
   const homeroom = ws.classes.some((c) => c.homeroom_teacher_id === ws.teacher.id);
