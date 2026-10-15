@@ -1,24 +1,15 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, View } from 'react-native';
 import { color, radius, subjectPalette } from '../theme/tokens';
 import { Subject } from '../types';
 import { AppText, PressableScale } from './ui';
+import { resolveSubjectIcon } from '../lib/icons';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-export function subjectIcon(nama: string): IconName {
-  const n = nama.toLowerCase();
-  if (n.includes('informatika') || n.includes('program') || n.includes('rpl')) return 'code-slash';
-  if (n.includes('matematika')) return 'calculator';
-  if (n.includes('indonesia')) return 'book';
-  if (n.includes('inggris')) return 'language';
-  if (n.includes('ipa') || n.includes('fisika') || n.includes('kimia') || n.includes('biologi')) return 'flask';
-  if (n.includes('sejarah')) return 'time';
-  if (n.includes('agama')) return 'moon';
-  if (n.includes('olahraga') || n.includes('pjok')) return 'football';
-  if (n.includes('seni') || n.includes('budaya')) return 'color-palette';
-  return 'school';
+export function subjectIcon(nama: string, customIcon?: string | null): IconName {
+  return resolveSubjectIcon(nama, customIcon);
 }
 
 interface SubjectCardProps {
@@ -35,6 +26,8 @@ interface SubjectCardProps {
 // "buka dashboard mapel ini". Diadaptasi dari gambar referensi.
 export function SubjectCard({ subject, className, studentCount, attention, onPress, notchColor = color.bg }: SubjectCardProps) {
   const p = subjectPalette[subject.warna];
+  const icon = resolveSubjectIcon(subject.nama, subject.icon);
+
   return (
     <View>
       <PressableScale
@@ -42,8 +35,16 @@ export function SubjectCard({ subject, className, studentCount, attention, onPre
         accessibilityLabel={`${subject.nama}, kelas ${className}, ${studentCount} siswa${attention ? `, ${attention} perlu perhatian` : ''}. Buka dashboard mapel`}
         style={[styles.card, { backgroundColor: p.bg }]}
       >
-        <View style={[styles.iconBox, { backgroundColor: p.iconBox }]}>
-          <Ionicons name={subjectIcon(subject.nama)} size={22} color={p.fg} />
+        <View style={[styles.iconBox, { backgroundColor: p.iconBox, overflow: 'hidden' }]}>
+          {subject.gambar ? (
+            <Image
+              source={{ uri: subject.gambar }}
+              style={{ width: '100%', height: '100%', borderRadius: 14 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name={icon} size={22} color={p.fg} />
+          )}
         </View>
         <View style={{ flex: 1 }} />
         <AppText variant={subject.nama.length > 16 ? 'body' : 'heading'} weight="extrabold" tone={p.fg} numberOfLines={3}>

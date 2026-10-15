@@ -327,3 +327,146 @@ INSTRUKSI PENTING:
 
   throw new Error('Gagal menghasilkan pesan untuk orang tua dari Gemini AI.');
 }
+
+/**
+ * Mentranskripsikan rekaman audio suara guru menjadi teks catatan pengamatan jurnal menggunakan Gemini AI
+ */
+export async function transcribeAudioWithGemini(
+  base64Audio: string,
+  mimeType = 'audio/webm'
+): Promise<string> {
+  if (!isGeminiConfigured) {
+    throw new Error('Kunci Gemini API belum dikonfigurasi.');
+  }
+
+  const prompt = `Transkripsikan rekaman suara guru ini ke dalam teks catatan pengamatan kelas/jurnal harian bahasa Indonesia yang rapi dan akurat. Perbaiki sedikit jika ada kata yang terputus, tanpa mengubah maksud guru. Berikan HANYA teks transkripsi tanpa basa-basi atau tanda kutip.`;
+
+  const apiKey = rawKey!.trim();
+  const models = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
+
+  for (const model of models) {
+    try {
+      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+      const payload = {
+        contents: [
+          {
+            role: 'user',
+            parts: [
+              {
+                inlineData: {
+                  mimeType,
+                  data: base64Audio,
+                },
+              },
+              { text: prompt },
+            ],
+          },
+        ],
+        generationConfig: {
+          temperature: 0.2,
+          maxOutputTokens: 600,
+        },
+      };
+
+      const res = await fetch(endpoint, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(payload),
+      });
+
+      if (res.ok) {
+        const data = await res.json();
+        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+        if (text) return text.trim();
+      }
+    } catch {
+      // coba model berikutnya
+    }
+  }
+
+  throw new Error('Gagal mentranskripsikan rekaman suara.');
+}
+
+/**
+ * Menganalisis dikte suara guru dan memetakan otomatis ke skor (1-5), tag observasi, nama siswa, dan catatan bersih.
+ */
+export async function parseVoiceJournalWithAI(params: {
+  voiceText: string;
+  availableStudents: { id: string; nama_lengkap: string }[];
+  currentMateri?: string;
+}): Promise<{
+  catatan: string;
+  matchedStudentIds: string[];
+  nilai_kognitif?: number | null;
+  nilai_keterampilan?: number | null;
+  skor_sikap?: number | null;
+  tags: string[];
+}> {
+  if (!isGeminiConfigured) {
+    return {
+      catatan: params.voiceText,
+      matchedStudentIds: [],
+      tags: [],
+    };
+  }
+
+  const studentList = params.availableStudents.map((s) => `- ${s.nama_lengkap} (ID: ${s.id})`).join('\n');
+
+  const prompt = `
+Sebagai Asisten PenaGuru, kamu menerima teks hasil dikte suara seorang guru saat mengamati siswa di kelas:
+"${params.voiceText}"
+
+Daftar siswa di kelas ini:
+${studentList}
+
+Tugasmu:
+1. "catatan": Rapikan kalimat dikte guru menjadi 1-2 kalimat catatan pengamatan observasi yang profesional, spesifik, dan siap disimpan ke jurnal kelas.
+2. "matchedStudentIds": Cocokkan nama siswa yang disebut oleh guru di teks dikte dengan ID siswa di atas. Jika tidak ada yang cocok atau tidak disebut, biarkan array kosong [].
+3. "nilai_kognitif", "nilai_keterampilan", "skor_sikap": Jika guru menyebut angka skor (misal "skor 5 4 4" atau "nilainya 4 semua"), ekstrak nilainya (skala 1-5). Jika tidak disebut, beri null.
+4. "tags": Pilih 1-3 tag karakter yang relevan dari kata-kata guru (misal: "Aktif bertanya", "Kolaboratif", "Fokus", "Perlu bimbingan", "Kritis", "Teliti").
+
+Keluarkan HANYA JSON valid:
+{
+  "catatan": "teks catatan rapi",
+  "matchedStudentIds": ["id1"],
+  "nilai_kognitif": 5,
+  "nilai_keterampilan": 4,
+  "skor_sikap": 5,
+  "tags": ["Aktif bertanya"]
+}
+`.trim();
+
+  const apiKey = rawKey!.trim();
+  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
+
+  try {
+    const res = await fetch(endpoint, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({
+        contents: [{ role: 'user', parts: [{ text: prompt }] }],
+        generationConfig: {
+          temperature: 0.2,
+          responseMimeType: 'application/json',
+        },
+      }),
+    });
+
+    if (res.ok) {
+      const data = await res.json();
+      const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
+      if (rawJson) {
+        return JSON.parse(rawJson);
+      }
+    }
+  } catch (err) {
+    console.warn('AI Voice parse failed:', err);
+  }
+
+  return {
+    catatan: params.voiceText,
+    matchedStudentIds: [],
+    tags: [],
+  };
+}
+

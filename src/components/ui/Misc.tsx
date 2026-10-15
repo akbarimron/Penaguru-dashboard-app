@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { Animated, LayoutChangeEvent, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, Image, LayoutChangeEvent, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { initials } from '../../lib/phone';
 import { duration, easing, isReducedMotion, useEntrance } from '../../lib/motion';
 import { color, radius, space, SubjectPalette } from '../../theme/tokens';
@@ -10,8 +10,33 @@ import { Skeleton } from './Skeleton';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
-// Avatar inisial. Sengaja tanpa foto: aplikasi tidak menyimpan foto siswa.
-export function Avatar({ name, size = 40, palette }: { name: string; size?: number; palette?: SubjectPalette }) {
+// Avatar inisial atau foto profil pengguna jika tersedia.
+export function Avatar({
+  name,
+  size = 40,
+  palette,
+  photoUrl,
+}: {
+  name: string;
+  size?: number;
+  palette?: SubjectPalette;
+  photoUrl?: string | null;
+}) {
+  if (photoUrl) {
+    return (
+      <Image
+        source={{ uri: photoUrl }}
+        style={{
+          width: size,
+          height: size,
+          borderRadius: size / 2,
+          backgroundColor: palette ? palette.soft : color.brandSoft,
+        }}
+        accessibilityLabel={`Foto profil ${name}`}
+      />
+    );
+  }
+
   return (
     <View
       style={{

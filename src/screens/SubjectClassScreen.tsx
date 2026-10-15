@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { Image, StyleSheet, View, ScrollView } from 'react-native';
+import { CustomAssetModal } from '../components/CustomAssetModal';
 import { JournalItem, StudentRow } from '../components/Rows';
 import { subjectIcon } from '../components/SubjectCard';
 import {
@@ -26,6 +27,7 @@ import {
 import { assignmentSummary, journalsOf, sortByUrgency } from '../lib/analytics';
 import { formatShortDate, HARI, reportPeriods } from '../lib/dates';
 import { balancedGroups, GroupDraft } from '../lib/grouping';
+import { resolveSubjectIcon } from '../lib/icons';
 import { useLayout } from '../lib/layout';
 import { draftReportFromJournals } from '../lib/reportGenerator';
 import { SubjectTab } from '../navigation/types';
@@ -36,8 +38,10 @@ import { GradeCategory, GradeItem, GradeSubmission, ReportStatus, Student, Stude
 
 export function SubjectClassScreen({ route, navigation }: any) {
   const ws = useAppStore((s) => s.ws)!;
+  const updateSubjectAsset = useAppStore((s) => s.updateSubjectAsset);
   const [tab, setTab] = useState<SubjectTab>(route.params?.tab || 'ringkasan');
   const [editOpen, setEditOpen] = useState(false);
+  const [assetModalOpen, setAssetModalOpen] = useState(false);
   const a = ws.assignments.find((x) => x.id === route.params?.assignmentId && x.teacher_id === ws.teacher.id);
 
   if (!a) {
@@ -54,11 +58,30 @@ export function SubjectClassScreen({ route, navigation }: any) {
   const attention = summary.counts.Perhatian + summary.counts.Kritis;
 
   return (
-    <Screen header={<ScreenHeader title={subject.nama} subtitle={`${cls.nama_kelas} · ${summary.rows.length} siswa`} tone={{ bg: p.bg, fg: p.fg }} />}>
+    <Screen
+      header={
+        <ScreenHeader
+          title={subject.nama}
+          subtitle={`${cls.nama_kelas} · ${summary.rows.length} siswa`}
+          tone={{ bg: p.bg, fg: p.fg }}
+          right={
+            <IconButton
+              icon="color-palette-outline"
+              label="Atur Ikon & Gambar Mapel"
+              onPress={() => setAssetModalOpen(true)}
+            />
+          }
+        />
+      }
+    >
       <EnterView>
         <View style={[styles.band, { backgroundColor: p.soft }]}>
-          <View style={[styles.bandIcon, { backgroundColor: p.bg }]}>
-            <Ionicons name={subjectIcon(subject.nama)} size={22} color={p.fg} />
+          <View style={[styles.bandIcon, { backgroundColor: p.bg, overflow: 'hidden' }]}>
+            {subject.gambar ? (
+              <Image source={{ uri: subject.gambar }} style={{ width: '100%', height: '100%', borderRadius: 14 }} resizeMode="cover" />
+            ) : (
+              <Ionicons name={resolveSubjectIcon(subject.nama, subject.icon)} size={22} color={p.fg} />
+            )}
           </View>
           <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
             <AppText variant="caption" weight="bold" tone={p.ink}>
@@ -71,7 +94,10 @@ export function SubjectClassScreen({ route, navigation }: any) {
               {a.jadwal.length ? a.jadwal.map((j) => `${HARI[j.hari]} ${j.jam_mulai}`).join(' · ') : 'Jadwal belum diisi'}
             </AppText>
           </View>
-          <Button label="Ubah" size="sm" variant="ghost" fg={p.ink} onPress={() => setEditOpen(true)} />
+          <View style={{ gap: 4, alignItems: 'flex-end' }}>
+            <Button label="Ubah Materi" size="sm" variant="ghost" fg={p.ink} onPress={() => setEditOpen(true)} />
+            <Button label="Ikon & Foto" size="sm" variant="ghost" fg={p.ink} icon="images-outline" onPress={() => setAssetModalOpen(true)} />
+          </View>
         </View>
       </EnterView>
       <View style={styles.actions}>
@@ -103,6 +129,19 @@ export function SubjectClassScreen({ route, navigation }: any) {
       {tab === 'rapor' ? <ReportsTab a={a} navigation={navigation} /> : null}
       {tab === 'kelompok' ? <GroupsTab a={a} palette={p} /> : null}
       <EditMateriDialog visible={editOpen} onClose={() => setEditOpen(false)} a={a} />
+      <CustomAssetModal
+        open={assetModalOpen}
+        onClose={() => setAssetModalOpen(false)}
+        targetType="subject"
+        title={`Profil & Ikon Mapel ${subject.nama}`}
+        currentName={subject.nama}
+        currentColor={subject.warna}
+        initialIcon={subject.icon}
+        initialImage={subject.gambar}
+        onSave={async ({ icon, image }) => {
+          await updateSubjectAsset(subject.id, { icon, gambar: image });
+        }}
+      />
     </Screen>
   );
 }

@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { Image, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { DemoBanner, JournalItem } from '../components/Rows';
 import { SubjectCard } from '../components/SubjectCard';
 import {
@@ -21,6 +21,7 @@ import {
 } from '../components/ui';
 import { assignmentSummary, crossSubjectStats } from '../lib/analytics';
 import { addDays, greeting, HARI, reportPeriods, toISODate } from '../lib/dates';
+import { resolveClassIcon } from '../lib/icons';
 import { useLayout } from '../lib/layout';
 import { firstName } from '../lib/phone';
 import { focusSession, studentContext, todaySessions } from '../lib/schedule';
@@ -64,11 +65,18 @@ export function HomeScreen({ navigation }: any) {
   const header = (
     <EnterView>
       <View style={styles.header}>
+        <TouchableOpacity
+          onPress={() => navigation.navigate('Profile')}
+          accessibilityLabel="Buka Profil Guru"
+          style={{ marginRight: 4 }}
+        >
+          <Avatar name={ws.teacher.nama_lengkap} size={46} photoUrl={ws.teacher.foto_profil} />
+        </TouchableOpacity>
         <View style={{ flex: 1, minWidth: 0 }}>
           <AppText variant="body" tone={color.muted}>
             {greeting()},
           </AppText>
-          <AppText variant="display" numberOfLines={2}>
+          <AppText variant="display" numberOfLines={1}>
             {firstName(ws.teacher.nama_lengkap)}!
           </AppText>
         </View>
@@ -446,8 +454,16 @@ function HomeroomCard({ cls, ws, onPress }: { cls: ClassRoom; ws: Workspace; onP
   return (
     <PressableScale onPress={onPress} scaleTo={0.985} style={styles.homeroom} accessibilityLabel={`Kelas perwalian ${cls.nama_kelas}. ${waiting} rapor menunggu tinjauan. Buka dashboard wali kelas`}>
       <View style={styles.homeroomHead}>
-        <View style={styles.homeroomIcon}>
-          <Ionicons name="ribbon" size={22} color={color.brandDeep} />
+        <View style={[styles.homeroomIcon, { overflow: 'hidden' }]}>
+          {cls.gambar ? (
+            <Image
+              source={{ uri: cls.gambar }}
+              style={{ width: '100%', height: '100%', borderRadius: 14 }}
+              resizeMode="cover"
+            />
+          ) : (
+            <Ionicons name={resolveClassIcon(cls.nama_kelas, cls.icon)} size={22} color={color.brandDeep} />
+          )}
         </View>
         <View style={{ flex: 1, minWidth: 0 }}>
           <AppText variant="caption" weight="bold" tone={color.brand}>

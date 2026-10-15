@@ -2,7 +2,8 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { RatingInput } from '../components/RatingInput';
-import { AppText, Button, Card, Chip, EmptyState, EnterView, IconButton, Screen, SectionHeader, TextField } from '../components/ui';
+import { AppText, Button, Card, Chip, EmptyState, EnterView, IconButton, PressableScale, Screen, SectionHeader, TextField } from '../components/ui';
+import { VoiceJournalModal } from '../components/VoiceJournalModal';
 import { PRESET_TAGS } from '../lib/analytics';
 import { formatLongDate, toISODate } from '../lib/dates';
 import { useLayout } from '../lib/layout';
@@ -32,6 +33,7 @@ export function JournalScreen({ navigation, route }: any) {
   const [materi, setMateri] = useState('');
   const [submitted, setSubmitted] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [voiceModalOpen, setVoiceModalOpen] = useState(false);
 
   const assignment = mine.find((a) => a.id === assignmentId) || null;
 
@@ -229,15 +231,29 @@ export function JournalScreen({ navigation, route }: any) {
         <RatingInput label="Pengetahuan" description="Pemahaman konsep dan teori" value={kog} onChange={setKog} error={submitted && !kog} />
         <RatingInput label="Keterampilan" description="Praktik dan penyelesaian tugas" value={ket} onChange={setKet} error={submitted && !ket} />
         <RatingInput label="Sikap" description="Kerja sama, disiplin, keaktifan" value={sik} onChange={setSik} error={submitted && !sik} />
-        <TextField
-          label="Catatan"
-          optional
-          multiline
-          value={note}
-          onChangeText={setNote}
-          placeholder="Apa yang Anda amati? Tulis singkat dan spesifik."
-          hint="Tip: tekan ikon mikrofon di keyboard ponsel untuk mendikte catatan."
-        />
+        <View style={{ gap: 8, marginTop: 4 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+            <AppText variant="small" weight="bold" tone={color.ink}>
+              Catatan Observasi (Opsional)
+            </AppText>
+            <Button
+              label="Dikte Mikrofon"
+              icon="mic"
+              size="sm"
+              variant="secondary"
+              onPress={() => setVoiceModalOpen(true)}
+            />
+          </View>
+          <TextField
+            label=""
+            optional
+            multiline
+            value={note}
+            onChangeText={setNote}
+            placeholder="Apa yang Anda amati? Tulis singkat atau tekan Dikte Mikrofon untuk berbicara langsung."
+            hint="Dapat didikte langsung lewat mikrofon dengan pemetaan otomatis AI."
+          />
+        </View>
       </Card>
     </EnterView>
   );
@@ -282,6 +298,34 @@ export function JournalScreen({ navigation, route }: any) {
           </View>
         ) : null}
       </View>
+
+      <EnterView>
+        <PressableScale
+          onPress={() => setVoiceModalOpen(true)}
+          style={styles.voiceBanner}
+          accessibilityLabel="Mulai dikte suara lewat mikrofon"
+        >
+          <View style={styles.voiceIconWrap}>
+            <Ionicons name="mic" size={20} color="#FFFFFF" />
+          </View>
+          <View style={{ flex: 1, minWidth: 0 }}>
+            <AppText variant="small" weight="bold" tone={color.brandDeep}>
+              Dikte Jurnal Lewat Mikrofon
+            </AppText>
+            <AppText variant="caption" tone={color.muted}>
+              Tekan untuk berbicara langsung & isi catatan atau form otomatis dengan AI
+            </AppText>
+          </View>
+          <Button
+            label="Mulai Dikte"
+            icon="mic"
+            size="sm"
+            variant="secondary"
+            onPress={() => setVoiceModalOpen(true)}
+          />
+        </PressableScale>
+      </EnterView>
+
       {layout.twoPane ? (
         <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' }}>
           <View style={{ flex: 1, gap: space.lg, minWidth: 0 }}>
@@ -301,6 +345,26 @@ export function JournalScreen({ navigation, route }: any) {
           {scores}
         </>
       )}
+
+      <VoiceJournalModal
+        open={voiceModalOpen}
+        onClose={() => setVoiceModalOpen(false)}
+        onApplyNote={(txt) => setNote((prev) => (prev ? `${prev} ${txt}` : txt))}
+        onApplyParsed={({ catatan, studentIds, kog: k, ket: kt, sik: s, tags: t }) => {
+          setNote((prev) => (prev ? `${prev} ${catatan}` : catatan));
+          if (studentIds.length > 0) {
+            setSelected((prev) => Array.from(new Set([...prev, ...studentIds])));
+          }
+          if (k) setKog(k);
+          if (kt) setKet(kt);
+          if (s) setSik(s);
+          if (t.length > 0) {
+            setTags((prev) => Array.from(new Set([...prev, ...t])));
+          }
+        }}
+        availableStudents={students}
+        currentMateri={materi}
+      />
     </Screen>
   );
 }
@@ -322,4 +386,22 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   offline: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.sm, backgroundColor: color.accentSoft },
+  voiceBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+    backgroundColor: color.brandSoft,
+    borderColor: color.brand,
+    borderWidth: 1,
+    padding: space.md,
+    borderRadius: radius.lg,
+  },
+  voiceIconWrap: {
+    width: 38,
+    height: 38,
+    borderRadius: 19,
+    backgroundColor: color.brand,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
 });

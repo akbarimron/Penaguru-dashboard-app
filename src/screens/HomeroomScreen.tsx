@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View, ScrollView } from 'react-native';
+import { Image, StyleSheet, View, ScrollView } from 'react-native';
+import { CustomAssetModal } from '../components/CustomAssetModal';
 import { JournalItem, StudentRow } from '../components/Rows';
 import { subjectIcon } from '../components/SubjectCard';
 import {
@@ -35,7 +36,9 @@ import { ClassRoom, GradeItem, GradeSubmission, ReportStatus, Student, StudentGr
 
 export function HomeroomScreen({ route, navigation }: any) {
   const ws = useAppStore((s) => s.ws)!;
+  const updateClassAsset = useAppStore((s) => s.updateClassAsset);
   const [tab, setTab] = useState<HomeroomTab>(route.params?.tab || 'ringkasan');
+  const [customOpen, setCustomOpen] = useState(false);
   const periods = reportPeriods();
   const [periode, setPeriode] = useState(periods[0]);
   const cls = ws.classes.find((c) => c.id === route.params?.classId && c.homeroom_teacher_id === ws.teacher.id);
@@ -54,7 +57,22 @@ export function HomeroomScreen({ route, navigation }: any) {
   const waitingGrades = (ws.gradeSubmissions || []).filter((s) => assignmentsInClass.some((a) => a.id === s.assignment_id) && s.periode === periode && s.status === 'Diajukan').length;
 
   return (
-    <Screen header={<ScreenHeader title={`Wali kelas ${cls.nama_kelas}`} subtitle={`${cls.tahun_ajaran} · semester ${cls.semester}`} tone={{ bg: color.brand, fg: '#FFFFFF' }} />}>
+    <Screen
+      header={
+        <ScreenHeader
+          title={`Wali kelas ${cls.nama_kelas}`}
+          subtitle={`${cls.tahun_ajaran} · semester ${cls.semester}`}
+          tone={{ bg: color.brand, fg: '#FFFFFF' }}
+          right={
+            <IconButton
+              icon="color-palette-outline"
+              label="Atur Ikon & Gambar Kelas"
+              onPress={() => setCustomOpen(true)}
+            />
+          }
+        />
+      }
+    >
       <View style={styles.periodRow}>
         <AppText variant="small" weight="semibold" tone={color.muted}>
           Periode rapor
@@ -80,6 +98,19 @@ export function HomeroomScreen({ route, navigation }: any) {
       {tab === 'nilai' ? <HomeroomGradesTab cls={cls} periode={periode} /> : null}
       {tab === 'siswa' ? <RosterTab cls={cls} navigation={navigation} /> : null}
       {tab === 'mapel' ? <SubjectsTab cls={cls} navigation={navigation} /> : null}
+
+      <CustomAssetModal
+        open={customOpen}
+        onClose={() => setCustomOpen(false)}
+        targetType="class"
+        title={`Profil & Ikon Kelas ${cls.nama_kelas}`}
+        currentName={cls.nama_kelas}
+        initialIcon={cls.icon}
+        initialImage={cls.gambar}
+        onSave={async ({ icon, image }) => {
+          await updateClassAsset(cls.id, { icon, gambar: image });
+        }}
+      />
     </Screen>
   );
 }

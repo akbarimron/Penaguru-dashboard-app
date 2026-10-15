@@ -25,6 +25,7 @@ export interface Teacher {
   nip: string | null;
   email: string;
   role?: 'admin' | 'guru';
+  foto_profil?: string | null;
 }
 
 export interface ClassRoom {
@@ -35,6 +36,8 @@ export interface ClassRoom {
   tahun_ajaran: string;
   semester: Semester;
   homeroom_teacher_id: string | null;
+  icon?: string | null;
+  gambar?: string | null;
 }
 
 export interface Subject {
@@ -42,6 +45,8 @@ export interface Subject {
   school_id: string;
   nama: string;
   warna: SubjectColor;
+  icon?: string | null;
+  gambar?: string | null;
 }
 
 export interface ScheduleSlot {

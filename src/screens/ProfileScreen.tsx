@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
-import React from 'react';
+import React, { useState } from 'react';
 import { StyleSheet, Switch, View } from 'react-native';
 import { AppText, Avatar, Button, Card, Divider, EnterView, IconButton, PressableScale, Screen, SectionHeader } from '../components/ui';
+import { CustomAssetModal } from '../components/CustomAssetModal';
 import { useLayout } from '../lib/layout';
 import { assignmentLabel, myAssignments, myHomeroomClasses } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
@@ -15,6 +16,8 @@ export function ProfileScreen({ navigation }: any) {
   const mode = useAppStore((s) => s.mode);
   const signOut = useAppStore((s) => s.signOut);
   const resetDemo = useAppStore((s) => s.resetDemo);
+  const updateTeacherProfile = useAppStore((s) => s.updateTeacherProfile);
+  const [photoModalOpen, setPhotoModalOpen] = useState(false);
   const muteSound = useSettingsStore((s) => s.muteSound);
   const setMuteSound = useSettingsStore((s) => s.setMuteSound);
   const hapticFeedback = useSettingsStore((s) => s.hapticFeedback);
@@ -53,7 +56,16 @@ export function ProfileScreen({ navigation }: any) {
   const identity = (
     <EnterView>
       <Card style={styles.identity}>
-        <Avatar name={ws.teacher.nama_lengkap} size={64} />
+        <View style={{ alignItems: 'center', gap: 6 }}>
+          <Avatar name={ws.teacher.nama_lengkap} size={68} photoUrl={ws.teacher.foto_profil} />
+          <Button
+            label="Ubah Foto"
+            icon="camera-outline"
+            size="sm"
+            variant="ghost"
+            onPress={() => setPhotoModalOpen(true)}
+          />
+        </View>
         <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
           <AppText variant="title" numberOfLines={2}>
             {ws.teacher.nama_lengkap}
@@ -304,6 +316,18 @@ export function ProfileScreen({ navigation }: any) {
           {account}
         </>
       )}
+
+      <CustomAssetModal
+        open={photoModalOpen}
+        onClose={() => setPhotoModalOpen(false)}
+        targetType="profile"
+        title="Foto Profil Guru"
+        currentName={ws.teacher.nama_lengkap}
+        initialImage={ws.teacher.foto_profil}
+        onSave={async ({ image }) => {
+          await updateTeacherProfile({ foto_profil: image });
+        }}
+      />
     </Screen>
   );
 }

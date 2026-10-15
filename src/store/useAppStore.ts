@@ -87,6 +87,10 @@ interface AppState {
   clearChat: () => Promise<void>;
   resetDemo: () => Promise<void>;
 
+  updateTeacherProfile: (patch: { foto_profil?: string | null; nama_lengkap?: string; nip?: string | null }) => Promise<void>;
+  updateClassAsset: (classId: string, patch: { icon?: string | null; gambar?: string | null }) => Promise<void>;
+  updateSubjectAsset: (subjectId: string, patch: { icon?: string | null; gambar?: string | null }) => Promise<void>;
+
   // Admin Actions
   adminUpdateSchool: (input: { nama?: string; npsn?: string | null; kode_gabung?: string }) => Promise<void>;
   adminSaveTeacher: (input: { id?: string; nama_lengkap: string; nip: string | null; email: string; role?: 'admin' | 'guru' }) => Promise<void>;
@@ -147,6 +151,30 @@ async function persistChatHistory(chat: ChatMessage[], userId?: string): Promise
     await AsyncStorage.setItem(key, JSON.stringify(chat));
   } catch (e) {
     console.warn('Failed to save chat history:', e);
+  }
+}
+
+const CUSTOM_ASSETS_KEY = '@penaguru/custom-assets';
+
+interface CustomAssetsStorage {
+  teacherPhotos: Record<string, string | null>;
+  classAssets: Record<string, { icon?: string | null; gambar?: string | null }>;
+  subjectAssets: Record<string, { icon?: string | null; gambar?: string | null }>;
+}
+
+async function loadCustomAssets(): Promise<CustomAssetsStorage> {
+  try {
+    const raw = await AsyncStorage.getItem(CUSTOM_ASSETS_KEY);
+    if (raw) return JSON.parse(raw);
+  } catch {}
+  return { teacherPhotos: {}, classAssets: {}, subjectAssets: {} };
+}
+
+async function saveCustomAssets(data: CustomAssetsStorage): Promise<void> {
+  try {
+    await AsyncStorage.setItem(CUSTOM_ASSETS_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('Failed to save custom assets:', err);
   }
 }
 
@@ -402,6 +430,18 @@ export const useAppStore = create<AppState>((set, get) => {
   // tidak berpindah stack (setup <-> ready) di tengah alur pengguna.
   const enter = async (user: SessionUser, keepStatus = false) => {
     const ws = await repo.loadWorkspace(user);
+    const customAssets = await loadCustomAssets();
+    if (customAssets.teacherPhotos[user.id]) {
+      ws.teacher.foto_profil = customAssets.teacherPhotos[user.id];
+    }
+    ws.classes = ws.classes.map((c) => {
+      const ca = customAssets.classAssets[c.id];
+      return ca ? { ...c, ...ca } : c;
+    });
+    ws.subjects = ws.subjects.map((s) => {
+      const sa = customAssets.subjectAssets[s.id];
+      return sa ? { ...s, ...sa } : s;
+    });
     const pending = get().pending.filter((p) => p.teacher_id === user.id);
     const merged = { ...ws, journals: [...pending, ...ws.journals] };
     const status = keepStatus ? get().status : needsSetup(merged) ? 'setup' : 'ready';
@@ -696,6 +736,43 @@ export const useAppStore = create<AppState>((set, get) => {
       await resetDemoData();
       set({ pending: [], offline: false, ws: null, user: null, status: 'signedOut' });
       persistPending([], false);
+    },
+
+    updateTeacherProfile: async (patch) => {
+      const user = get().user;
+      if (!user) return;
+      patchWs((ws) => ({
+        teacher: { ...ws.teacher, ...patch },
+      }));
+      const assets = await loadCustomAssets();
+      if (patch.foto_profil !== undefined) {
+        assets.teacherPhotos[user.id] = patch.foto_profil;
+        await saveCustomAssets(assets);
+      }
+    },
+
+    updateClassAsset: async (classId, patch) => {
+      patchWs((ws) => ({
+        classes: ws.classes.map((c) => (c.id === classId ? { ...c, ...patch } : c)),
+      }));
+      const assets = await loadCustomAssets();
+      assets.classAssets[classId] = {
+        ...(assets.classAssets[classId] || {}),
+        ...patch,
+      };
+      await saveCustomAssets(assets);
+    },
+
+    updateSubjectAsset: async (subjectId, patch) => {
+      patchWs((ws) => ({
+        subjects: ws.subjects.map((s) => (s.id === subjectId ? { ...s, ...patch } : s)),
+      }));
+      const assets = await loadCustomAssets();
+      assets.subjectAssets[subjectId] = {
+        ...(assets.subjectAssets[subjectId] || {}),
+        ...patch,
+      };
+      await saveCustomAssets(assets);
     },
 
     adminUpdateSchool: async (input) => {
