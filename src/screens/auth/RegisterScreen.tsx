@@ -36,7 +36,7 @@ export function RegisterScreen({ navigation }: any) {
     confirm: useRef<TextInput>(null),
   };
 
-  const brandActionColor = isWide ? '#4F46E5' : '#076356';
+  const brandActionColor = '#4F46E5';
 
   const set = (k: Field) => (t: string) => {
     setValues((v) => ({ ...v, [k]: t }));
@@ -204,7 +204,7 @@ export function RegisterScreen({ navigation }: any) {
 
         {/* Action Button */}
         <Button
-          label={isWide ? 'Daftar Sekarang' : 'Sign Up'}
+          label="Daftar Akun Guru"
           round
           onPress={submit}
           loading={loading}
@@ -212,7 +212,7 @@ export function RegisterScreen({ navigation }: any) {
           style={[
             styles.submitButton,
             { backgroundColor: brandActionColor },
-            isWide && styles.desktopGlow,
+            styles.desktopGlow,
           ]}
         />
       </Animated.View>

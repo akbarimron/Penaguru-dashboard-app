@@ -20,7 +20,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const brandActionColor = isWide ? '#4F46E5' : '#076356';
+  const brandActionColor = '#4F46E5';
 
   const submit = async () => {
     if (!EMAIL_RE.test(email.trim())) {
@@ -42,7 +42,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
   return (
     <AuthLayout
       mode="forgot"
-      title={isWide ? 'Atur Ulang Kata Sandi' : 'Reset Password'}
+      title="Atur Ulang Kata Sandi"
       subtitle="Masukkan email akun Anda. Kami kirimkan tautan untuk membuat kata sandi baru."
       onBack={() => navigation.navigate('Login')}
     >
@@ -65,8 +65,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           ) : null}
 
           <TextField
-            label={isWide ? 'Your email' : 'Email'}
-            hideLabel={!isWide}
+            label="Email Guru"
             round
             value={email}
             onChangeText={(t) => {
@@ -75,7 +74,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
             }}
             error={error}
             leftIcon="mail-outline"
-            placeholder={isWide ? 'nama@sekolah.sch.id' : 'Email'}
+            placeholder="nama@sekolah.sch.id"
             keyboardType="email-address"
             autoCapitalize="none"
             autoComplete="email"
@@ -84,7 +83,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
           />
 
           <Button
-            label={isWide ? 'Kirim Tautan Reset' : 'Send Reset Link'}
+            label="Kirim Tautan Reset"
             round
             onPress={submit}
             loading={loading}
@@ -92,7 +91,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
             style={[
               styles.submitButton,
               { backgroundColor: brandActionColor },
-              isWide && styles.desktopGlow,
+              styles.desktopGlow,
             ]}
           />
         </View>

@@ -3,7 +3,6 @@ import React, { useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
 import { AppText, Button, PressableScale, TextField } from '../../components/ui';
 import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../../data/seed';
-import { useLayout } from '../../lib/layout';
 import { shake } from '../../lib/motion';
 import { useAppStore } from '../../store/useAppStore';
 import { color, radius } from '../../theme/tokens';
@@ -12,10 +11,7 @@ import { AuthLayout } from './AuthLayout';
 const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 
 export function LoginScreen({ navigation }: any) {
-  const layout = useLayout();
-  const isWide = layout.width >= 850;
   const signIn = useAppStore((s) => s.signIn);
-  const mode = useAppStore((s) => s.mode);
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
@@ -24,7 +20,7 @@ export function LoginScreen({ navigation }: any) {
   const shakeX = useRef(new Animated.Value(0)).current;
   const passwordRef = useRef<TextInput>(null);
 
-  const brandActionColor = isWide ? '#4F46E5' : '#076356';
+  const brandActionColor = '#4F46E5'; // Windows Vibrant Blue/Indigo across both Mobile and Web
 
   const submit = async (overrideEmail?: string, overridePassword?: string) => {
     const e = (overrideEmail ?? email).trim();
@@ -41,7 +37,7 @@ export function LoginScreen({ navigation }: any) {
     try {
       await signIn(e, p);
     } catch (err: any) {
-      setErrors({ form: err?.message || 'Gagal masuk. Coba lagi.' });
+      setErrors({ form: err?.message || 'Email atau kata sandi tidak cocok.' });
       shake(shakeX);
     } finally {
       setLoading(null);
@@ -62,8 +58,7 @@ export function LoginScreen({ navigation }: any) {
 
         {/* Email Pill Input */}
         <TextField
-          label={isWide ? 'Your email' : 'Email'}
-          hideLabel={!isWide}
+          label="Email Guru"
           round
           value={email}
           onChangeText={(t) => {
@@ -72,7 +67,7 @@ export function LoginScreen({ navigation }: any) {
           }}
           error={errors.email}
           leftIcon="mail-outline"
-          placeholder={isWide ? 'farazhaidet786@gmail.com' : 'Email'}
+          placeholder="nama@sekolah.sch.id"
           keyboardType="email-address"
           autoCapitalize="none"
           autoComplete="email"
@@ -84,8 +79,7 @@ export function LoginScreen({ navigation }: any) {
         {/* Password Pill Input */}
         <TextField
           ref={passwordRef}
-          label={isWide ? 'Password' : 'Password'}
-          hideLabel={!isWide}
+          label="Kata Sandi"
           round
           value={password}
           onChangeText={(t) => {
@@ -94,7 +88,7 @@ export function LoginScreen({ navigation }: any) {
           }}
           error={errors.password}
           leftIcon="lock-closed-outline"
-          placeholder="Password"
+          placeholder="Masukkan kata sandi"
           secureToggle
           autoComplete="password"
           textContentType="password"
@@ -112,15 +106,15 @@ export function LoginScreen({ navigation }: any) {
           <AppText
             variant="small"
             weight="medium"
-            tone={isWide ? '#4F46E5' : '#076356'}
+            tone="#4F46E5"
           >
-            {isWide ? 'Lupa kata sandi?' : 'Forgot Password'}
+            Lupa kata sandi?
           </AppText>
         </Pressable>
 
         {/* Action Button */}
         <Button
-          label={isWide ? 'Masuk Sekarang' : 'Login'}
+          label="Masuk Sekarang"
           round
           onPress={() => submit()}
           loading={loading === 'form'}
@@ -128,21 +122,12 @@ export function LoginScreen({ navigation }: any) {
           style={[
             styles.submitButton,
             { backgroundColor: brandActionColor },
-            isWide && styles.desktopGlow,
+            styles.glowShadow,
           ]}
         />
       </Animated.View>
 
-      {/* Divider */}
-      <View style={styles.dividerRow}>
-        <View style={styles.dividerLine} />
-        <AppText variant="caption" tone="#94A3B8" style={{ paddingHorizontal: 12 }}>
-          {isWide ? 'or continue with' : 'Or login with'}
-        </AppText>
-        <View style={styles.dividerLine} />
-      </View>
-
-      {/* Quick Demo Access Pills */}
+      {/* Quick Demo Access Pills (Tanpa garis / tulisan "or continue with") */}
       <View style={styles.demoSection}>
         <View style={styles.demoPillsWrap}>
           {DEMO_ACCOUNTS.map((acc) => {
@@ -179,10 +164,10 @@ export function LoginScreen({ navigation }: any) {
         </View>
       </View>
 
-      {/* Sign Up Footer */}
+      {/* Sign Up Footer (Bahasa Indonesia) */}
       <View style={styles.footerRow}>
         <AppText variant="small" tone="#64748B">
-          {isWide ? "Don't have an account?" : "Don't have account?"}
+          Belum punya akun?
         </AppText>
         <Pressable
           onPress={() => navigation.navigate('Register')}
@@ -192,9 +177,9 @@ export function LoginScreen({ navigation }: any) {
           <AppText
             variant="small"
             weight="bold"
-            tone={isWide ? '#4F46E5' : '#076356'}
+            tone="#4F46E5"
           >
-            {' '}{isWide ? 'Sign up' : 'Sign Up'}
+            {' '}Daftar sebagai guru
           </AppText>
         </Pressable>
       </View>
@@ -222,7 +207,7 @@ const styles = StyleSheet.create({
     minHeight: 50,
     borderWidth: 0,
   },
-  desktopGlow: Platform.select({
+  glowShadow: Platform.select({
     web: {
       boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)',
     } as any,
@@ -234,17 +219,8 @@ const styles = StyleSheet.create({
       elevation: 6,
     },
   })!,
-  dividerRow: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    marginVertical: 4,
-  },
-  dividerLine: {
-    flex: 1,
-    height: 1,
-    backgroundColor: '#E2E8F0',
-  },
   demoSection: {
+    marginTop: 8,
     gap: 8,
   },
   demoPillsWrap: {
@@ -272,6 +248,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 6,
+    marginTop: 4,
   },
 });

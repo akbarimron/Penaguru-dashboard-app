@@ -1,6 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import {
+  Image,
   KeyboardAvoidingView,
   Platform,
   Pressable,
@@ -10,10 +11,12 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrganicMintBlob, PlantIllustration, StarburstIcon } from '../../components/auth/AuthVisuals';
+import { OrganicBlueBlob, StarburstIcon } from '../../components/auth/AuthVisuals';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
-import { color, font } from '../../theme/tokens';
+import { color } from '../../theme/tokens';
+
+const SchoolIllustration = require('../../assets/school-illustration.png');
 
 export interface AuthLayoutProps {
   title?: string;
@@ -36,36 +39,39 @@ export function AuthLayout({
   const insets = useSafeAreaInsets();
   const isWide = layout.width >= 850;
 
-  // Mobile Copy & Theming
+  // Mobile Copy & Theming (All in Bahasa Indonesia & Blue Theme)
   const mobileGreeting =
     mode === 'login'
-      ? { title: 'Hello!', subtitle: 'Selamat datang di PenaGuru' }
+      ? { title: 'Selamat Datang!', subtitle: 'di PenaGuru' }
       : mode === 'register'
       ? { title: 'Halo, Guru!', subtitle: 'Mulai langkah mengajar Anda' }
       : { title: 'Lupa Sandi?', subtitle: 'Pulihkan akses akun Anda' };
 
   const mobileCardTitle =
-    title || (mode === 'login' ? 'Login' : mode === 'register' ? 'Sign Up' : 'Atur Ulang Sandi');
+    title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Kata Sandi');
 
-  // Desktop Copy & Theming
+  // Desktop Copy & Theming (All in Bahasa Indonesia)
   const desktopLeftCopy =
     mode === 'login'
       ? {
-          tag: 'Ruang Kerja Cerdas',
-          headline: 'Akses ruang kerja cerdas untuk catatan jurnal, perwalian, dan rapor siswa.',
+          tag: 'RUANG KERJA GURU',
+          headline: 'Selamat Datang di PenaGuru',
+          sub: 'Akses ruang kerja cerdas untuk catatan jurnal, perwalian, dan rapor siswa.',
         }
       : mode === 'register'
       ? {
-          tag: 'Bergabung Bersama Kami',
-          headline: 'Mulai kelola kelas dan perwalian dengan lebih rapi, terstruktur, dan cepat.',
+          tag: 'BERGABUNG BERSAMA KAMI',
+          headline: 'Selamat Datang di PenaGuru',
+          sub: 'Mulai kelola kelas dan perwalian dengan lebih rapi, terstruktur, dan cepat.',
         }
       : {
-          tag: 'Keamanan Akun',
-          headline: 'Keamanan akun dan data siswa Anda adalah prioritas utama kami.',
+          tag: 'KEAMANAN AKUN',
+          headline: 'Selamat Datang di PenaGuru',
+          sub: 'Keamanan akun dan data siswa Anda adalah prioritas utama kami.',
         };
 
   const desktopRightTitle =
-    title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Sandi');
+    title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Kata Sandi');
 
   const desktopRightSubtitle =
     subtitle ||
@@ -76,7 +82,7 @@ export function AuthLayout({
       : 'Masukkan email Anda untuk menerima instruksi pemulihan kata sandi.');
 
   // ==========================================
-  // DESKTOP / WEB LAYOUT (Image 2)
+  // DESKTOP / WEB LAYOUT (Windows Layout)
   // ==========================================
   if (isWide) {
     return (
@@ -93,11 +99,20 @@ export function AuthLayout({
         >
           <EnterView>
             <View style={[styles.desktopCard, desktopCardShadow]}>
-              {/* Left Column: Vibrant Mesh Gradient Hero Card */}
-              <View style={[styles.desktopHeroCard, desktopGradientStyle]}>
+              {/* Left Column: Vibrant Mesh Gradient Hero Card with Illustration */}
+              <View style={[styles.desktopHeroCard, blueGradientStyle]}>
                 {/* Top: White 6-lobed Starburst Icon */}
                 <View style={styles.desktopHeroTop}>
                   <StarburstIcon size={34} color="#FFFFFF" />
+                </View>
+
+                {/* Center: Educational Illustration (Apple, Pencil, Open Book) */}
+                <View style={styles.desktopIllustrationWrap}>
+                  <Image
+                    source={SchoolIllustration}
+                    style={styles.desktopIllustration}
+                    resizeMode="contain"
+                  />
                 </View>
 
                 {/* Bottom: Caption & Large Headline */}
@@ -117,6 +132,14 @@ export function AuthLayout({
                     style={styles.desktopHeroHeadline}
                   >
                     {desktopLeftCopy.headline}
+                  </AppText>
+                  <AppText
+                    variant="small"
+                    weight="medium"
+                    tone="rgba(255, 255, 255, 0.88)"
+                    style={{ marginTop: 4, lineHeight: 20 }}
+                  >
+                    {desktopLeftCopy.sub}
                   </AppText>
                 </View>
               </View>
@@ -167,7 +190,7 @@ export function AuthLayout({
   }
 
   // ==========================================
-  // MOBILE / APP LAYOUT (Image 1)
+  // MOBILE / APP LAYOUT (Blue Theme matching Windows)
   // ==========================================
   return (
     <KeyboardAvoidingView
@@ -180,16 +203,20 @@ export function AuthLayout({
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        {/* Top Teal Banner with Organic Shapes & Potted Plant */}
-        <View style={styles.mobileTopBanner}>
-          {/* Top-Left Organic Mint Shape */}
+        {/* Top Blue Banner with Organic Shapes & School Illustration */}
+        <View style={[styles.mobileTopBanner, blueGradientStyle]}>
+          {/* Top-Left Organic Shape */}
           <View style={styles.mobileBlobPosition}>
-            <OrganicMintBlob width={130} height={120} />
+            <OrganicBlueBlob width={130} height={120} />
           </View>
 
-          {/* Plant Illustration Sitting on the Card Edge */}
-          <View style={styles.mobilePlantPosition}>
-            <PlantIllustration width={105} height={135} />
+          {/* School Illustration on Mobile */}
+          <View style={styles.mobileIllustrationPosition}>
+            <Image
+              source={SchoolIllustration}
+              style={styles.mobileIllustration}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Greeting Typography */}
@@ -205,7 +232,7 @@ export function AuthLayout({
             <AppText
               variant="body"
               weight="medium"
-              tone="rgba(255, 255, 255, 0.88)"
+              tone="rgba(255, 255, 255, 0.92)"
               style={styles.mobileGreetingSub}
             >
               {mobileGreeting.subtitle}
@@ -222,9 +249,9 @@ export function AuthLayout({
               accessibilityRole="button"
               accessibilityLabel="Kembali ke halaman masuk"
             >
-              <Ionicons name="arrow-back" size={18} color="#076356" />
-              <AppText variant="small" weight="bold" tone="#076356">
-                Back to login
+              <Ionicons name="arrow-back" size={18} color="#4F46E5" />
+              <AppText variant="small" weight="bold" tone="#4F46E5">
+                Kembali ke halaman masuk
               </AppText>
             </Pressable>
           ) : null}
@@ -233,9 +260,9 @@ export function AuthLayout({
             <AppText
               variant="display"
               weight="extrabold"
-              tone="#076356"
+              tone="#1E3A8A"
               accessibilityRole="header"
-              style={{ fontSize: 26, letterSpacing: -0.3 }}
+              style={{ fontSize: 24, letterSpacing: -0.3 }}
             >
               {mobileCardTitle}
             </AppText>
@@ -268,8 +295,8 @@ const desktopCardShadow: ViewStyle = Platform.select({
   },
 })!;
 
-// Rich Vibrant Mesh Gradient Style for Desktop Left Card (Image 2)
-const desktopGradientStyle: ViewStyle = Platform.select({
+// Rich Vibrant Mesh Gradient Style (Windows Royal Blue & Indigo)
+const blueGradientStyle: ViewStyle = Platform.select({
   web: {
     background:
       'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
@@ -279,7 +306,7 @@ const desktopGradientStyle: ViewStyle = Platform.select({
     boxShadow: '0 16px 40px -8px rgba(79, 70, 229, 0.32)',
   } as any,
   default: {
-    backgroundColor: '#4338CA',
+    backgroundColor: '#2563EB',
   },
 })!;
 
@@ -309,25 +336,36 @@ const styles = StyleSheet.create({
   desktopHeroCard: {
     width: '46%',
     borderRadius: 22,
-    padding: 36,
+    padding: 32,
     justifyContent: 'space-between',
     minHeight: 540,
+    position: 'relative',
+    overflow: 'hidden',
   },
   desktopHeroTop: {
     flexDirection: 'row',
     alignItems: 'center',
   },
+  desktopIllustrationWrap: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 12,
+  },
+  desktopIllustration: {
+    width: 175,
+    height: 195,
+  },
   desktopHeroBottom: {
-    gap: 8,
+    gap: 6,
   },
   desktopHeroTag: {
     textTransform: 'uppercase',
-    letterSpacing: 1,
+    letterSpacing: 1.2,
     fontSize: 11,
   },
   desktopHeroHeadline: {
     fontSize: 24,
-    lineHeight: 33,
+    lineHeight: 32,
     letterSpacing: -0.4,
   },
   desktopFormColumn: {
@@ -344,18 +382,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // Mobile Styles
+  // Mobile Styles (Blue Gradient)
   mobileCanvas: {
     flex: 1,
-    backgroundColor: '#076356', // Deep emerald / pine teal header
+    backgroundColor: '#1E3A8A', // Windows Blue fallback
   },
   mobileScrollContent: {
     flexGrow: 1,
     justifyContent: 'space-between',
   },
   mobileTopBanner: {
-    minHeight: 200,
-    paddingHorizontal: 28,
+    minHeight: 210,
+    paddingHorizontal: 26,
     paddingTop: 24,
     paddingBottom: 24,
     position: 'relative',
@@ -367,26 +405,30 @@ const styles = StyleSheet.create({
     left: 0,
     zIndex: 1,
   },
-  mobilePlantPosition: {
+  mobileIllustrationPosition: {
     position: 'absolute',
-    bottom: -6,
-    right: 28,
+    bottom: -4,
+    right: 18,
     zIndex: 10,
+  },
+  mobileIllustration: {
+    width: 105,
+    height: 125,
   },
   mobileGreetingBox: {
     zIndex: 5,
     maxWidth: '65%',
-    marginBottom: 8,
+    marginBottom: 10,
   },
   mobileGreetingTitle: {
-    fontSize: 34,
-    lineHeight: 40,
+    fontSize: 32,
+    lineHeight: 38,
     letterSpacing: -0.5,
   },
   mobileGreetingSub: {
-    fontSize: 14,
-    lineHeight: 20,
-    marginTop: 4,
+    fontSize: 16,
+    lineHeight: 22,
+    marginTop: 2,
   },
   mobileWhiteCard: {
     backgroundColor: '#FFFFFF',
