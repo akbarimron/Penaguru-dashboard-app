@@ -283,9 +283,17 @@ export function AnimatedDoodleCharacters({
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* SCENE STAGE (400 x 260 coordinate space)                      */}
+      {/* SCENE STAGE (380 x 250 coordinate space, scaled responsively)  */}
       {/* ------------------------------------------------------------- */}
-      <View style={styles.sceneContainer}>
+      <View
+        style={[
+          styles.sceneContainer,
+          {
+            transform: [{ scale: Math.min(1.05, height / 250) }],
+            ...(Platform.OS === 'web' ? { transformOrigin: 'bottom center' } : {}),
+          } as any,
+        ]}
+      >
         {/* Soft Stage Platform Glow under feet */}
         <View
           style={[

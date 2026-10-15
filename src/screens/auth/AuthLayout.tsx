@@ -185,19 +185,14 @@ export function AuthLayout({
         </KeyboardAvoidingView>
       ) : (
         /* ========================================================================= */
-        /* MOBILE / APP LAYOUT (Soft Modern Gradient + Mascot Troupe at Bottom)      */
+        /* MOBILE / APP LAYOUT (Fixed Single-Screen, Non-Scrollable, Zero Cutoff)    */
         /* ========================================================================= */
         <KeyboardAvoidingView
           behavior={Platform.OS === 'ios' ? 'padding' : undefined}
           style={[styles.mobileCanvas, mobileCanvasBgStyle]}
         >
-          <ScrollView
-            style={{ flex: 1 }}
-            contentContainerStyle={[styles.mobileScrollContent, { paddingTop: insets.top }]}
-            keyboardShouldPersistTaps="handled"
-            bounces={false}
-          >
-            {/* Top Soft Gradient Banner */}
+          <View style={[styles.mobileContainerFixed, { paddingTop: insets.top }]}>
+            {/* Top Soft Gradient Banner (Compact) */}
             <View style={[styles.mobileTopBanner, mobileBannerGradient]}>
               {/* Top Brand Logo & Guide Button Row */}
               <View style={styles.mobileTopBar}>
@@ -207,7 +202,7 @@ export function AuthLayout({
                     style={styles.mobileTopLogo}
                     resizeMode="contain"
                   />
-                  <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.5 }}>
+                  <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ fontSize: 18, letterSpacing: -0.4 }}>
                     Pena<AppText variant="title" weight="extrabold" tone="#93C5FD">Guru</AppText>
                   </AppText>
                 </View>
@@ -222,7 +217,7 @@ export function AuthLayout({
                   accessibilityRole="button"
                   accessibilityLabel="Buka panduan guru"
                 >
-                  <Ionicons name="sparkles" size={13} color="#FFFFFF" />
+                  <Ionicons name="sparkles" size={12} color="#FFFFFF" />
                   <AppText variant="caption" weight="bold" tone="#FFFFFF" style={{ fontSize: 11 }}>
                     Panduan
                   </AppText>
@@ -232,7 +227,7 @@ export function AuthLayout({
               {/* Greeting Typography */}
               <View style={styles.mobileGreetingBox}>
                 <AppText
-                  variant="display"
+                  variant="title"
                   weight="extrabold"
                   tone="#FFFFFF"
                   style={styles.mobileGreetingTitle}
@@ -240,9 +235,9 @@ export function AuthLayout({
                   {mobileGreeting.title}
                 </AppText>
                 <AppText
-                  variant="body"
-                  weight="semibold"
-                  tone="rgba(255, 255, 255, 0.95)"
+                  variant="caption"
+                  weight="medium"
+                  tone="rgba(255, 255, 255, 0.92)"
                   style={styles.mobileGreetingSub}
                 >
                   {mobileGreeting.subtitle}
@@ -250,57 +245,59 @@ export function AuthLayout({
               </View>
             </View>
 
-            {/* White Rounded Bottom Sheet Card with negative margin to completely seal corners */}
-            <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(32, insets.bottom + 20) }]}>
-              {onBack ? (
-                <Pressable
-                  onPress={onBack}
-                  style={styles.backRowMobile}
-                  accessibilityRole="button"
-                  accessibilityLabel="Kembali ke halaman masuk"
-                >
-                  <Ionicons name="arrow-back" size={18} color="#4F46E5" />
-                  <AppText variant="small" weight="bold" tone="#4F46E5">
-                    Kembali ke halaman masuk
-                  </AppText>
-                </Pressable>
-              ) : (
-                /* Pure Mark Icon without background box */
-                <View style={styles.mobileCardLogoMark}>
-                  <Image
-                    source={LogoColorMark}
-                    style={styles.mobileCardLogo}
-                    resizeMode="contain"
-                  />
-                </View>
-              )}
+            {/* White Rounded Bottom Sheet Card - Fills remaining height, non-scrollable, zero cutoff */}
+            <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(6, insets.bottom) }]}>
+              <View style={styles.mobileCardTopSection}>
+                {onBack ? (
+                  <Pressable
+                    onPress={onBack}
+                    style={styles.backRowMobile}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kembali ke halaman masuk"
+                  >
+                    <Ionicons name="arrow-back" size={16} color="#4F46E5" />
+                    <AppText variant="small" weight="bold" tone="#4F46E5">
+                      Kembali ke halaman masuk
+                    </AppText>
+                  </Pressable>
+                ) : (
+                  /* Pure Mark Icon without background box */
+                  <View style={styles.mobileCardLogoMark}>
+                    <Image
+                      source={LogoColorMark}
+                      style={styles.mobileCardLogo}
+                      resizeMode="contain"
+                    />
+                  </View>
+                )}
 
-              <View style={styles.mobileCardHeader}>
-                <AppText
-                  variant="display"
-                  weight="extrabold"
-                  tone="#0F172A"
-                  accessibilityRole="header"
-                  style={{ fontSize: 24, letterSpacing: -0.3 }}
-                >
-                  {mobileCardTitle}
-                </AppText>
-                {subtitle && mode !== 'login' ? (
-                  <AppText variant="small" tone={color.muted} style={{ marginTop: 2 }}>
-                    {subtitle}
+                <View style={styles.mobileCardHeader}>
+                  <AppText
+                    variant="title"
+                    weight="extrabold"
+                    tone="#0F172A"
+                    accessibilityRole="header"
+                    style={{ fontSize: 20, letterSpacing: -0.3 }}
+                  >
+                    {mobileCardTitle}
                   </AppText>
-                ) : null}
+                  {subtitle && mode !== 'login' ? (
+                    <AppText variant="small" tone={color.muted} style={{ marginTop: 2 }}>
+                      {subtitle}
+                    </AppText>
+                  ) : null}
+                </View>
+
+                {top}
+                {children}
               </View>
 
-              {top}
-              {children}
-
-              {/* Animated Cute Teacher & Student Doodle Characters at bottom of Mobile Page */}
+              {/* Animated Cute Teacher & Student Doodle Characters at bottom of Mobile Page - 100% visible, never cut off! */}
               <View style={styles.mobileMascotContainer}>
-                <AnimatedDoodleCharacters width="100%" height={210} />
+                <AnimatedDoodleCharacters width="100%" height={140} />
               </View>
             </View>
-          </ScrollView>
+          </View>
         </KeyboardAvoidingView>
       )}
 
@@ -475,19 +472,24 @@ const styles = StyleSheet.create({
   },
 
   // ==========================================
-  // Mobile Styles (Soft Modern Gradient)
+  // Mobile Styles (Soft Modern Gradient - Fixed Non-Scrollable)
   // ==========================================
   mobileCanvas: {
     flex: 1,
+    height: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    maxHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
+    overflow: 'hidden',
   },
-  mobileScrollContent: {
-    flexGrow: 1,
+  mobileContainerFixed: {
+    flex: 1,
+    height: '100%',
+    justifyContent: 'space-between',
   },
   mobileTopBanner: {
-    minHeight: 200,
-    paddingHorizontal: 24,
-    paddingTop: 16,
-    paddingBottom: 44,
+    height: 125,
+    paddingHorizontal: 22,
+    paddingTop: 12,
+    paddingBottom: 22,
     justifyContent: 'space-between',
   },
   mobileTopBar: {
@@ -502,65 +504,71 @@ const styles = StyleSheet.create({
     gap: 8,
   },
   mobileTopLogo: {
-    width: 30,
-    height: 30,
+    width: 26,
+    height: 26,
   },
   mobileGuidePill: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
+    gap: 4,
     paddingHorizontal: 10,
-    paddingVertical: 5,
+    paddingVertical: 4,
     borderRadius: 20,
     backgroundColor: 'rgba(255, 255, 255, 0.2)',
     borderWidth: 1,
     borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   mobileGreetingBox: {
-    marginTop: 18,
+    marginTop: 4,
   },
   mobileGreetingTitle: {
-    fontSize: 30,
-    lineHeight: 36,
-    letterSpacing: -0.5,
+    fontSize: 22,
+    lineHeight: 26,
+    letterSpacing: -0.4,
   },
   mobileGreetingSub: {
-    fontSize: 16,
-    lineHeight: 22,
-    marginTop: 2,
+    fontSize: 13,
+    lineHeight: 18,
+    marginTop: 1,
   },
   mobileWhiteCard: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 32,
-    borderTopRightRadius: 32,
-    paddingHorizontal: 24,
-    paddingTop: 26,
-    marginTop: -22, // Smooth overlap
-    gap: 14,
-    flexGrow: 1,
+    borderTopLeftRadius: 28,
+    borderTopRightRadius: 28,
+    paddingHorizontal: 22,
+    paddingTop: 16,
+    marginTop: -16, // Smooth overlap
+    flex: 1,
     zIndex: 20,
+    justifyContent: 'space-between',
     shadowColor: '#0F172A',
     shadowOffset: { width: 0, height: -6 },
     shadowOpacity: 0.05,
     shadowRadius: 16,
     elevation: 4,
   },
+  mobileCardTopSection: {
+    width: '100%',
+    gap: 8,
+  },
   mobileCardLogoMark: {
     marginBottom: -4,
   },
   mobileCardLogo: {
-    width: 38,
-    height: 38,
+    width: 32,
+    height: 32,
   },
   mobileCardHeader: {
-    marginBottom: 4,
+    marginBottom: 2,
   },
   mobileMascotContainer: {
     alignItems: 'center',
-    justifyContent: 'center',
-    marginTop: 20,
-    marginBottom: 4,
+    justifyContent: 'flex-end',
     width: '100%',
+    height: 140,
+    overflow: 'hidden',
+    marginTop: 2,
+    marginBottom: 0,
   },
   backRow: {
     flexDirection: 'row',

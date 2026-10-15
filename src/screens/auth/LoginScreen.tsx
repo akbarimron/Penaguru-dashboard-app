@@ -46,7 +46,7 @@ export function LoginScreen({ navigation }: any) {
 
   return (
     <AuthLayout mode="login">
-      <Animated.View style={{ gap: 16, transform: [{ translateX: shakeX }] }}>
+      <Animated.View style={{ gap: 12, transform: [{ translateX: shakeX }] }}>
         {errors.form ? (
           <View style={styles.formError} accessibilityRole="alert">
             <Ionicons name="alert-circle" size={18} color={color.danger} />
@@ -215,6 +215,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 16,
+    marginTop: 10,
   },
 });
