@@ -171,25 +171,50 @@ ${allJournalsList}
 
   return (
     <EnterView>
-      <Card style={styles.identity}>
-        <Avatar name={student.nama_lengkap} size={56} />
-        <View style={{ flex: 1, minWidth: 180, gap: 2 }}>
-          <AppText variant="small" tone={color.mutedOnWhite}>
-            NISN {student.nisn} · {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
-          </AppText>
-          <AppText variant="small" tone={color.inkSoft}>
-            Wali murid: {student.nama_wali || 'belum diisi'}
-          </AppText>
-          <AppText variant="small" tone={color.inkSoft}>
-            WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
-          </AppText>
+      <Card style={styles.identityCard}>
+        <View style={styles.identityTop}>
+          <Avatar name={student.nama_lengkap} size={56} />
+          <View style={styles.identityInfo}>
+            <AppText variant="small" tone={color.mutedOnWhite}>
+              NISN {student.nisn} · {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
+            </AppText>
+            <AppText variant="small" tone={color.inkSoft}>
+              Wali murid: {student.nama_wali || 'belum diisi'}
+            </AppText>
+            <AppText variant="small" tone={color.inkSoft}>
+              WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
+            </AppText>
+          </View>
         </View>
-        <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap' }}>
+        <View style={styles.identityActions}>
           {homeroom ? (
-            <Button label="Ubah data" size="sm" variant="secondary" icon="create-outline" onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })} />
+            <Button
+              label="Ubah data"
+              size="sm"
+              variant="secondary"
+              icon="create-outline"
+              onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })}
+              style={styles.actionBtn}
+            />
           ) : null}
-          <Button label="Pesan Ortu (AI)" size="sm" variant="subtle" icon="sparkles" onPress={handleOpenModal} />
-          {wa ? <Button label="Chat wali" size="sm" variant="ghost" icon="logo-whatsapp" onPress={() => Linking.openURL(wa)} /> : null}
+          <Button
+            label="Pesan Ortu (AI)"
+            size="sm"
+            variant="subtle"
+            icon="sparkles"
+            onPress={handleOpenModal}
+            style={styles.actionBtn}
+          />
+          {wa ? (
+            <Button
+              label="Chat wali"
+              size="sm"
+              variant="ghost"
+              icon="logo-whatsapp"
+              onPress={() => Linking.openURL(wa)}
+              style={styles.actionBtn}
+            />
+          ) : null}
         </View>
       </Card>
 
@@ -566,10 +591,14 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
 }
 
 const styles = StyleSheet.create({
-  identity: { flexDirection: 'row', alignItems: 'center', gap: 14, flexWrap: 'wrap' },
+  identityCard: { gap: 14, width: '100%' },
+  identityTop: { flexDirection: 'row', alignItems: 'center', gap: 14, width: '100%' },
+  identityInfo: { flex: 1, minWidth: 0, gap: 2 },
+  identityActions: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%', alignItems: 'center' },
+  actionBtn: { flexGrow: 1, minWidth: 105 },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
   reason: { flexDirection: 'row', alignItems: 'center', gap: 6, padding: 10, borderRadius: radius.md, backgroundColor: color.accentSoft },
-  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8 },
+  wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, width: '100%' },
   tag: { flexDirection: 'row', alignItems: 'center', gap: 3, paddingHorizontal: 8, paddingVertical: 3, borderRadius: 6, backgroundColor: '#F1F5F9' },
   subjectLine: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   dot: { width: 12, height: 12, borderRadius: 4 },
