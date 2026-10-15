@@ -40,7 +40,7 @@ def main():
 
     os.makedirs('assets', exist_ok=True)
 
-    # 1. assets/icon.png (1024x1024 / 512x512)
+    # 1. assets/icon.png (1024x1024)
     icon_1024 = squircle.resize((1024, 1024), Image.Resampling.LANCZOS)
     icon_1024.save('assets/icon.png', 'PNG')
     print("Created assets/icon.png")
@@ -78,17 +78,14 @@ def main():
             # ic_launcher.webp
             l_img = squircle.resize((launcher_sz, launcher_sz), Image.Resampling.LANCZOS)
             l_img.save(os.path.join(dir_path, 'ic_launcher.webp'), 'WEBP')
-            l_img.save(os.path.join(dir_path, 'ic_launcher.png'), 'PNG')
 
             # ic_launcher_round.webp
             r_img = create_circle_crop(l_img)
             r_img.save(os.path.join(dir_path, 'ic_launcher_round.webp'), 'WEBP')
-            r_img.save(os.path.join(dir_path, 'ic_launcher_round.png'), 'PNG')
 
             # ic_launcher_foreground.webp
             f_img = make_adaptive_foreground(color_mark, fore_sz)
             f_img.save(os.path.join(dir_path, 'ic_launcher_foreground.webp'), 'WEBP')
-            f_img.save(os.path.join(dir_path, 'ic_launcher_foreground.png'), 'PNG')
 
             print(f"Updated Android {folder} ({launcher_sz}px launcher, {fore_sz}px foreground)")
 
