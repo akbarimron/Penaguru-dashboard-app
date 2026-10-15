@@ -100,7 +100,7 @@ export function AuthLayout({
           <EnterView>
             <View style={[styles.desktopCard, desktopCardShadow]}>
               {/* Left Column: Vibrant Mesh Gradient Hero Card with Illustration */}
-              <View style={[styles.desktopHeroCard, blueGradientStyle]}>
+              <View style={[styles.desktopHeroCard, desktopHeroGradientStyle]}>
                 {/* Top: White 6-lobed Starburst Icon */}
                 <View style={styles.desktopHeroTop}>
                   <StarburstIcon size={34} color="#FFFFFF" />
@@ -190,12 +190,12 @@ export function AuthLayout({
   }
 
   // ==========================================
-  // MOBILE / APP LAYOUT (Blue Theme matching Windows)
+  // MOBILE / APP LAYOUT (Seamless Blue Gradient, Zero Gaps)
   // ==========================================
   return (
     <KeyboardAvoidingView
       behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={styles.mobileCanvas}
+      style={[styles.mobileCanvas, mobileBgGradientStyle]}
     >
       <ScrollView
         style={{ flex: 1 }}
@@ -204,13 +204,13 @@ export function AuthLayout({
         bounces={false}
       >
         {/* Top Blue Banner with Organic Shapes & School Illustration */}
-        <View style={[styles.mobileTopBanner, blueGradientStyle]}>
+        <View style={styles.mobileTopBanner}>
           {/* Top-Left Organic Shape */}
           <View style={styles.mobileBlobPosition}>
             <OrganicBlueBlob width={130} height={120} />
           </View>
 
-          {/* School Illustration on Mobile */}
+          {/* School Illustration on Mobile (Overlapping card line) */}
           <View style={styles.mobileIllustrationPosition}>
             <Image
               source={SchoolIllustration}
@@ -240,7 +240,7 @@ export function AuthLayout({
           </View>
         </View>
 
-        {/* White Rounded Bottom Sheet Card */}
+        {/* White Rounded Bottom Sheet Card with negative margin to completely seal corners */}
         <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(36, insets.bottom + 24) }]}>
           {onBack ? (
             <Pressable
@@ -295,8 +295,8 @@ const desktopCardShadow: ViewStyle = Platform.select({
   },
 })!;
 
-// Rich Vibrant Mesh Gradient Style (Windows Royal Blue & Indigo)
-const blueGradientStyle: ViewStyle = Platform.select({
+// Rich Vibrant Mesh Gradient Style for Desktop Left Card
+const desktopHeroGradientStyle: ViewStyle = Platform.select({
   web: {
     background:
       'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
@@ -304,6 +304,20 @@ const blueGradientStyle: ViewStyle = Platform.select({
       'radial-gradient(circle at 35% 85%, rgba(99, 102, 241, 0.85) 0%, transparent 55%), ' +
       'linear-gradient(145deg, #1E3A8A 0%, #2563EB 30%, #4F46E5 65%, #7C3AED 100%)',
     boxShadow: '0 16px 40px -8px rgba(79, 70, 229, 0.32)',
+  } as any,
+  default: {
+    backgroundColor: '#2563EB',
+  },
+})!;
+
+// Seamless Gradient Style for Mobile View (No dark cuts or harsh seams)
+const mobileBgGradientStyle: ViewStyle = Platform.select({
+  web: {
+    background:
+      'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
+      'radial-gradient(circle at 88% 18%, rgba(192, 132, 252, 0.92) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 35% 85%, rgba(99, 102, 241, 0.85) 0%, transparent 55%), ' +
+      'linear-gradient(145deg, #1E3A8A 0%, #2563EB 30%, #4F46E5 65%, #7C3AED 100%)',
   } as any,
   default: {
     backgroundColor: '#2563EB',
@@ -382,20 +396,18 @@ const styles = StyleSheet.create({
     marginBottom: 6,
   },
 
-  // Mobile Styles (Blue Gradient)
+  // Mobile Styles (Unified Seamless Blue Gradient, Zero Gaps)
   mobileCanvas: {
     flex: 1,
-    backgroundColor: '#1E3A8A', // Windows Blue fallback
   },
   mobileScrollContent: {
     flexGrow: 1,
-    justifyContent: 'space-between',
   },
   mobileTopBanner: {
-    minHeight: 210,
+    minHeight: 220,
     paddingHorizontal: 26,
     paddingTop: 24,
-    paddingBottom: 24,
+    paddingBottom: 48,
     position: 'relative',
     justifyContent: 'flex-end',
   },
@@ -407,18 +419,18 @@ const styles = StyleSheet.create({
   },
   mobileIllustrationPosition: {
     position: 'absolute',
-    bottom: -4,
+    bottom: 12,
     right: 18,
-    zIndex: 10,
+    zIndex: 30,
   },
   mobileIllustration: {
-    width: 105,
-    height: 125,
+    width: 110,
+    height: 130,
   },
   mobileGreetingBox: {
     zIndex: 5,
     maxWidth: '65%',
-    marginBottom: 10,
+    marginBottom: 8,
   },
   mobileGreetingTitle: {
     fontSize: 32,
@@ -436,13 +448,10 @@ const styles = StyleSheet.create({
     borderTopRightRadius: 36,
     paddingHorizontal: 26,
     paddingTop: 32,
+    marginTop: -24, // Overlap banner smoothly so rounded corners have 100% gradient behind them
     gap: 16,
     flexGrow: 1,
-    shadowColor: '#000000',
-    shadowOffset: { width: 0, height: -4 },
-    shadowOpacity: 0.05,
-    shadowRadius: 16,
-    elevation: 8,
+    zIndex: 20,
   },
   mobileCardHeader: {
     marginBottom: 4,
