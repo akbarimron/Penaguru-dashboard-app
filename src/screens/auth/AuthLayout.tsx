@@ -138,7 +138,7 @@ export function AuthLayout({
             </ScrollView>
           </View>
 
-          {/* RIGHT COLUMN: Soft Pastel Gradient Showcase with Animated Doodle Characters (50% Width) */}
+          {/* RIGHT COLUMN: Soft Blue Gradient Showcase with Animated Doodle Characters (50% Width) */}
           <View style={[styles.desktopRightCol, desktopRightBgGradient]}>
             {/* Ambient decorative radial glow bubbles */}
             <View style={styles.ambientGlowTopRight} />
@@ -147,12 +147,12 @@ export function AuthLayout({
             {/* Top-Right Info Badge */}
             <View style={styles.desktopRightTopBadge}>
               <View style={styles.badgeHeaderRow}>
-                <Ionicons name="school" size={20} color="#4F46E5" />
-                <AppText variant="body" weight="extrabold" tone="#0F172A">
+                <Ionicons name="school" size={20} color="#93C5FD" />
+                <AppText variant="body" weight="extrabold" tone="#FFFFFF">
                   PenaGuru
                 </AppText>
               </View>
-              <AppText variant="caption" tone="#64748B" style={styles.badgeSubtext}>
+              <AppText variant="caption" tone="rgba(255, 255, 255, 0.88)" style={styles.badgeSubtext}>
                 Kumpulan tips dan alat cerdas untuk mendampingi pencatatan kelas Anda.
               </AppText>
               <Pressable
@@ -164,7 +164,7 @@ export function AuthLayout({
                 accessibilityRole="button"
                 accessibilityLabel="Buka panduan guru"
               >
-                <AppText variant="caption" weight="bold" tone="#4F46E5" style={{ letterSpacing: 0.8 }}>
+                <AppText variant="caption" weight="bold" tone="#FFFFFF" style={{ letterSpacing: 0.8 }}>
                   PANDUAN GURU
                 </AppText>
               </Pressable>
@@ -172,12 +172,12 @@ export function AuthLayout({
 
             {/* Centered Animated Doodle Characters Showcase */}
             <View style={styles.desktopIllustrationCenter}>
-              <AnimatedDoodleCharacters width="100%" height={280} />
+              <AnimatedDoodleCharacters width="100%" height={280} isDarkBg={true} />
             </View>
 
             {/* Bottom Footer Note */}
             <View style={styles.desktopRightBottom}>
-              <AppText variant="caption" tone="#94A3B8">
+              <AppText variant="caption" tone="rgba(255, 255, 255, 0.75)">
                 PenaGuru • Ruang Kerja Cerdas Guru Indonesia
               </AppText>
             </View>
@@ -319,12 +319,13 @@ export function AuthLayout({
 const desktopRightBgGradient: ViewStyle = Platform.select({
   web: {
     background:
-      'radial-gradient(circle at 85% 15%, rgba(224, 231, 255, 0.7) 0%, transparent 45%), ' +
-      'radial-gradient(circle at 20% 85%, rgba(252, 231, 243, 0.6) 0%, transparent 50%), ' +
-      'linear-gradient(135deg, #F0F7FF 0%, #EEF2FF 40%, #F5F3FF 70%, #FDF2F8 100%)',
+      'radial-gradient(circle at 15% 15%, rgba(147, 197, 253, 0.45) 0%, transparent 40%), ' +
+      'radial-gradient(circle at 85% 20%, rgba(216, 180, 254, 0.35) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 50% 85%, rgba(99, 102, 241, 0.4) 0%, transparent 50%), ' +
+      'linear-gradient(145deg, #1E40AF 0%, #2563EB 30%, #4F46E5 65%, #6366F1 100%)',
   } as any,
   default: {
-    backgroundColor: '#EEF2FF',
+    backgroundColor: '#2563EB',
   },
 })!;
 
@@ -421,21 +422,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: -60,
     right: -60,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: '#E0E7FF',
-    opacity: 0.5,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(255, 255, 255, 0.12)',
   },
   ambientGlowBottomLeft: {
     position: 'absolute',
     bottom: -60,
     left: -60,
-    width: 240,
-    height: 240,
-    borderRadius: 120,
-    backgroundColor: '#FCE7F3',
-    opacity: 0.5,
+    width: 260,
+    height: 260,
+    borderRadius: 130,
+    backgroundColor: 'rgba(255, 255, 255, 0.08)',
   },
   desktopRightTopBadge: {
     alignSelf: 'flex-end',
@@ -452,7 +451,7 @@ const styles = StyleSheet.create({
   badgeSubtext: {
     textAlign: 'right',
     lineHeight: 18,
-    color: '#64748B',
+    color: 'rgba(255, 255, 255, 0.88)',
   },
   badgeBtn: {
     marginTop: 6,
@@ -460,8 +459,8 @@ const styles = StyleSheet.create({
     paddingVertical: 8,
     borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#4F46E5',
-    backgroundColor: 'rgba(255, 255, 255, 0.7)',
+    borderColor: 'rgba(255, 255, 255, 0.55)',
+    backgroundColor: 'rgba(255, 255, 255, 0.16)',
   },
   desktopIllustrationCenter: {
     alignItems: 'center',

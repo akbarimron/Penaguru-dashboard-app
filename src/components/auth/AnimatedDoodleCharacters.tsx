@@ -14,6 +14,7 @@ export interface AnimatedDoodleCharactersProps {
   width?: number | string;
   height?: number;
   style?: ViewStyle;
+  isDarkBg?: boolean;
 }
 
 /**
@@ -30,6 +31,7 @@ export function AnimatedDoodleCharacters({
   width = '100%',
   height = 240,
   style,
+  isDarkBg = false,
 }: AnimatedDoodleCharactersProps) {
   // -------------------------------------------------------------
   // ANIMATION DRIVERS (Staggered independent loops for natural life)
@@ -266,7 +268,18 @@ export function AnimatedDoodleCharacters({
       {/* ------------------------------------------------------------- */}
       <View style={styles.sceneContainer}>
         {/* Soft Ambient Glow under characters */}
-        <View style={styles.ambientShadow} />
+        <View
+          style={[
+            styles.ambientShadow,
+            isDarkBg && {
+              backgroundColor: 'rgba(255, 255, 255, 0.22)',
+              shadowColor: '#000000',
+              shadowOffset: { width: 0, height: 4 },
+              shadowOpacity: 0.15,
+              shadowRadius: 10,
+            },
+          ]}
+        />
 
         {/* 1. CHARACTER 2: Large Pink Arch Cyclops (Right Center) */}
         <Animated.View
@@ -431,11 +444,34 @@ export function AnimatedDoodleCharacters({
         >
           <Svg width={115} height={145} viewBox="0 0 115 145">
             {/* Blue Stick Legs */}
-            <Line x1={42} y1={80} x2={42} y2={140} stroke="#2563EB" strokeWidth={9} strokeLinecap="round" />
-            <Line x1={72} y1={80} x2={72} y2={140} stroke="#2563EB" strokeWidth={9} strokeLinecap="round" />
+            <Line
+              x1={42}
+              y1={80}
+              x2={42}
+              y2={140}
+              stroke={isDarkBg ? "#0284C7" : "#2563EB"}
+              strokeWidth={9}
+              strokeLinecap="round"
+            />
+            <Line
+              x1={72}
+              y1={80}
+              x2={72}
+              y2={140}
+              stroke={isDarkBg ? "#0284C7" : "#2563EB"}
+              strokeWidth={9}
+              strokeLinecap="round"
+            />
 
-            {/* Vivid Blue Circle Body */}
-            <Circle cx={57} cy={52} r={44} fill="#3B82F6" />
+            {/* Vivid Blue Circle Body - Brighter with subtle white outline on dark/blue background */}
+            <Circle
+              cx={57}
+              cy={52}
+              r={44}
+              fill={isDarkBg ? "#38BDF8" : "#3B82F6"}
+              stroke={isDarkBg ? "rgba(255, 255, 255, 0.9)" : undefined}
+              strokeWidth={isDarkBg ? 2.5 : 0}
+            />
 
             {/* Highlight Crescent on Top Left */}
             <Path
