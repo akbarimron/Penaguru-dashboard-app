@@ -11,12 +11,14 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrganicBlueBlob, StarburstIcon } from '../../components/auth/AuthVisuals';
+import { OrganicBlueBlob } from '../../components/auth/AuthVisuals';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
 import { color } from '../../theme/tokens';
 
 const SchoolIllustration = require('../../assets/school-illustration.png');
+const LogoWhite = require('../../assets/logo/penaguru-mark-white.png');
+const LogoSquircle = require('../../assets/logo/penaguru-mark-squircle.png');
 
 export interface AuthLayoutProps {
   title?: string;
@@ -99,11 +101,20 @@ export function AuthLayout({
         >
           <EnterView>
             <View style={[styles.desktopCard, desktopCardShadow]}>
-              {/* Left Column: Vibrant Mesh Gradient Hero Card with Illustration */}
+              {/* Left Column: Vibrant Mesh Gradient Hero Card with Logo & Illustration */}
               <View style={[styles.desktopHeroCard, desktopHeroGradientStyle]}>
-                {/* Top: White 6-lobed Starburst Icon */}
+                {/* Top: Official PenaGuru Brand Mark in Crisp White */}
                 <View style={styles.desktopHeroTop}>
-                  <StarburstIcon size={34} color="#FFFFFF" />
+                  <Image
+                    source={LogoWhite}
+                    style={styles.desktopLogoWhite}
+                    resizeMode="contain"
+                  />
+                  <View style={{ marginLeft: 12 }}>
+                    <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.6 }}>
+                      Pena<AppText variant="title" weight="extrabold" tone="#38BDF8">Guru</AppText>
+                    </AppText>
+                  </View>
                 </View>
 
                 {/* Center: Educational Illustration (Apple, Pencil, Open Book) */}
@@ -160,7 +171,12 @@ export function AuthLayout({
                   </Pressable>
                 ) : (
                   <View style={styles.desktopFormMark}>
-                    <StarburstIcon size={26} color="#4F46E5" />
+                    {/* Official PenaGuru App Icon Badge above Form */}
+                    <Image
+                      source={LogoSquircle}
+                      style={styles.desktopFormLogo}
+                      resizeMode="contain"
+                    />
                   </View>
                 )}
 
@@ -203,11 +219,23 @@ export function AuthLayout({
         keyboardShouldPersistTaps="handled"
         bounces={false}
       >
-        {/* Top Blue Banner with Organic Shapes & School Illustration */}
+        {/* Top Blue Banner with Organic Shapes, Logo & School Illustration */}
         <View style={styles.mobileTopBanner}>
           {/* Top-Left Organic Shape */}
           <View style={styles.mobileBlobPosition}>
             <OrganicBlueBlob width={130} height={120} />
+          </View>
+
+          {/* Top Brand Logo Row on Mobile */}
+          <View style={styles.mobileLogoRow}>
+            <Image
+              source={LogoWhite}
+              style={styles.mobileTopLogo}
+              resizeMode="contain"
+            />
+            <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.5 }}>
+              Pena<AppText variant="title" weight="extrabold" tone="#38BDF8">Guru</AppText>
+            </AppText>
           </View>
 
           {/* School Illustration on Mobile (Overlapping card line) */}
@@ -254,7 +282,15 @@ export function AuthLayout({
                 Kembali ke halaman masuk
               </AppText>
             </Pressable>
-          ) : null}
+          ) : (
+            <View style={styles.mobileCardLogoMark}>
+              <Image
+                source={LogoSquircle}
+                style={styles.mobileCardLogo}
+                resizeMode="contain"
+              />
+            </View>
+          )}
 
           <View style={styles.mobileCardHeader}>
             <AppText
@@ -360,6 +396,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
   },
+  desktopLogoWhite: {
+    width: 42,
+    height: 42,
+  },
   desktopIllustrationWrap: {
     alignItems: 'center',
     justifyContent: 'center',
@@ -392,6 +432,11 @@ const styles = StyleSheet.create({
   desktopFormMark: {
     marginBottom: 4,
   },
+  desktopFormLogo: {
+    width: 48,
+    height: 48,
+    borderRadius: 12,
+  },
   desktopHeaderBox: {
     marginBottom: 6,
   },
@@ -404,9 +449,9 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   mobileTopBanner: {
-    minHeight: 220,
+    minHeight: 230,
     paddingHorizontal: 26,
-    paddingTop: 24,
+    paddingTop: 20,
     paddingBottom: 48,
     position: 'relative',
     justifyContent: 'flex-end',
@@ -416,6 +461,19 @@ const styles = StyleSheet.create({
     top: 0,
     left: 0,
     zIndex: 1,
+  },
+  mobileLogoRow: {
+    position: 'absolute',
+    top: 20,
+    left: 26,
+    zIndex: 15,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  mobileTopLogo: {
+    width: 32,
+    height: 32,
   },
   mobileIllustrationPosition: {
     position: 'absolute',
@@ -447,11 +505,19 @@ const styles = StyleSheet.create({
     borderTopLeftRadius: 36,
     borderTopRightRadius: 36,
     paddingHorizontal: 26,
-    paddingTop: 32,
+    paddingTop: 28,
     marginTop: -24, // Overlap banner smoothly so rounded corners have 100% gradient behind them
-    gap: 16,
+    gap: 14,
     flexGrow: 1,
     zIndex: 20,
+  },
+  mobileCardLogoMark: {
+    marginBottom: -4,
+  },
+  mobileCardLogo: {
+    width: 44,
+    height: 44,
+    borderRadius: 12,
   },
   mobileCardHeader: {
     marginBottom: 4,
