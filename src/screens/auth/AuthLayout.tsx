@@ -11,7 +11,7 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrganicBlueBlob } from '../../components/auth/AuthVisuals';
+import { OrganicBlueBlob, TeacherWorkspaceIllustration } from '../../components/auth/AuthVisuals';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
 import { color } from '../../theme/tokens';
@@ -39,7 +39,7 @@ export function AuthLayout({
 }: AuthLayoutProps) {
   const layout = useLayout();
   const insets = useSafeAreaInsets();
-  const isWide = layout.width >= 850;
+  const isWide = layout.width >= 900;
 
   // Mobile Copy & Theming (All in Bahasa Indonesia & Blue Theme)
   const mobileGreeting =
@@ -52,30 +52,11 @@ export function AuthLayout({
   const mobileCardTitle =
     title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Kata Sandi');
 
-  // Desktop Copy & Theming (All in Bahasa Indonesia)
-  const desktopLeftCopy =
-    mode === 'login'
-      ? {
-          tag: 'RUANG KERJA GURU',
-          headline: 'Selamat Datang di PenaGuru',
-          sub: 'Akses ruang kerja cerdas untuk catatan jurnal, perwalian, dan rapor siswa.',
-        }
-      : mode === 'register'
-      ? {
-          tag: 'BERGABUNG BERSAMA KAMI',
-          headline: 'Selamat Datang di PenaGuru',
-          sub: 'Mulai kelola kelas dan perwalian dengan lebih rapi, terstruktur, dan cepat.',
-        }
-      : {
-          tag: 'KEAMANAN AKUN',
-          headline: 'Selamat Datang di PenaGuru',
-          sub: 'Keamanan akun dan data siswa Anda adalah prioritas utama kami.',
-        };
+  // Desktop Titles
+  const desktopTitle =
+    title || (mode === 'login' ? 'Selamat Datang' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Kata Sandi');
 
-  const desktopRightTitle =
-    title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Kata Sandi');
-
-  const desktopRightSubtitle =
+  const desktopSubtitle =
     subtitle ||
     (mode === 'login'
       ? 'Akses semua catatan kelas, jurnal harian, dan rapor siswa dalam satu tempat.'
@@ -83,130 +64,116 @@ export function AuthLayout({
       ? 'Atur sekolah, kelas perwalian, dan mapel yang Anda ajar dengan mudah.'
       : 'Masukkan email Anda untuk menerima instruksi pemulihan kata sandi.');
 
-  // ==========================================
-  // DESKTOP / WEB LAYOUT (Windows Layout)
-  // ==========================================
+  // =========================================================================
+  // DESKTOP FULL-WIDTH SPLIT SCREEN LAYOUT (50% Form White | 50% Illustration)
+  // Matching reference layout in Sleeknote style
+  // =========================================================================
   if (isWide) {
     return (
       <KeyboardAvoidingView
         behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.desktopCanvas}
+        style={styles.desktopFullWidth}
       >
-        <ScrollView
-          contentContainerStyle={[
-            styles.desktopScrollContent,
-            { paddingTop: Math.max(32, insets.top + 24), paddingBottom: Math.max(32, insets.bottom + 24) },
-          ]}
-          keyboardShouldPersistTaps="handled"
-        >
-          <EnterView>
-            <View style={[styles.desktopCard, desktopCardShadow]}>
-              {/* Left Column: Vibrant Mesh Gradient Hero Card with Logo & Illustration */}
-              <View style={[styles.desktopHeroCard, desktopHeroGradientStyle]}>
-                {/* Top: Official PenaGuru Brand Mark in Crisp White */}
-                <View style={styles.desktopHeroTop}>
-                  <Image
-                    source={LogoWhite}
-                    style={styles.desktopLogoWhite}
-                    resizeMode="contain"
-                  />
-                  <View style={{ marginLeft: 12 }}>
-                    <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.6 }}>
-                      Pena<AppText variant="title" weight="extrabold" tone="#38BDF8">Guru</AppText>
-                    </AppText>
-                  </View>
-                </View>
+        {/* LEFT COLUMN: Clean White Form Area (50% Width) */}
+        <View style={styles.desktopLeftCol}>
+          <ScrollView
+            style={{ width: '100%' }}
+            contentContainerStyle={styles.desktopFormScroll}
+            keyboardShouldPersistTaps="handled"
+          >
+            <EnterView style={styles.desktopFormBox}>
+              {/* Back navigation if available */}
+              {onBack ? (
+                <Pressable
+                  onPress={onBack}
+                  style={styles.backRow}
+                  accessibilityRole="button"
+                  accessibilityLabel="Kembali ke halaman masuk"
+                >
+                  <Ionicons name="arrow-back" size={18} color="#4F46E5" />
+                  <AppText variant="small" weight="bold" tone="#4F46E5">
+                    Kembali ke halaman masuk
+                  </AppText>
+                </Pressable>
+              ) : null}
 
-                {/* Center: Educational Illustration (Apple, Pencil, Open Book) */}
-                <View style={styles.desktopIllustrationWrap}>
-                  <Image
-                    source={SchoolIllustration}
-                    style={styles.desktopIllustration}
-                    resizeMode="contain"
-                  />
-                </View>
-
-                {/* Bottom: Caption & Large Headline */}
-                <View style={styles.desktopHeroBottom}>
-                  <AppText
-                    variant="caption"
-                    weight="bold"
-                    tone="rgba(255, 255, 255, 0.85)"
-                    style={styles.desktopHeroTag}
-                  >
-                    {desktopLeftCopy.tag}
-                  </AppText>
-                  <AppText
-                    variant="display"
-                    weight="extrabold"
-                    tone="#FFFFFF"
-                    style={styles.desktopHeroHeadline}
-                  >
-                    {desktopLeftCopy.headline}
-                  </AppText>
-                  <AppText
-                    variant="small"
-                    weight="medium"
-                    tone="rgba(255, 255, 255, 0.88)"
-                    style={{ marginTop: 4, lineHeight: 20 }}
-                  >
-                    {desktopLeftCopy.sub}
-                  </AppText>
-                </View>
+              {/* PenaGuru Brand Logo Lockup */}
+              <View style={styles.desktopLogoRow}>
+                <Image
+                  source={LogoSquircle}
+                  style={styles.desktopLogoIcon}
+                  resizeMode="contain"
+                />
+                <AppText
+                  variant="title"
+                  weight="extrabold"
+                  tone="#0F172A"
+                  style={{ fontSize: 24, letterSpacing: -0.6 }}
+                >
+                  Pena<AppText variant="title" weight="extrabold" tone="#4F46E5">Guru</AppText>
+                </AppText>
               </View>
 
-              {/* Right Column: Clean Form Container */}
-              <View style={styles.desktopFormColumn}>
-                {onBack ? (
-                  <Pressable
-                    onPress={onBack}
-                    style={styles.backRow}
-                    accessibilityRole="button"
-                    accessibilityLabel="Kembali ke halaman masuk"
-                  >
-                    <Ionicons name="arrow-back" size={18} color="#4F46E5" />
-                    <AppText variant="small" weight="bold" tone="#4F46E5">
-                      Kembali ke halaman masuk
-                    </AppText>
-                  </Pressable>
-                ) : (
-                  <View style={styles.desktopFormMark}>
-                    {/* Official PenaGuru App Icon Badge above Form */}
-                    <Image
-                      source={LogoSquircle}
-                      style={styles.desktopFormLogo}
-                      resizeMode="contain"
-                    />
-                  </View>
-                )}
-
-                <View style={styles.desktopHeaderBox}>
-                  <AppText
-                    variant="display"
-                    weight="extrabold"
-                    tone={color.ink}
-                    accessibilityRole="header"
-                    style={{ fontSize: 26, lineHeight: 32 }}
-                  >
-                    {desktopRightTitle}
-                  </AppText>
-                  <AppText variant="small" tone="#64748B" style={{ marginTop: 4, lineHeight: 20 }}>
-                    {desktopRightSubtitle}
-                  </AppText>
-                </View>
-
-                {top}
-                {children}
+              {/* Big Headline */}
+              <View style={styles.desktopHeaderBox}>
+                <AppText
+                  variant="display"
+                  weight="extrabold"
+                  tone="#0F172A"
+                  accessibilityRole="header"
+                  style={styles.desktopMainHeading}
+                >
+                  {desktopTitle}
+                </AppText>
+                <AppText variant="small" tone="#64748B" style={styles.desktopSubHeading}>
+                  {desktopSubtitle}
+                </AppText>
               </View>
+
+              {top}
+              {children}
+            </EnterView>
+          </ScrollView>
+        </View>
+
+        {/* RIGHT COLUMN: Soft Pastel Workspace Showcase (50% Width) */}
+        <View style={styles.desktopRightCol}>
+          {/* Top-Right Info Badge */}
+          <View style={styles.desktopRightTopBadge}>
+            <View style={styles.badgeHeaderRow}>
+              <Ionicons name="school-outline" size={20} color="#0F172A" />
+              <AppText variant="body" weight="extrabold" tone="#0F172A">
+                PenaGuru Edukasi
+              </AppText>
             </View>
-          </EnterView>
-        </ScrollView>
+            <AppText variant="caption" tone="#64748B" style={styles.badgeSubtext}>
+              Kumpulan tips dan alat cerdas untuk mendampingi pencatatan kelas Anda.
+            </AppText>
+            <View style={styles.badgeBtn}>
+              <AppText variant="caption" weight="bold" tone="#0F172A" style={{ letterSpacing: 0.8 }}>
+                PANDUAN GURU
+              </AppText>
+            </View>
+          </View>
+
+          {/* Centered Modern Vector Illustration of Educator at Desk */}
+          <View style={styles.desktopIllustrationCenter}>
+            <TeacherWorkspaceIllustration width={480} height={370} />
+          </View>
+
+          {/* Bottom Footer Note */}
+          <View style={styles.desktopRightBottom}>
+            <AppText variant="caption" tone="#94A3B8">
+              PenaGuru • Ruang Kerja Cerdas Guru Indonesia
+            </AppText>
+          </View>
+        </View>
       </KeyboardAvoidingView>
     );
   }
 
   // ==========================================
-  // MOBILE / APP LAYOUT (Seamless Blue Gradient, Zero Gaps)
+  // MOBILE / APP LAYOUT (Seamless Blue Gradient)
   // ==========================================
   return (
     <KeyboardAvoidingView
@@ -317,35 +284,6 @@ export function AuthLayout({
   );
 }
 
-// Visual Drop Shadow for Desktop Floating Card
-const desktopCardShadow: ViewStyle = Platform.select({
-  web: {
-    boxShadow: '0 24px 64px -12px rgba(99, 102, 241, 0.16), 0 8px 24px -4px rgba(15, 23, 42, 0.06)',
-  } as any,
-  default: {
-    shadowColor: '#6366F1',
-    shadowOffset: { width: 0, height: 16 },
-    shadowOpacity: 0.12,
-    shadowRadius: 32,
-    elevation: 12,
-  },
-})!;
-
-// Rich Vibrant Mesh Gradient Style for Desktop Left Card
-const desktopHeroGradientStyle: ViewStyle = Platform.select({
-  web: {
-    background:
-      'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
-      'radial-gradient(circle at 88% 18%, rgba(192, 132, 252, 0.92) 0%, transparent 45%), ' +
-      'radial-gradient(circle at 35% 85%, rgba(99, 102, 241, 0.85) 0%, transparent 55%), ' +
-      'linear-gradient(145deg, #1E3A8A 0%, #2563EB 30%, #4F46E5 65%, #7C3AED 100%)',
-    boxShadow: '0 16px 40px -8px rgba(79, 70, 229, 0.32)',
-  } as any,
-  default: {
-    backgroundColor: '#2563EB',
-  },
-})!;
-
 // Seamless Gradient Style for Mobile View (No dark cuts or harsh seams)
 const mobileBgGradientStyle: ViewStyle = Platform.select({
   web: {
@@ -361,87 +299,110 @@ const mobileBgGradientStyle: ViewStyle = Platform.select({
 })!;
 
 const styles = StyleSheet.create({
-  // Desktop Web Styles
-  desktopCanvas: {
+  // ==========================================
+  // Desktop Full-Width 50/50 Split Screen
+  // ==========================================
+  desktopFullWidth: {
     flex: 1,
-    backgroundColor: '#EEF0F8', // Subtle modern lilac-gray canvas
-  },
-  desktopScrollContent: {
-    flexGrow: 1,
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingHorizontal: 20,
-  },
-  desktopCard: {
+    flexDirection: 'row',
     width: '100%',
-    maxWidth: 960,
-    minHeight: 580,
-    borderRadius: 28,
+    minHeight: Platform.OS === 'web' ? ('100vh' as any) : '100%',
     backgroundColor: '#FFFFFF',
-    flexDirection: 'row',
-    padding: 16,
-    borderWidth: 1,
-    borderColor: '#E8EBF3',
   },
-  desktopHeroCard: {
-    width: '46%',
-    borderRadius: 22,
-    padding: 32,
-    justifyContent: 'space-between',
-    minHeight: 540,
-    position: 'relative',
-    overflow: 'hidden',
-  },
-  desktopHeroTop: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  desktopLogoWhite: {
-    width: 42,
-    height: 42,
-  },
-  desktopIllustrationWrap: {
+  desktopLeftCol: {
+    flex: 1,
+    width: '50%',
+    backgroundColor: '#FFFFFF',
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 12,
   },
-  desktopIllustration: {
-    width: 175,
-    height: 195,
-  },
-  desktopHeroBottom: {
-    gap: 6,
-  },
-  desktopHeroTag: {
-    textTransform: 'uppercase',
-    letterSpacing: 1.2,
-    fontSize: 11,
-  },
-  desktopHeroHeadline: {
-    fontSize: 24,
-    lineHeight: 32,
-    letterSpacing: -0.4,
-  },
-  desktopFormColumn: {
-    width: '54%',
-    paddingHorizontal: 38,
-    paddingVertical: 24,
+  desktopFormScroll: {
+    flexGrow: 1,
     justifyContent: 'center',
+    alignItems: 'center',
+    paddingHorizontal: 36,
+    paddingVertical: 48,
+  },
+  desktopFormBox: {
+    width: '100%',
+    maxWidth: 420,
     gap: 16,
   },
-  desktopFormMark: {
-    marginBottom: 4,
+  desktopLogoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    marginBottom: 8,
   },
-  desktopFormLogo: {
-    width: 48,
-    height: 48,
-    borderRadius: 12,
+  desktopLogoIcon: {
+    width: 42,
+    height: 42,
+    borderRadius: 11,
   },
   desktopHeaderBox: {
-    marginBottom: 6,
+    marginBottom: 8,
+    gap: 6,
+  },
+  desktopMainHeading: {
+    fontSize: 34,
+    lineHeight: 42,
+    letterSpacing: -0.7,
+  },
+  desktopSubHeading: {
+    fontSize: 14,
+    lineHeight: 22,
+    color: '#64748B',
   },
 
-  // Mobile Styles (Unified Seamless Blue Gradient, Zero Gaps)
+  // Desktop Right Column (Pastel Workspace Showcase)
+  desktopRightCol: {
+    flex: 1,
+    width: '50%',
+    backgroundColor: '#F0F4FA', // Soft pastel blue/lavender tint matching reference
+    paddingHorizontal: 48,
+    paddingVertical: 40,
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    borderLeftWidth: 1,
+    borderLeftColor: '#E2E8F0',
+  },
+  desktopRightTopBadge: {
+    alignSelf: 'flex-end',
+    maxWidth: 320,
+    alignItems: 'flex-end',
+    gap: 6,
+  },
+  badgeHeaderRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  badgeSubtext: {
+    textAlign: 'right',
+    lineHeight: 18,
+    color: '#64748B',
+  },
+  badgeBtn: {
+    marginTop: 6,
+    paddingHorizontal: 16,
+    paddingVertical: 7,
+    borderRadius: 6,
+    borderWidth: 1.5,
+    borderColor: '#0F172A',
+    backgroundColor: 'transparent',
+  },
+  desktopIllustrationCenter: {
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginVertical: 20,
+  },
+  desktopRightBottom: {
+    alignSelf: 'center',
+  },
+
+  // ==========================================
+  // Mobile Styles (Unified Seamless Blue Gradient)
+  // ==========================================
   mobileCanvas: {
     flex: 1,
   },

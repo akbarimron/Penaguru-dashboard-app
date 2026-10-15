@@ -14,12 +14,13 @@ export function LoginScreen({ navigation }: any) {
 
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
+  const [rememberMe, setRememberMe] = useState(true);
   const [errors, setErrors] = useState<{ email?: string; password?: string; form?: string }>({});
   const [loading, setLoading] = useState<string | null>(null);
   const shakeX = useRef(new Animated.Value(0)).current;
   const passwordRef = useRef<TextInput>(null);
 
-  const brandActionColor = '#4F46E5'; // Windows Vibrant Blue/Indigo across both Mobile and Web
+  const brandActionColor = '#4F46E5'; // Vibrant Brand Indigo
 
   const submit = async (overrideEmail?: string, overridePassword?: string) => {
     const e = (overrideEmail ?? email).trim();
@@ -45,7 +46,7 @@ export function LoginScreen({ navigation }: any) {
 
   return (
     <AuthLayout mode="login">
-      <Animated.View style={{ gap: 14, transform: [{ translateX: shakeX }] }}>
+      <Animated.View style={{ gap: 16, transform: [{ translateX: shakeX }] }}>
         {errors.form ? (
           <View style={styles.formError} accessibilityRole="alert">
             <Ionicons name="alert-circle" size={18} color={color.danger} />
@@ -55,7 +56,7 @@ export function LoginScreen({ navigation }: any) {
           </View>
         ) : null}
 
-        {/* Email Pill Input */}
+        {/* Email Input */}
         <TextField
           label="Email Guru"
           round
@@ -75,7 +76,7 @@ export function LoginScreen({ navigation }: any) {
           onSubmitEditing={() => passwordRef.current?.focus()}
         />
 
-        {/* Password Pill Input */}
+        {/* Password Input */}
         <TextField
           ref={passwordRef}
           label="Kata Sandi"
@@ -95,21 +96,39 @@ export function LoginScreen({ navigation }: any) {
           onSubmitEditing={() => submit()}
         />
 
-        {/* Forgot Password Link */}
-        <Pressable
-          onPress={() => navigation.navigate('ForgotPassword')}
-          style={styles.forgotBtn}
-          accessibilityRole="button"
-          accessibilityLabel="Lupa kata sandi"
-        >
-          <AppText
-            variant="small"
-            weight="medium"
-            tone="#4F46E5"
+        {/* Options Row: Remember Me & Forgot Password */}
+        <View style={styles.optionsRow}>
+          <Pressable
+            onPress={() => setRememberMe(!rememberMe)}
+            style={styles.rememberBox}
+            accessibilityRole="checkbox"
+            accessibilityState={{ checked: rememberMe }}
           >
-            Lupa kata sandi?
-          </AppText>
-        </Pressable>
+            <Ionicons
+              name={rememberMe ? 'checkbox' : 'square-outline'}
+              size={18}
+              color={rememberMe ? '#4F46E5' : '#94A3B8'}
+            />
+            <AppText variant="small" tone="#475569">
+              Ingat saya
+            </AppText>
+          </Pressable>
+
+          <Pressable
+            onPress={() => navigation.navigate('ForgotPassword')}
+            style={styles.forgotBtn}
+            accessibilityRole="button"
+            accessibilityLabel="Lupa kata sandi"
+          >
+            <AppText
+              variant="small"
+              weight="semibold"
+              tone="#4F46E5"
+            >
+              Lupa kata sandi?
+            </AppText>
+          </Pressable>
+        </View>
 
         {/* Action Button */}
         <Button
@@ -160,15 +179,25 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FECACA',
   },
-  forgotBtn: {
-    alignSelf: 'flex-end',
+  optionsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginTop: -2,
+  },
+  rememberBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
     paddingVertical: 2,
-    marginTop: -4,
+  },
+  forgotBtn: {
+    paddingVertical: 2,
   },
   submitButton: {
     minHeight: 50,
     borderWidth: 0,
-    marginTop: 4,
+    marginTop: 2,
   },
   glowShadow: Platform.select({
     web: {
