@@ -23,15 +23,26 @@ export function AssistantScreen() {
   const [focused, setFocused] = useState(false);
   const listRef = useRef<FlatList<ChatMessage>>(null);
 
-  useEffect(() => {
-    const t = setTimeout(() => listRef.current?.scrollToEnd({ animated: true }), 60);
-    return () => clearTimeout(t);
-  }, [chat.length, busy]);
+  const scrollToUserMessage = (index: number) => {
+    setTimeout(() => {
+      try {
+        listRef.current?.scrollToIndex({
+          index: Math.max(0, index),
+          viewPosition: 0,
+          animated: true,
+        });
+      } catch {
+        // onScrollToIndexFailed will handle fallback
+      }
+    }, 60);
+  };
 
   const send = async (q?: string) => {
     const question = (q ?? text).trim();
     if (!question || busy) return;
     setText('');
+    const userMsgIndex = chat.length;
+    scrollToUserMessage(userMsgIndex);
     try {
       await ask(question);
     } catch (e: any) {
@@ -77,7 +88,22 @@ export function AssistantScreen() {
         ref={listRef}
         data={chat}
         keyExtractor={(m) => m.id}
-        onContentSizeChange={() => listRef.current?.scrollToEnd({ animated: true })}
+        onScrollToIndexFailed={(info) => {
+          setTimeout(() => {
+            try {
+              listRef.current?.scrollToIndex({
+                index: Math.max(0, info.index),
+                viewPosition: 0,
+                animated: false,
+              });
+            } catch {
+              listRef.current?.scrollToOffset({
+                offset: Math.max(0, info.highestMeasuredFrameIndex * 80),
+                animated: true,
+              });
+            }
+          }, 80);
+        }}
         contentContainerStyle={[inner, { paddingVertical: space.md, gap: 12 }]}
         renderItem={({ item, index }) => <Bubble message={item} index={index} />}
         ListFooterComponent={
