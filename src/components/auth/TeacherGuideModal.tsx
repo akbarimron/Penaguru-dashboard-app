@@ -77,12 +77,6 @@ export function TeacherGuideModal({ visible, onClose }: TeacherGuideModalProps) 
           {/* Header */}
           <View style={styles.headerRow}>
             <View style={styles.headerTitleWrap}>
-              <View style={styles.badgePill}>
-                <Ionicons name="school" size={15} color="#4F46E5" />
-                <AppText variant="caption" weight="bold" tone="#4F46E5">
-                  PANDUAN APLIKASI
-                </AppText>
-              </View>
               <AppText variant="title" weight="extrabold" tone="#0F172A" style={styles.modalTitle}>
                 Fitur Utama PenaGuru
               </AppText>
@@ -112,8 +106,8 @@ export function TeacherGuideModal({ visible, onClose }: TeacherGuideModalProps) 
           >
             {GUIDE_ITEMS.map((item, idx) => (
               <View key={idx} style={styles.guideCard}>
-                <View style={[styles.guideIconWrap, { backgroundColor: item.bgColor }]}>
-                  <Ionicons name={item.icon} size={22} color={item.color} />
+                <View style={styles.guideIconWrap}>
+                  <Ionicons name={item.icon} size={24} color={item.color} />
                 </View>
                 <View style={styles.guideTextWrap}>
                   <AppText variant="body" weight="bold" tone="#1E293B">
@@ -185,17 +179,6 @@ const styles = StyleSheet.create({
     flex: 1,
     paddingRight: 12,
   },
-  badgePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: '#EEF2FF',
-    alignSelf: 'flex-start',
-    marginBottom: 8,
-  },
   modalTitle: {
     fontSize: 22,
     lineHeight: 28,
@@ -231,11 +214,10 @@ const styles = StyleSheet.create({
     gap: 14,
   },
   guideIconWrap: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 28,
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-start',
+    paddingTop: 2,
   },
   guideTextWrap: {
     flex: 1,
