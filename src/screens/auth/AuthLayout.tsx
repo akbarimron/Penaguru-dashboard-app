@@ -178,7 +178,7 @@ export function AuthLayout({
             {/* Bottom Footer Note */}
             <View style={styles.desktopRightBottom}>
               <AppText variant="caption" tone="rgba(255, 255, 255, 0.75)">
-                PenaGuru • Ruang Kerja Cerdas Guru Indonesia
+                PenaGuru | Ruang Kerja Cerdas Guru Indonesia
               </AppText>
             </View>
           </View>
