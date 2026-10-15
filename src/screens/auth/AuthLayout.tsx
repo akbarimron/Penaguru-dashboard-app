@@ -18,7 +18,7 @@ import { useLayout } from '../../lib/layout';
 import { color } from '../../theme/tokens';
 
 // Logos: pure icon marks without background squircle boxes
-const LogoColorMark = require('../../assets/logo/penaguru-mark-color.png');
+const LogoDarkMark = require('../../assets/logo/penaguru-mark-dark.png');
 const LogoWhiteMark = require('../../assets/logo/penaguru-mark-white.png');
 
 export interface AuthLayoutProps {
@@ -99,10 +99,10 @@ export function AuthLayout({
                   </Pressable>
                 ) : null}
 
-                {/* PenaGuru Brand Logo: Pure Mark Icon without background box */}
+                {/* PenaGuru Brand Logo: Illustrative Dark Mark Icon without background box and zero color */}
                 <View style={styles.desktopLogoRow}>
                   <Image
-                    source={LogoColorMark}
+                    source={LogoDarkMark}
                     style={styles.desktopLogoIcon}
                     resizeMode="contain"
                   />
@@ -112,7 +112,7 @@ export function AuthLayout({
                     tone="#0F172A"
                     style={{ fontSize: 24, letterSpacing: -0.6 }}
                   >
-                    Pena<AppText variant="title" weight="extrabold" tone="#4F46E5">Guru</AppText>
+                    PenaGuru
                   </AppText>
                 </View>
 
