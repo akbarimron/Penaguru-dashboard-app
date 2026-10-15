@@ -153,7 +153,7 @@ export function AuthLayout({
                 </AppText>
               </View>
               <AppText variant="caption" tone="rgba(255, 255, 255, 0.88)" style={styles.badgeSubtext}>
-                Kumpulan tips dan alat cerdas untuk mendampingi pencatatan kelas Anda.
+                Aplikasi ruang kerja cerdas untuk mengelola presensi, penilaian, dan administrasi kelas Anda.
               </AppText>
               <Pressable
                 onPress={() => setShowGuideModal(true)}
