@@ -3,7 +3,7 @@ import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText, Chip, EnterView, IconButton, MarkdownView } from '../components/ui';
+import { AppText, Chip, EnterView, IconButton, MarkdownView, MiniNibbyAvatar } from '../components/ui';
 import { focusStyle } from '../components/ui/PressableScale';
 import { QUICK_TOPICS } from '../lib/assistant';
 import { useLayout } from '../lib/layout';
@@ -82,11 +82,16 @@ export function AssistantScreen() {
         renderItem={({ item, index }) => <Bubble message={item} index={index} />}
         ListFooterComponent={
           busy ? (
-            <View style={styles.typing} accessibilityLiveRegion="polite">
-              <ActivityIndicator size="small" color={color.brand} />
-              <AppText variant="small" tone={color.muted}>
-                Asisten Guru sedang menyusun saran terbaik...
-              </AppText>
+            <View style={styles.botMessageRow} accessibilityLiveRegion="polite">
+              <View style={styles.botAvatarContainer}>
+                <MiniNibbyAvatar size={34} isThinking={true} />
+              </View>
+              <View style={[styles.bubble, styles.botBubble, styles.typingBubble]}>
+                <ActivityIndicator size="small" color={color.brand} />
+                <AppText variant="small" tone={color.muted}>
+                  Asisten Guru sedang menyusun saran terbaik...
+                </AppText>
+              </View>
             </View>
           ) : null
         }
@@ -120,75 +125,87 @@ export function AssistantScreen() {
 function Bubble({ message, index }: { message: ChatMessage; index: number }) {
   const user = message.sender === 'user';
   return (
-    <EnterView index={Math.min(index, 1)} style={{ alignItems: user ? 'flex-end' : 'flex-start' }}>
-      <View style={[styles.bubble, user ? styles.userBubble : styles.botBubble]}>
-        {!user && message.source === 'gemini' ? (
-          <View style={styles.geminiBadgeHeader}>
-            <Ionicons name="sparkles" size={13} color={color.brand} />
-            <AppText variant="caption" weight="bold" tone={color.brandDeep} style={styles.geminiBadgeText}>
-              Asisten Guru AI
-            </AppText>
+    <EnterView index={Math.min(index, 1)} style={{ width: '100%', alignItems: user ? 'flex-end' : 'flex-start' }}>
+      {user ? (
+        <View style={[styles.bubble, styles.userBubble]}>
+          <MarkdownView content={message.text} isUser={true} />
+        </View>
+      ) : (
+        <View style={styles.botMessageRow}>
+          <View style={styles.botAvatarContainer}>
+            <MiniNibbyAvatar size={34} />
           </View>
-        ) : null}
+          <View style={[styles.bubble, styles.botBubble]}>
+            <MarkdownView content={message.text} isUser={false} />
 
-        <MarkdownView content={message.text} isUser={user} />
-
-        {!user ? (
-          <View style={styles.bubbleFoot}>
-            <View style={styles.source}>
-              <Ionicons
-                name={message.source === 'gemini' ? 'cloud-done' : 'library-outline'}
-                size={12}
-                color={message.source === 'gemini' ? color.brand : color.muted}
-              />
-              <AppText variant="caption" tone={message.source === 'gemini' ? color.brandDeep : color.muted}>
-                {message.source === 'gemini' ? 'Jawaban Asisten Guru' : 'Saran lokal'}
-              </AppText>
+            <View style={styles.bubbleFoot}>
+              <View style={styles.source}>
+                <Ionicons
+                  name={message.source === 'gemini' ? 'sparkles' : 'library-outline'}
+                  size={12}
+                  color={message.source === 'gemini' ? color.brand : color.muted}
+                />
+                <AppText variant="caption" tone={message.source === 'gemini' ? color.brandDeep : color.muted}>
+                  {message.source === 'gemini' ? 'Jawaban Asisten Guru' : 'Saran lokal'}
+                </AppText>
+              </View>
+              {message.id !== 'welcome' ? (
+                <IconButton
+                  icon="copy-outline"
+                  label="Salin saran"
+                  variant="ghost"
+                  size={34}
+                  iconColor={color.brand}
+                  onPress={async () => {
+                    await Clipboard.setStringAsync(message.text);
+                    toast('Saran disalin ke clipboard! Siap ditempel ke modul ajar.');
+                  }}
+                />
+              ) : null}
             </View>
-            {message.id !== 'welcome' ? (
-              <IconButton
-                icon="copy-outline"
-                label="Salin saran"
-                variant="ghost"
-                size={34}
-                iconColor={color.brand}
-                onPress={async () => {
-                  await Clipboard.setStringAsync(message.text);
-                  toast('Saran disalin ke clipboard! Siap ditempel ke modul ajar.');
-                }}
-              />
-            ) : null}
           </View>
-        ) : null}
-      </View>
+        </View>
+      )}
     </EnterView>
   );
 }
 
 const styles = StyleSheet.create({
-  bubble: { maxWidth: '92%', padding: 14, borderRadius: radius.lg, gap: 8 },
-  userBubble: { backgroundColor: color.brand, borderBottomRightRadius: 6 },
-  botBubble: { backgroundColor: color.surface, borderBottomLeftRadius: 6, borderWidth: 1, borderColor: color.line },
-  geminiBadgeHeader: {
+  bubble: { padding: 14, borderRadius: radius.lg, gap: 8 },
+  userBubble: {
+    backgroundColor: color.brand,
+    borderBottomRightRadius: 6,
+    maxWidth: '85%',
+    alignSelf: 'flex-end',
+  },
+  botMessageRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 10,
+    maxWidth: '92%',
+    alignSelf: 'flex-start',
+  },
+  botAvatarContainer: {
+    marginTop: 2,
+    flexShrink: 0,
+  },
+  botBubble: {
+    flex: 1,
+    backgroundColor: color.surface,
+    borderTopLeftRadius: 6,
+    borderBottomLeftRadius: radius.lg,
+    borderWidth: 1,
+    borderColor: color.line,
+  },
+  typingBubble: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 5,
-    paddingHorizontal: 8,
-    paddingVertical: 3,
-    borderRadius: radius.sm,
-    backgroundColor: color.brandSoft,
-    alignSelf: 'flex-start',
-    marginBottom: 4,
-  },
-  geminiBadgeText: {
-    fontFamily: font.bold,
-    fontSize: 11,
-    color: color.brandDeep,
-    fontWeight: '700',
+    gap: 8,
+    paddingVertical: 12,
+    paddingHorizontal: 14,
   },
   bubbleFoot: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8, marginTop: 4 },
   source: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 7, paddingVertical: 3, borderRadius: 6, backgroundColor: '#F1F5F9' },
-  typing: { flexDirection: 'row', alignItems: 'center', gap: 8, paddingVertical: 4 },
   inputWrap: { borderTopWidth: 1, borderTopColor: color.line, backgroundColor: color.surface, paddingVertical: 10 },
   inputRow: { flexDirection: 'row', alignItems: 'flex-end', gap: 10 },
   input: {

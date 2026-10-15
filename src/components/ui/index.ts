@@ -11,3 +11,4 @@ export type { SegmentOption } from './Segmented';
 export { StatusPill } from './StatusPill';
 export { TextField } from './TextField';
 export { ToastHost } from './ToastHost';
+export { MiniNibbyAvatar } from './MiniNibbyAvatar';
