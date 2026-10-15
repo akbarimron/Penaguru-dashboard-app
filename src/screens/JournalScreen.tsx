@@ -2,11 +2,12 @@ import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useMemo, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 import { RatingInput } from '../components/RatingInput';
-import { AppText, Button, Card, Chip, EmptyState, EnterView, Screen, SectionHeader, TextField } from '../components/ui';
+import { AppText, Button, Card, Chip, EmptyState, EnterView, IconButton, Screen, SectionHeader, TextField } from '../components/ui';
 import { PRESET_TAGS } from '../lib/analytics';
 import { formatLongDate, toISODate } from '../lib/dates';
 import { useLayout } from '../lib/layout';
 import { focusSession } from '../lib/schedule';
+import { playPopSound } from '../lib/sound';
 import { assignmentLabel, myAssignments } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
 import { toast } from '../store/useUiStore';
@@ -115,9 +116,20 @@ export function JournalScreen({ navigation, route }: any) {
   const contextPicker = (
     <EnterView>
       <Card style={{ gap: 10 }}>
-        <AppText variant="small" weight="semibold" tone={color.inkSoft}>
-          Mapel dan kelas
-        </AppText>
+        <View style={styles.rowBetween}>
+          <AppText variant="small" weight="semibold" tone={color.inkSoft}>
+            Mapel dan kelas
+          </AppText>
+          {assignment ? (
+            <Button
+              label="Buka dashboard kelas"
+              size="sm"
+              variant="ghost"
+              icon="easel-outline"
+              onPress={() => navigation.navigate('SubjectClass', { assignmentId: assignment.id })}
+            />
+          ) : null}
+        </View>
         <View style={styles.wrap}>
           {mine.map((a) => {
             const { subject, title } = assignmentLabel(ws, a);
@@ -128,6 +140,7 @@ export function JournalScreen({ navigation, route }: any) {
                 palette={subject ? subjectPalette[subject.warna] : undefined}
                 selected={a.id === assignmentId}
                 onPress={() => {
+                  playPopSound(1.15);
                   setAssignmentId(a.id);
                   setSelected([]);
                 }}
@@ -246,14 +259,29 @@ export function JournalScreen({ navigation, route }: any) {
       }
     >
       <View style={styles.titleRow}>
-        <View style={{ flex: 1 }}>
+        <IconButton
+          icon="arrow-back"
+          label="Kembali"
+          onPress={() => (navigation.canGoBack() ? navigation.goBack() : navigation.navigate('Home'))}
+          variant="surface"
+        />
+        <View style={{ flex: 1, minWidth: 0 }}>
           <AppText variant="display" accessibilityRole="header">
             Catat jurnal
           </AppText>
-          <AppText variant="small" tone={color.muted}>
+          <AppText variant="small" tone={color.muted} numberOfLines={1}>
             Pengamatan singkat selama atau setelah kelas.
           </AppText>
         </View>
+        {assignment ? (
+          <Button
+            label={layout.isCompact ? 'Dashboard' : 'Dashboard kelas'}
+            size="sm"
+            variant="secondary"
+            icon="easel-outline"
+            onPress={() => navigation.navigate('SubjectClass', { assignmentId: assignment.id })}
+          />
+        ) : null}
         {offline ? (
           <View style={styles.offline}>
             <Ionicons name="cloud-offline-outline" size={14} color={color.accentInk} />
