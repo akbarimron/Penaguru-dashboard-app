@@ -46,7 +46,7 @@ export function AuthLayout({
   // Mobile Copy & Theming (All in Bahasa Indonesia & Soft Modern Blue)
   const mobileGreeting =
     mode === 'login'
-      ? { title: 'Selamat Datang', subtitle: 'di PenaGuru' }
+      ? { title: 'Selamat Datang', subtitle: 'Akses catatan kelas, presensi, dan rapor siswa.' }
       : mode === 'register'
       ? { title: 'Halo, Guru!', subtitle: 'Mulai langkah mengajar Anda' }
       : { title: 'Lupa Sandi?', subtitle: 'Pulihkan akses akun Anda' };
@@ -139,7 +139,7 @@ export function AuthLayout({
           </View>
 
           {/* RIGHT COLUMN: Soft Blue Gradient Showcase with Animated Doodle Characters (50% Width) */}
-          <View style={[styles.desktopRightCol, desktopRightBgGradient]}>
+          <View style={[styles.desktopRightCol, sharedBrandBlueGradient]}>
             {/* Ambient decorative radial glow bubbles */}
             <View style={styles.ambientGlowTopRight} />
             <View style={styles.ambientGlowBottomLeft} />
@@ -193,7 +193,7 @@ export function AuthLayout({
         >
           <View style={[styles.mobileContainerFixed, { paddingTop: insets.top }]}>
             {/* Top Soft Gradient Banner (Compact) */}
-            <View style={[styles.mobileTopBanner, mobileBannerGradient]}>
+            <View style={[styles.mobileTopBanner, sharedBrandBlueGradient]}>
               {/* Top Brand Logo & Guide Button Row */}
               <View style={styles.mobileTopBar}>
                 <View style={styles.mobileLogoRow}>
@@ -312,8 +312,8 @@ export function AuthLayout({
 
 // -------------------------------------------------------------
 // GRADIENTS & STYLES (Soft, Luminous, Modern)
-// -------------------------------------------------------------
-const desktopRightBgGradient: ViewStyle = Platform.select({
+// Shared Brand Blue Gradient (Identical between Desktop Right Showcase & Mobile Banner)
+const sharedBrandBlueGradient: ViewStyle = Platform.select({
   web: {
     background:
       'radial-gradient(circle at 15% 15%, rgba(147, 197, 253, 0.45) 0%, transparent 40%), ' +
@@ -329,18 +329,6 @@ const desktopRightBgGradient: ViewStyle = Platform.select({
 const mobileCanvasBgStyle: ViewStyle = Platform.select({
   web: {
     backgroundColor: '#F8FAFC',
-  } as any,
-  default: {
-    backgroundColor: '#4F46E5',
-  },
-})!;
-
-const mobileBannerGradient: ViewStyle = Platform.select({
-  web: {
-    background:
-      'radial-gradient(circle at 15% 20%, rgba(147, 197, 253, 0.6) 0%, transparent 45%), ' +
-      'radial-gradient(circle at 85% 25%, rgba(216, 180, 254, 0.5) 0%, transparent 45%), ' +
-      'linear-gradient(145deg, #2563EB 0%, #4F46E5 55%, #6366F1 100%)',
   } as any,
   default: {
     backgroundColor: '#4F46E5',
