@@ -303,7 +303,7 @@ export function ReportScreen({ route, navigation }: any) {
           onChange={setTab}
           options={[
             { key: 'rapor', label: 'Untuk rapor' },
-            { key: 'ortu', label: 'Untuk orang tua' },
+            { key: 'ortu', label: isReviewer ? 'Untuk orang tua' : 'Untuk wali kelas' },
           ]}
         />
         {tab === 'rapor' ? (
@@ -323,35 +323,57 @@ export function ReportScreen({ route, navigation }: any) {
         ) : (
           <>
             <TextField
-              label="Pesan untuk orang tua"
+              label={isReviewer ? 'Pesan untuk orang tua' : 'Catatan untuk wali kelas'}
               multiline
               value={fields.pesan_wali}
               onChangeText={set('pesan_wali')}
               editable={editable}
-              hint="Bahasa santun dan mudah dipahami. Dapat dikirim lewat WhatsApp setelah disetujui."
+              hint={
+                isReviewer
+                  ? 'Bahasa santun dan mudah dipahami. Dapat dikirim lewat WhatsApp setelah disetujui.'
+                  : 'Sampaikan catatan pengamatan atau pesan di sini agar dirangkum atau diteruskan oleh wali kelas ke orang tua.'
+              }
+              placeholder={
+                isReviewer
+                  ? 'Tulis pesan yang akan dikirimkan kepada orang tua...'
+                  : 'Tulis catatan atau rekomendasi untuk disampaikan ke wali kelas...'
+              }
             />
             {status === 'Disetujui' ? (
               <View style={styles.wrap}>
                 <Button
-                  label="Salin pesan"
+                  label={isReviewer ? 'Salin pesan' : 'Salin catatan'}
                   icon="copy-outline"
                   variant="secondary"
                   size="sm"
                   onPress={async () => {
                     await Clipboard.setStringAsync(fields.pesan_wali);
-                    toast('Pesan disalin.');
+                    toast(isReviewer ? 'Pesan disalin.' : 'Catatan untuk wali kelas disalin.');
                   }}
                 />
-                <Button label="Kirim via WhatsApp" icon="logo-whatsapp" size="sm" disabled={!wa} onPress={() => wa && Linking.openURL(wa)} />
-                {!wa ? (
-                  <AppText variant="caption" tone={color.mutedOnWhite}>
-                    Nomor WhatsApp wali belum diisi wali kelas.
-                  </AppText>
-                ) : null}
+                {isReviewer ? (
+                  <>
+                    <Button label="Kirim via WhatsApp" icon="logo-whatsapp" size="sm" disabled={!wa} onPress={() => wa && Linking.openURL(wa)} />
+                    {!wa ? (
+                      <AppText variant="caption" tone={color.mutedOnWhite}>
+                        Nomor WhatsApp wali belum diisi di data siswa.
+                      </AppText>
+                    ) : null}
+                  </>
+                ) : (
+                  <View style={styles.infoBanner}>
+                    <Ionicons name="information-circle-outline" size={16} color={color.brandDeep} />
+                    <AppText variant="caption" tone={color.brandDeep} style={{ flex: 1 }}>
+                      Komunikasi ke orang tua dilakukan terpusat oleh wali kelas ({cls.nama_kelas}). Catatan Anda sudah tersimpan di rapor.
+                    </AppText>
+                  </View>
+                )}
               </View>
             ) : (
               <AppText variant="caption" tone={color.mutedOnWhite}>
-                Tombol kirim muncul setelah rapor disetujui wali kelas.
+                {isReviewer
+                  ? 'Tombol kirim WhatsApp muncul setelah rapor disetujui.'
+                  : 'Catatan ini akan ditinjau wali kelas bersamaan saat pengajuan rapor.'}
               </AppText>
             )}
           </>
@@ -434,4 +456,13 @@ const styles = StyleSheet.create({
   genRow: { flexDirection: 'row', alignItems: 'center', gap: 10, flexWrap: 'wrap', padding: 12, borderRadius: radius.md, backgroundColor: color.brandTint },
   wrap: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, alignItems: 'center' },
   footer: { flexDirection: 'row', justifyContent: 'flex-end', alignItems: 'center', gap: 10, flexWrap: 'wrap' },
+  infoBanner: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    padding: 10,
+    borderRadius: radius.md,
+    backgroundColor: color.brandSoft,
+    width: '100%',
+  },
 });

@@ -93,7 +93,10 @@ function Identity({ student, homeroom, navigation }: { student: Student; homeroo
   const [generatingMsg, setGeneratingMsg] = useState(false);
 
   const cls = ws.classes.find((c) => c.id === student.class_id);
+  const homeroomTeacher = ws.colleagues.find((t) => t.id === cls?.homeroom_teacher_id) || (cls?.homeroom_teacher_id === ws.teacher.id ? ws.teacher : null);
   const [currentPeriode] = reportPeriods();
+  const [homeroomModalVisible, setHomeroomModalVisible] = useState(false);
+  const [coordMsg, setCoordMsg] = useState('');
 
   const handleGenerateAiMessage = async () => {
     setGeneratingMsg(true);
@@ -179,45 +182,108 @@ ${allJournalsList}
             <AppText variant="small" tone={color.mutedOnWhite}>
               NISN {student.nisn} · {student.jenis_kelamin === 'L' ? 'Laki-laki' : 'Perempuan'}
             </AppText>
-            <AppText variant="small" tone={color.inkSoft}>
-              Wali murid: {student.nama_wali || 'belum diisi'}
-            </AppText>
-            <AppText variant="small" tone={color.inkSoft}>
-              WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
-            </AppText>
+            {homeroom ? (
+              <>
+                <AppText variant="small" tone={color.inkSoft}>
+                  Wali murid: {student.nama_wali || 'belum diisi'}
+                </AppText>
+                <AppText variant="small" tone={color.inkSoft}>
+                  WhatsApp: {student.no_whatsapp_wali || 'belum diisi'}
+                </AppText>
+              </>
+            ) : (
+              <AppText variant="small" tone={color.inkSoft}>
+                Wali kelas: {homeroomTeacher?.nama_lengkap || 'Belum ditentukan'} ({cls?.nama_kelas || 'Kelas'})
+              </AppText>
+            )}
           </View>
         </View>
         <View style={styles.identityActions}>
           {homeroom ? (
+            <>
+              <Button
+                label="Ubah data"
+                size="sm"
+                variant="secondary"
+                icon="create-outline"
+                onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })}
+                style={styles.actionBtn}
+              />
+              <Button
+                label="Pesan Ortu (AI)"
+                size="sm"
+                variant="subtle"
+                icon="sparkles"
+                onPress={handleOpenModal}
+                style={styles.actionBtn}
+              />
+              {wa ? (
+                <Button
+                  label="Chat orang tua"
+                  size="sm"
+                  variant="ghost"
+                  icon="logo-whatsapp"
+                  onPress={() => Linking.openURL(wa)}
+                  style={styles.actionBtn}
+                />
+              ) : null}
+            </>
+          ) : (
             <Button
-              label="Ubah data"
+              label="Sampaikan ke Wali Kelas"
               size="sm"
-              variant="secondary"
-              icon="create-outline"
-              onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })}
+              variant="subtle"
+              icon="chatbubbles-outline"
+              onPress={() => {
+                const initial = `Yth. Bapak/Ibu ${homeroomTeacher?.nama_lengkap || 'Wali Kelas'},\n\nBerikut catatan pengamatan saya untuk siswa ananda ${student.nama_lengkap} di kelas ${cls?.nama_kelas || ''}:\n- Catatan: \n\nMohon bantuannya untuk koordinasi atau penyampaian kepada orang tua murid jika diperlukan. Terima kasih.`;
+                setCoordMsg(initial);
+                setHomeroomModalVisible(true);
+              }}
               style={styles.actionBtn}
             />
-          ) : null}
-          <Button
-            label="Pesan Ortu (AI)"
-            size="sm"
-            variant="subtle"
-            icon="sparkles"
-            onPress={handleOpenModal}
-            style={styles.actionBtn}
-          />
-          {wa ? (
-            <Button
-              label="Chat wali"
-              size="sm"
-              variant="ghost"
-              icon="logo-whatsapp"
-              onPress={() => Linking.openURL(wa)}
-              style={styles.actionBtn}
-            />
-          ) : null}
+          )}
         </View>
       </Card>
+
+      <Dialog
+        visible={homeroomModalVisible}
+        onClose={() => setHomeroomModalVisible(false)}
+        title="Catatan untuk Wali Kelas"
+        description={`Sampaikan catatan ananda ${student.nama_lengkap} ke wali kelas (${homeroomTeacher?.nama_lengkap || 'Wali Kelas'})`}
+        footer={
+          <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', width: '100%' }}>
+            <Button label="Tutup" variant="ghost" size="sm" onPress={() => setHomeroomModalVisible(false)} />
+            <Button
+              label="Salin Catatan"
+              variant="primary"
+              size="sm"
+              icon="copy-outline"
+              onPress={async () => {
+                await Clipboard.setStringAsync(coordMsg);
+                toast('Catatan untuk wali kelas berhasil disalin.');
+                setHomeroomModalVisible(false);
+              }}
+            />
+          </View>
+        }
+      >
+        <View style={{ gap: 12 }}>
+          <View style={styles.reason}>
+            <Ionicons name="information-circle-outline" size={16} color={color.accentInk} />
+            <AppText variant="caption" tone={color.accentInk} style={{ flex: 1 }}>
+              Sebagai guru mapel, komunikasi dengan orang tua dilakukan melalui wali kelas ({cls?.nama_kelas}). Salin catatan ini untuk disampaikan ke wali kelas.
+            </AppText>
+          </View>
+          <TextField
+            multiline
+            label="Draf pesan untuk wali kelas"
+            value={coordMsg}
+            onChangeText={setCoordMsg}
+            placeholder="Tulis catatan perkembangan siswa untuk wali kelas..."
+            numberOfLines={6}
+          />
+        </View>
+      </Dialog>
 
       <Dialog
         visible={parentModalVisible}
