@@ -11,12 +11,13 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrganicBlueBlob, TeacherWorkspaceIllustration } from '../../components/auth/AuthVisuals';
+import { OrganicBlueBlob } from '../../components/auth/AuthVisuals';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
 import { color } from '../../theme/tokens';
 
 const SchoolIllustration = require('../../assets/school-illustration.png');
+const CuteCharactersImg = require('../../assets/cute-teacher-characters.png');
 const LogoWhite = require('../../assets/logo/penaguru-mark-white.png');
 const LogoSquircle = require('../../assets/logo/penaguru-mark-squircle.png');
 
@@ -65,8 +66,7 @@ export function AuthLayout({
       : 'Masukkan email Anda untuk menerima instruksi pemulihan kata sandi.');
 
   // =========================================================================
-  // DESKTOP FULL-WIDTH SPLIT SCREEN LAYOUT (50% Form White | 50% Illustration)
-  // Matching reference layout in Sleeknote style
+  // DESKTOP FULL-WIDTH SPLIT SCREEN LAYOUT (50% Form White | 50% Characters)
   // =========================================================================
   if (isWide) {
     return (
@@ -136,7 +136,7 @@ export function AuthLayout({
           </ScrollView>
         </View>
 
-        {/* RIGHT COLUMN: Soft Pastel Workspace Showcase (50% Width) */}
+        {/* RIGHT COLUMN: Soft Pastel Workspace Showcase with Cute Characters (50% Width) */}
         <View style={styles.desktopRightCol}>
           {/* Top-Right Info Badge */}
           <View style={styles.desktopRightTopBadge}>
@@ -156,9 +156,13 @@ export function AuthLayout({
             </View>
           </View>
 
-          {/* Centered Modern Vector Illustration of Educator at Desk */}
+          {/* Centered Cute Teacher & Student Characters Showcase */}
           <View style={styles.desktopIllustrationCenter}>
-            <TeacherWorkspaceIllustration width={480} height={370} />
+            <Image
+              source={CuteCharactersImg}
+              style={styles.desktopMascotImg}
+              resizeMode="contain"
+            />
           </View>
 
           {/* Bottom Footer Note */}
@@ -173,7 +177,7 @@ export function AuthLayout({
   }
 
   // ==========================================
-  // MOBILE / APP LAYOUT (Seamless Blue Gradient)
+  // MOBILE / APP LAYOUT (Seamless Blue Gradient + Mascot Bottom)
   // ==========================================
   return (
     <KeyboardAvoidingView
@@ -278,6 +282,15 @@ export function AuthLayout({
 
           {top}
           {children}
+
+          {/* Cute Teacher & Student Characters Mascot Troupe placed at bottom of Mobile Page */}
+          <View style={styles.mobileMascotContainer}>
+            <Image
+              source={CuteCharactersImg}
+              style={styles.mobileMascotImg}
+              resizeMode="contain"
+            />
+          </View>
         </View>
       </ScrollView>
     </KeyboardAvoidingView>
@@ -354,7 +367,7 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
 
-  // Desktop Right Column (Pastel Workspace Showcase)
+  // Desktop Right Column (Pastel Workspace Showcase with Cute Characters)
   desktopRightCol: {
     flex: 1,
     width: '50%',
@@ -395,6 +408,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     marginVertical: 20,
+    width: '100%',
+  },
+  desktopMascotImg: {
+    width: '100%',
+    maxWidth: 520,
+    height: 290,
   },
   desktopRightBottom: {
     alignSelf: 'center',
@@ -482,6 +501,18 @@ const styles = StyleSheet.create({
   },
   mobileCardHeader: {
     marginBottom: 4,
+  },
+  mobileMascotContainer: {
+    alignItems: 'center',
+    justifyContent: 'flex-end',
+    marginTop: 24,
+    marginBottom: 8,
+    width: '100%',
+  },
+  mobileMascotImg: {
+    width: '100%',
+    maxWidth: 340,
+    height: 160,
   },
   backRow: {
     flexDirection: 'row',
