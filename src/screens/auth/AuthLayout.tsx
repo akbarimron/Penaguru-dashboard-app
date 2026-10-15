@@ -158,14 +158,14 @@ export function AuthLayout({
               <Pressable
                 onPress={() => setShowGuideModal(true)}
                 style={({ pressed }) => [
-                  styles.badgeBtn,
-                  pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+                  styles.guideTextBtn,
+                  pressed && { opacity: 0.6 },
                 ]}
                 accessibilityRole="button"
                 accessibilityLabel="Buka panduan guru"
               >
-                <AppText variant="caption" weight="bold" tone="#FFFFFF" style={{ letterSpacing: 0.8 }}>
-                  PANDUAN GURU
+                <AppText variant="caption" weight="bold" tone="#FFFFFF" style={styles.guideText}>
+                  Panduan
                 </AppText>
               </Pressable>
             </View>
@@ -207,18 +207,17 @@ export function AuthLayout({
                   </AppText>
                 </View>
 
-                {/* Quick Guide Trigger on Mobile */}
+                {/* Quick Guide Trigger on Mobile: Pure text, zero background, zero border */}
                 <Pressable
                   onPress={() => setShowGuideModal(true)}
                   style={({ pressed }) => [
-                    styles.mobileGuidePill,
-                    pressed && { opacity: 0.8 },
+                    styles.guideTextBtn,
+                    pressed && { opacity: 0.6 },
                   ]}
                   accessibilityRole="button"
                   accessibilityLabel="Buka panduan guru"
                 >
-                  <Ionicons name="sparkles" size={12} color="#FFFFFF" />
-                  <AppText variant="caption" weight="bold" tone="#FFFFFF" style={{ fontSize: 11 }}>
+                  <AppText variant="caption" weight="bold" tone="#FFFFFF" style={styles.guideText}>
                     Panduan
                   </AppText>
                 </Pressable>
@@ -438,14 +437,17 @@ const styles = StyleSheet.create({
     lineHeight: 18,
     color: 'rgba(255, 255, 255, 0.88)',
   },
-  badgeBtn: {
-    marginTop: 6,
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    borderRadius: 8,
-    borderWidth: 1.5,
-    borderColor: 'rgba(255, 255, 255, 0.55)',
-    backgroundColor: 'rgba(255, 255, 255, 0.16)',
+  guideTextBtn: {
+    paddingVertical: 6,
+    paddingHorizontal: 6,
+    backgroundColor: 'transparent',
+    borderWidth: 0,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  guideText: {
+    fontSize: 13,
+    letterSpacing: 0.2,
   },
   desktopIllustrationCenter: {
     alignItems: 'center',
@@ -494,17 +496,6 @@ const styles = StyleSheet.create({
   mobileTopLogo: {
     width: 26,
     height: 26,
-  },
-  mobileGuidePill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 4,
-    paddingHorizontal: 10,
-    paddingVertical: 4,
-    borderRadius: 20,
-    backgroundColor: 'rgba(255, 255, 255, 0.2)',
-    borderWidth: 1,
-    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   mobileGreetingBox: {
     marginTop: 4,
