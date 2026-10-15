@@ -147,9 +147,13 @@ export function AuthLayout({
             {/* Top-Right Info Badge */}
             <View style={styles.desktopRightTopBadge}>
               <View style={styles.badgeHeaderRow}>
-                <Ionicons name="school" size={20} color="#93C5FD" />
-                <AppText variant="body" weight="extrabold" tone="#FFFFFF">
-                  PenaGuru
+                <Image
+                  source={LogoWhiteMark}
+                  style={styles.desktopBadgeLogo}
+                  resizeMode="contain"
+                />
+                <AppText variant="body" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.3 }}>
+                  Pena<AppText variant="body" weight="extrabold" tone="#93C5FD">Guru</AppText>
                 </AppText>
               </View>
               <AppText variant="caption" tone="rgba(255, 255, 255, 0.88)" style={styles.badgeSubtext}>
@@ -431,6 +435,10 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
+  },
+  desktopBadgeLogo: {
+    width: 22,
+    height: 22,
   },
   badgeSubtext: {
     textAlign: 'right',
