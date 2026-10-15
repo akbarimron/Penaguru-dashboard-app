@@ -30,9 +30,10 @@ interface ButtonProps {
   style?: StyleProp<ViewStyle>;
   accessibilityHint?: string;
   fg?: string;
+  round?: boolean;
 }
 
-export function Button({ label, onPress, variant = 'primary', icon, size = 'md', loading, disabled, fullWidth, style, accessibilityHint, fg }: ButtonProps) {
+export function Button({ label, onPress, variant = 'primary', icon, size = 'md', loading, disabled, fullWidth, style, accessibilityHint, fg, round }: ButtonProps) {
   const v = VARIANTS[variant] || VARIANTS.primary;
   const textColor = fg || v.fg;
   return (
@@ -48,6 +49,7 @@ export function Button({ label, onPress, variant = 'primary', icon, size = 'md',
       style={[
         styles.base,
         size === 'sm' ? styles.sm : styles.md,
+        round && { borderRadius: 28 },
         { backgroundColor: v.bg, borderColor: v.border || 'transparent' },
         fullWidth && { alignSelf: 'stretch' },
         style,

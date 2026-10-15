@@ -1,7 +1,8 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
-import { Animated, StyleSheet, TextInput, View } from 'react-native';
-import { AppText, Button, EmptyState, IconButton, TextField } from '../../components/ui';
+import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
+import { AppText, Button, EmptyState, TextField } from '../../components/ui';
+import { useLayout } from '../../lib/layout';
 import { shake } from '../../lib/motion';
 import { useAppStore } from '../../store/useAppStore';
 import { color, radius } from '../../theme/tokens';
@@ -12,13 +13,30 @@ const EMAIL_RE = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
 type Field = 'nama' | 'nip' | 'email' | 'password' | 'confirm';
 
 export function RegisterScreen({ navigation }: any) {
+  const layout = useLayout();
+  const isWide = layout.width >= 850;
   const signUp = useAppStore((s) => s.signUp);
-  const [values, setValues] = useState<Record<Field, string>>({ nama: '', nip: '', email: '', password: '', confirm: '' });
+
+  const [values, setValues] = useState<Record<Field, string>>({
+    nama: '',
+    nip: '',
+    email: '',
+    password: '',
+    confirm: '',
+  });
   const [errors, setErrors] = useState<Partial<Record<Field | 'form', string>>>({});
   const [loading, setLoading] = useState(false);
   const [confirmSent, setConfirmSent] = useState<string | null>(null);
   const shakeX = useRef(new Animated.Value(0)).current;
-  const refs = { nip: useRef<TextInput>(null), email: useRef<TextInput>(null), password: useRef<TextInput>(null), confirm: useRef<TextInput>(null) };
+
+  const refs = {
+    nip: useRef<TextInput>(null),
+    email: useRef<TextInput>(null),
+    password: useRef<TextInput>(null),
+    confirm: useRef<TextInput>(null),
+  };
+
+  const brandActionColor = isWide ? '#4F46E5' : '#076356';
 
   const set = (k: Field) => (t: string) => {
     setValues((v) => ({ ...v, [k]: t }));
@@ -28,10 +46,12 @@ export function RegisterScreen({ navigation }: any) {
   const validate = () => {
     const e: typeof errors = {};
     if (values.nama.trim().length < 3) e.nama = 'Tulis nama lengkap, minimal 3 huruf.';
-    if (values.nip && !/^\d{18}$/.test(values.nip.replace(/\s/g, ''))) e.nip = 'NIP terdiri dari 18 angka. Kosongkan bila belum punya.';
+    if (values.nip && !/^\d{18}$/.test(values.nip.replace(/\s/g, '')))
+      e.nip = 'NIP terdiri dari 18 angka. Kosongkan bila belum punya.';
     if (!EMAIL_RE.test(values.email.trim())) e.email = 'Masukkan alamat email yang valid.';
     if (values.password.length < 8) e.password = 'Minimal 8 karakter.';
-    else if (!/\d/.test(values.password) || !/[A-Za-z]/.test(values.password)) e.password = 'Gabungkan huruf dan angka.';
+    else if (!/\d/.test(values.password) || !/[A-Za-z]/.test(values.password))
+      e.password = 'Gabungkan huruf dan angka.';
     if (values.confirm !== values.password) e.confirm = 'Kata sandi tidak sama.';
     return e;
   };
@@ -62,7 +82,12 @@ export function RegisterScreen({ navigation }: any) {
 
   if (confirmSent) {
     return (
-      <AuthLayout title="Cek email Anda" subtitle={`Kami mengirim tautan konfirmasi ke ${confirmSent}.`}>
+      <AuthLayout
+        mode="register"
+        title="Cek Email Anda"
+        subtitle={`Kami mengirim tautan konfirmasi ke ${confirmSent}.`}
+        onBack={() => navigation.navigate('Login')}
+      >
         <EmptyState
           icon="mail-unread-outline"
           title="Konfirmasi dulu, lalu masuk"
@@ -75,11 +100,10 @@ export function RegisterScreen({ navigation }: any) {
 
   return (
     <AuthLayout
-      title="Daftar akun guru"
-      subtitle="Setelah mendaftar, Anda akan memilih sekolah, kelas perwalian, dan mapel yang Anda ajar."
-      top={<IconButton icon="arrow-back" label="Kembali ke halaman masuk" onPress={() => navigation.goBack()} />}
+      mode="register"
+      onBack={() => navigation.navigate('Login')}
     >
-      <Animated.View style={{ gap: 16, transform: [{ translateX: shakeX }] }}>
+      <Animated.View style={{ gap: 12, transform: [{ translateX: shakeX }] }}>
         {errors.form ? (
           <View style={styles.formError} accessibilityRole="alert">
             <Ionicons name="alert-circle" size={18} color={color.danger} />
@@ -88,33 +112,47 @@ export function RegisterScreen({ navigation }: any) {
             </AppText>
           </View>
         ) : null}
+
+        {/* Nama Lengkap */}
         <TextField
-          label="Nama lengkap dan gelar"
+          label={isWide ? 'Nama Lengkap dan Gelar' : 'Nama Lengkap'}
+          hideLabel={!isWide}
+          round
           value={values.nama}
           onChangeText={set('nama')}
           error={errors.nama}
-          placeholder="Nama Anda, S.Pd."
+          placeholder="Nama Lengkap & Gelar (misal: Budi Santoso, S.Kom.)"
+          leftIcon="person-outline"
           autoComplete="name"
           textContentType="name"
           returnKeyType="next"
           onSubmitEditing={() => refs.nip.current?.focus()}
         />
+
+        {/* NIP (Opsional) */}
         <TextField
           ref={refs.nip}
-          label="NIP"
+          label={isWide ? 'NIP (opsional)' : 'NIP'}
+          hideLabel={!isWide}
+          round
           optional
           value={values.nip}
           onChangeText={set('nip')}
           error={errors.nip}
-          hint="18 angka. Bisa diisi nanti."
+          placeholder="NIP (18 angka, opsional)"
+          leftIcon="card-outline"
           keyboardType="number-pad"
           maxLength={22}
           returnKeyType="next"
           onSubmitEditing={() => refs.email.current?.focus()}
         />
+
+        {/* Email */}
         <TextField
           ref={refs.email}
-          label="Email"
+          label={isWide ? 'Email Guru' : 'Email'}
+          hideLabel={!isWide}
+          round
           value={values.email}
           onChangeText={set('email')}
           error={errors.email}
@@ -127,13 +165,17 @@ export function RegisterScreen({ navigation }: any) {
           returnKeyType="next"
           onSubmitEditing={() => refs.password.current?.focus()}
         />
+
+        {/* Password */}
         <TextField
           ref={refs.password}
-          label="Kata sandi"
+          label={isWide ? 'Kata Sandi' : 'Password'}
+          hideLabel={!isWide}
+          round
           value={values.password}
           onChangeText={set('password')}
           error={errors.password}
-          hint="Minimal 8 karakter, gabungan huruf dan angka."
+          placeholder="Kata Sandi (min. 8 karakter)"
           leftIcon="lock-closed-outline"
           secureToggle
           autoComplete="new-password"
@@ -141,12 +183,17 @@ export function RegisterScreen({ navigation }: any) {
           returnKeyType="next"
           onSubmitEditing={() => refs.confirm.current?.focus()}
         />
+
+        {/* Confirm Password */}
         <TextField
           ref={refs.confirm}
-          label="Ulangi kata sandi"
+          label={isWide ? 'Ulangi Kata Sandi' : 'Confirm Password'}
+          hideLabel={!isWide}
+          round
           value={values.confirm}
           onChangeText={set('confirm')}
           error={errors.confirm}
+          placeholder="Ulangi Kata Sandi"
           leftIcon="lock-closed-outline"
           secureToggle
           autoComplete="new-password"
@@ -154,19 +201,40 @@ export function RegisterScreen({ navigation }: any) {
           returnKeyType="done"
           onSubmitEditing={submit}
         />
-        <View style={styles.note}>
-          <Ionicons name="shield-checkmark-outline" size={18} color={color.brand} />
-          <AppText variant="caption" tone={color.inkSoft} style={{ flex: 1 }}>
-            Data siswa hanya terlihat oleh guru yang mengajar di kelas tersebut dan wali kelasnya.
-          </AppText>
-        </View>
-        <Button label="Buat akun" onPress={submit} loading={loading} fullWidth />
+
+        {/* Action Button */}
+        <Button
+          label={isWide ? 'Daftar Sekarang' : 'Sign Up'}
+          round
+          onPress={submit}
+          loading={loading}
+          fullWidth
+          style={[
+            styles.submitButton,
+            { backgroundColor: brandActionColor },
+            isWide && styles.desktopGlow,
+          ]}
+        />
       </Animated.View>
-      <View style={styles.row}>
-        <AppText variant="small" tone={color.muted}>
+
+      {/* Footer Link */}
+      <View style={styles.footerRow}>
+        <AppText variant="small" tone="#64748B">
           Sudah punya akun?
         </AppText>
-        <Button label="Masuk" variant="ghost" size="sm" onPress={() => navigation.navigate('Login')} />
+        <Pressable
+          onPress={() => navigation.navigate('Login')}
+          accessibilityRole="button"
+          accessibilityLabel="Masuk ke akun yang sudah ada"
+        >
+          <AppText
+            variant="small"
+            weight="bold"
+            tone={isWide ? '#4F46E5' : '#076356'}
+          >
+            {' '}Masuk
+          </AppText>
+        </Pressable>
       </View>
     </AuthLayout>
   );
@@ -183,6 +251,27 @@ const styles = StyleSheet.create({
     borderWidth: 1,
     borderColor: '#FECACA',
   },
-  note: { flexDirection: 'row', gap: 8, alignItems: 'center', padding: 12, borderRadius: radius.md, backgroundColor: color.brandTint },
-  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'center', gap: 2 },
+  submitButton: {
+    minHeight: 50,
+    borderWidth: 0,
+    marginTop: 4,
+  },
+  desktopGlow: Platform.select({
+    web: {
+      boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)',
+    } as any,
+    default: {
+      shadowColor: '#4F46E5',
+      shadowOffset: { width: 0, height: 6 },
+      shadowOpacity: 0.35,
+      shadowRadius: 14,
+      elevation: 6,
+    },
+  })!,
+  footerRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 8,
+  },
 });

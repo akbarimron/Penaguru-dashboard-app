@@ -1,103 +1,422 @@
 import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
-import { KeyboardAvoidingView, Platform, ScrollView, StyleSheet, View } from 'react-native';
+import {
+  KeyboardAvoidingView,
+  Platform,
+  Pressable,
+  ScrollView,
+  StyleSheet,
+  View,
+  ViewStyle,
+} from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
+import { OrganicMintBlob, PlantIllustration, StarburstIcon } from '../../components/auth/AuthVisuals';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
-import { color, radius, space } from '../../theme/tokens';
+import { color, font } from '../../theme/tokens';
 
-type IconName = React.ComponentProps<typeof Ionicons>['name'];
+export interface AuthLayoutProps {
+  title?: string;
+  subtitle?: string;
+  children: React.ReactNode;
+  top?: React.ReactNode;
+  mode?: 'login' | 'register' | 'forgot';
+  onBack?: () => void;
+}
 
-const POINTS: { icon: IconName; title: string; text: string }[] = [
-  { icon: 'create-outline', title: 'Guru mapel', text: 'Satu dashboard untuk tiap mapel di tiap kelas yang Anda ajar.' },
-  { icon: 'people-outline', title: 'Wali kelas', text: 'Semua jurnal dan rapor mapel dari kelas perwalian terkumpul di satu tempat untuk ditinjau.' },
-  { icon: 'lock-closed-outline', title: 'Data per kelas', text: 'Guru hanya melihat siswa di kelas yang ia ajar atau walikan.' },
-];
-
-// Kerangka layar masuk/daftar. Ponsel: satu kolom. Layar lebar: panel
-// penjelasan teal di kiri + formulir di kanan.
-export function AuthLayout({ title, subtitle, children, top }: { title: string; subtitle: string; children: React.ReactNode; top?: React.ReactNode }) {
+export function AuthLayout({
+  title,
+  subtitle,
+  children,
+  top,
+  mode = 'login',
+  onBack,
+}: AuthLayoutProps) {
   const layout = useLayout();
   const insets = useSafeAreaInsets();
-  const wide = layout.width >= 900;
+  const isWide = layout.width >= 850;
 
-  const form = (
-    <View style={{ width: '100%', maxWidth: 440, alignSelf: 'center', gap: space.lg }}>
-      {top}
-      {!wide ? (
-        <AppText variant="title" weight="extrabold" tone={color.brandDeep}>
-          PenaGuru
-        </AppText>
-      ) : null}
-      <View style={{ gap: 6 }}>
-        <AppText variant="display" accessibilityRole="header">
-          {title}
-        </AppText>
-        <AppText tone={color.muted}>{subtitle}</AppText>
-      </View>
-      {children}
-    </View>
-  );
+  // Mobile Copy & Theming
+  const mobileGreeting =
+    mode === 'login'
+      ? { title: 'Hello!', subtitle: 'Selamat datang di PenaGuru' }
+      : mode === 'register'
+      ? { title: 'Halo, Guru!', subtitle: 'Mulai langkah mengajar Anda' }
+      : { title: 'Lupa Sandi?', subtitle: 'Pulihkan akses akun Anda' };
 
-  return (
-    <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : undefined} style={{ flex: 1, backgroundColor: color.bg }}>
-      <View style={{ flex: 1, flexDirection: wide ? 'row' : 'column' }}>
-        {wide ? (
-          <View style={[styles.panel, { paddingTop: insets.top + 48 }]}>
-            <AppText variant="title" weight="extrabold" tone="#FFFFFF">
-              PenaGuru
-            </AppText>
-            <AppText variant="display" tone="#FFFFFF" style={{ marginTop: 40, maxWidth: 420 }}>
-              Catatan kelas yang rapi, dari jurnal harian sampai rapor.
-            </AppText>
-            <View style={{ gap: 14, marginTop: 32, maxWidth: 440 }}>
-              {POINTS.map((p, i) => (
-                <EnterView key={p.title} index={i}>
-                  <View style={styles.point}>
-                    <View style={styles.pointIcon}>
-                      <Ionicons name={p.icon} size={20} color="#FFFFFF" />
-                    </View>
-                    <View style={{ flex: 1, gap: 2 }}>
-                      <AppText weight="bold" tone="#FFFFFF">
-                        {p.title}
-                      </AppText>
-                      <AppText variant="small" tone={color.onBrandSoft}>
-                        {p.text}
-                      </AppText>
-                    </View>
-                  </View>
-                </EnterView>
-              ))}
-            </View>
-          </View>
-        ) : null}
+  const mobileCardTitle =
+    title || (mode === 'login' ? 'Login' : mode === 'register' ? 'Sign Up' : 'Atur Ulang Sandi');
+
+  // Desktop Copy & Theming
+  const desktopLeftCopy =
+    mode === 'login'
+      ? {
+          tag: 'Ruang Kerja Cerdas',
+          headline: 'Akses ruang kerja cerdas untuk catatan jurnal, perwalian, dan rapor siswa.',
+        }
+      : mode === 'register'
+      ? {
+          tag: 'Bergabung Bersama Kami',
+          headline: 'Mulai kelola kelas dan perwalian dengan lebih rapi, terstruktur, dan cepat.',
+        }
+      : {
+          tag: 'Keamanan Akun',
+          headline: 'Keamanan akun dan data siswa Anda adalah prioritas utama kami.',
+        };
+
+  const desktopRightTitle =
+    title || (mode === 'login' ? 'Masuk ke Akun Anda' : mode === 'register' ? 'Daftar Akun Guru' : 'Atur Ulang Sandi');
+
+  const desktopRightSubtitle =
+    subtitle ||
+    (mode === 'login'
+      ? 'Akses semua catatan kelas, jurnal harian, dan rapor siswa dalam satu tempat.'
+      : mode === 'register'
+      ? 'Atur sekolah, kelas perwalian, dan mapel yang Anda ajar dengan mudah.'
+      : 'Masukkan email Anda untuk menerima instruksi pemulihan kata sandi.');
+
+  // ==========================================
+  // DESKTOP / WEB LAYOUT (Image 2)
+  // ==========================================
+  if (isWide) {
+    return (
+      <KeyboardAvoidingView
+        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+        style={styles.desktopCanvas}
+      >
         <ScrollView
-          style={{ flex: 1 }}
+          contentContainerStyle={[
+            styles.desktopScrollContent,
+            { paddingTop: Math.max(32, insets.top + 24), paddingBottom: Math.max(32, insets.bottom + 24) },
+          ]}
           keyboardShouldPersistTaps="handled"
-          contentContainerStyle={{
-            flexGrow: 1,
-            justifyContent: wide ? 'center' : 'flex-start',
-            paddingHorizontal: layout.gutter,
-            paddingTop: insets.top + (wide ? 32 : 24),
-            paddingBottom: insets.bottom + 32,
-          }}
         >
-          <EnterView>{form}</EnterView>
+          <EnterView>
+            <View style={[styles.desktopCard, desktopCardShadow]}>
+              {/* Left Column: Vibrant Mesh Gradient Hero Card */}
+              <View style={[styles.desktopHeroCard, desktopGradientStyle]}>
+                {/* Top: White 6-lobed Starburst Icon */}
+                <View style={styles.desktopHeroTop}>
+                  <StarburstIcon size={34} color="#FFFFFF" />
+                </View>
+
+                {/* Bottom: Caption & Large Headline */}
+                <View style={styles.desktopHeroBottom}>
+                  <AppText
+                    variant="caption"
+                    weight="bold"
+                    tone="rgba(255, 255, 255, 0.85)"
+                    style={styles.desktopHeroTag}
+                  >
+                    {desktopLeftCopy.tag}
+                  </AppText>
+                  <AppText
+                    variant="display"
+                    weight="extrabold"
+                    tone="#FFFFFF"
+                    style={styles.desktopHeroHeadline}
+                  >
+                    {desktopLeftCopy.headline}
+                  </AppText>
+                </View>
+              </View>
+
+              {/* Right Column: Clean Form Container */}
+              <View style={styles.desktopFormColumn}>
+                {onBack ? (
+                  <Pressable
+                    onPress={onBack}
+                    style={styles.backRow}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kembali ke halaman masuk"
+                  >
+                    <Ionicons name="arrow-back" size={18} color="#4F46E5" />
+                    <AppText variant="small" weight="bold" tone="#4F46E5">
+                      Kembali ke halaman masuk
+                    </AppText>
+                  </Pressable>
+                ) : (
+                  <View style={styles.desktopFormMark}>
+                    <StarburstIcon size={26} color="#4F46E5" />
+                  </View>
+                )}
+
+                <View style={styles.desktopHeaderBox}>
+                  <AppText
+                    variant="display"
+                    weight="extrabold"
+                    tone={color.ink}
+                    accessibilityRole="header"
+                    style={{ fontSize: 26, lineHeight: 32 }}
+                  >
+                    {desktopRightTitle}
+                  </AppText>
+                  <AppText variant="small" tone="#64748B" style={{ marginTop: 4, lineHeight: 20 }}>
+                    {desktopRightSubtitle}
+                  </AppText>
+                </View>
+
+                {top}
+                {children}
+              </View>
+            </View>
+          </EnterView>
         </ScrollView>
-      </View>
+      </KeyboardAvoidingView>
+    );
+  }
+
+  // ==========================================
+  // MOBILE / APP LAYOUT (Image 1)
+  // ==========================================
+  return (
+    <KeyboardAvoidingView
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+      style={styles.mobileCanvas}
+    >
+      <ScrollView
+        style={{ flex: 1 }}
+        contentContainerStyle={[styles.mobileScrollContent, { paddingTop: insets.top }]}
+        keyboardShouldPersistTaps="handled"
+        bounces={false}
+      >
+        {/* Top Teal Banner with Organic Shapes & Potted Plant */}
+        <View style={styles.mobileTopBanner}>
+          {/* Top-Left Organic Mint Shape */}
+          <View style={styles.mobileBlobPosition}>
+            <OrganicMintBlob width={130} height={120} />
+          </View>
+
+          {/* Plant Illustration Sitting on the Card Edge */}
+          <View style={styles.mobilePlantPosition}>
+            <PlantIllustration width={105} height={135} />
+          </View>
+
+          {/* Greeting Typography */}
+          <View style={styles.mobileGreetingBox}>
+            <AppText
+              variant="display"
+              weight="extrabold"
+              tone="#FFFFFF"
+              style={styles.mobileGreetingTitle}
+            >
+              {mobileGreeting.title}
+            </AppText>
+            <AppText
+              variant="body"
+              weight="medium"
+              tone="rgba(255, 255, 255, 0.88)"
+              style={styles.mobileGreetingSub}
+            >
+              {mobileGreeting.subtitle}
+            </AppText>
+          </View>
+        </View>
+
+        {/* White Rounded Bottom Sheet Card */}
+        <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(36, insets.bottom + 24) }]}>
+          {onBack ? (
+            <Pressable
+              onPress={onBack}
+              style={styles.backRowMobile}
+              accessibilityRole="button"
+              accessibilityLabel="Kembali ke halaman masuk"
+            >
+              <Ionicons name="arrow-back" size={18} color="#076356" />
+              <AppText variant="small" weight="bold" tone="#076356">
+                Back to login
+              </AppText>
+            </Pressable>
+          ) : null}
+
+          <View style={styles.mobileCardHeader}>
+            <AppText
+              variant="display"
+              weight="extrabold"
+              tone="#076356"
+              accessibilityRole="header"
+              style={{ fontSize: 26, letterSpacing: -0.3 }}
+            >
+              {mobileCardTitle}
+            </AppText>
+            {subtitle && mode !== 'login' ? (
+              <AppText variant="small" tone={color.muted} style={{ marginTop: 2 }}>
+                {subtitle}
+              </AppText>
+            ) : null}
+          </View>
+
+          {top}
+          {children}
+        </View>
+      </ScrollView>
     </KeyboardAvoidingView>
   );
 }
 
-const styles = StyleSheet.create({
-  panel: {
-    width: '42%',
-    maxWidth: 560,
-    backgroundColor: color.brand,
-    paddingHorizontal: 48,
-    borderTopRightRadius: radius.xl,
-    borderBottomRightRadius: radius.xl,
+// Visual Drop Shadow for Desktop Floating Card
+const desktopCardShadow: ViewStyle = Platform.select({
+  web: {
+    boxShadow: '0 24px 64px -12px rgba(99, 102, 241, 0.16), 0 8px 24px -4px rgba(15, 23, 42, 0.06)',
+  } as any,
+  default: {
+    shadowColor: '#6366F1',
+    shadowOffset: { width: 0, height: 16 },
+    shadowOpacity: 0.12,
+    shadowRadius: 32,
+    elevation: 12,
   },
-  point: { flexDirection: 'row', gap: 12, alignItems: 'flex-start' },
-  pointIcon: { width: 40, height: 40, borderRadius: 12, backgroundColor: 'rgba(255,255,255,0.16)', alignItems: 'center', justifyContent: 'center' },
+})!;
+
+// Rich Vibrant Mesh Gradient Style for Desktop Left Card (Image 2)
+const desktopGradientStyle: ViewStyle = Platform.select({
+  web: {
+    background:
+      'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
+      'radial-gradient(circle at 88% 18%, rgba(192, 132, 252, 0.92) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 35% 85%, rgba(99, 102, 241, 0.85) 0%, transparent 55%), ' +
+      'linear-gradient(145deg, #1E3A8A 0%, #2563EB 30%, #4F46E5 65%, #7C3AED 100%)',
+    boxShadow: '0 16px 40px -8px rgba(79, 70, 229, 0.32)',
+  } as any,
+  default: {
+    backgroundColor: '#4338CA',
+  },
+})!;
+
+const styles = StyleSheet.create({
+  // Desktop Web Styles
+  desktopCanvas: {
+    flex: 1,
+    backgroundColor: '#EEF0F8', // Subtle modern lilac-gray canvas
+  },
+  desktopScrollContent: {
+    flexGrow: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 20,
+  },
+  desktopCard: {
+    width: '100%',
+    maxWidth: 960,
+    minHeight: 580,
+    borderRadius: 28,
+    backgroundColor: '#FFFFFF',
+    flexDirection: 'row',
+    padding: 16,
+    borderWidth: 1,
+    borderColor: '#E8EBF3',
+  },
+  desktopHeroCard: {
+    width: '46%',
+    borderRadius: 22,
+    padding: 36,
+    justifyContent: 'space-between',
+    minHeight: 540,
+  },
+  desktopHeroTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+  },
+  desktopHeroBottom: {
+    gap: 8,
+  },
+  desktopHeroTag: {
+    textTransform: 'uppercase',
+    letterSpacing: 1,
+    fontSize: 11,
+  },
+  desktopHeroHeadline: {
+    fontSize: 24,
+    lineHeight: 33,
+    letterSpacing: -0.4,
+  },
+  desktopFormColumn: {
+    width: '54%',
+    paddingHorizontal: 38,
+    paddingVertical: 24,
+    justifyContent: 'center',
+    gap: 16,
+  },
+  desktopFormMark: {
+    marginBottom: 4,
+  },
+  desktopHeaderBox: {
+    marginBottom: 6,
+  },
+
+  // Mobile Styles
+  mobileCanvas: {
+    flex: 1,
+    backgroundColor: '#076356', // Deep emerald / pine teal header
+  },
+  mobileScrollContent: {
+    flexGrow: 1,
+    justifyContent: 'space-between',
+  },
+  mobileTopBanner: {
+    minHeight: 200,
+    paddingHorizontal: 28,
+    paddingTop: 24,
+    paddingBottom: 24,
+    position: 'relative',
+    justifyContent: 'flex-end',
+  },
+  mobileBlobPosition: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    zIndex: 1,
+  },
+  mobilePlantPosition: {
+    position: 'absolute',
+    bottom: -6,
+    right: 28,
+    zIndex: 10,
+  },
+  mobileGreetingBox: {
+    zIndex: 5,
+    maxWidth: '65%',
+    marginBottom: 8,
+  },
+  mobileGreetingTitle: {
+    fontSize: 34,
+    lineHeight: 40,
+    letterSpacing: -0.5,
+  },
+  mobileGreetingSub: {
+    fontSize: 14,
+    lineHeight: 20,
+    marginTop: 4,
+  },
+  mobileWhiteCard: {
+    backgroundColor: '#FFFFFF',
+    borderTopLeftRadius: 36,
+    borderTopRightRadius: 36,
+    paddingHorizontal: 26,
+    paddingTop: 32,
+    gap: 16,
+    flexGrow: 1,
+    shadowColor: '#000000',
+    shadowOffset: { width: 0, height: -4 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 8,
+  },
+  mobileCardHeader: {
+    marginBottom: 4,
+  },
+  backRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 8,
+    alignSelf: 'flex-start',
+  },
+  backRowMobile: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    marginBottom: 6,
+    alignSelf: 'flex-start',
+  },
 });

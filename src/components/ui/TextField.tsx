@@ -13,11 +13,14 @@ interface TextFieldProps extends Omit<TextInputProps, 'style'> {
   leftIcon?: IconName;
   secureToggle?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
+  boxStyle?: StyleProp<ViewStyle>;
+  round?: boolean;
+  hideLabel?: boolean;
   optional?: boolean;
 }
 
 export const TextField = forwardRef<TextInput, TextFieldProps>(function TextField(
-  { label, error, hint, leftIcon, secureToggle, containerStyle, optional, multiline, secureTextEntry, onFocus, onBlur, editable, ...rest },
+  { label, error, hint, leftIcon, secureToggle, containerStyle, boxStyle, round, hideLabel, optional, multiline, secureTextEntry, onFocus, onBlur, editable, ...rest },
   ref
 ) {
   const [focused, setFocused] = useState(false);
@@ -25,18 +28,22 @@ export const TextField = forwardRef<TextInput, TextFieldProps>(function TextFiel
   // Kolom multi-baris tumbuh mengikuti isi (84-320px) agar teks panjang terbaca utuh.
   const [contentH, setContentH] = useState(84);
   const readOnly = editable === false;
-  const borderColor = error ? color.danger : focused ? color.brand : color.lineStrong;
+  const borderColor = error ? color.danger : focused ? color.brand : color.line;
 
   return (
     <View style={[{ gap: 6 }, containerStyle]}>
-      <AppText variant="small" weight="semibold" tone={color.inkSoft}>
-        {label}
-        {optional ? <AppText variant="small" tone={color.muted}> (opsional)</AppText> : null}
-      </AppText>
+      {!hideLabel ? (
+        <AppText variant="small" weight="semibold" tone={color.inkSoft}>
+          {label}
+          {optional ? <AppText variant="small" tone={color.muted}> (opsional)</AppText> : null}
+        </AppText>
+      ) : null}
       <View
         style={[
           styles.box,
-          { borderColor, borderWidth: focused || error ? 2 : 1.5 },
+          round && { borderRadius: 28, height: 52, paddingHorizontal: 18 },
+          { borderColor, borderWidth: focused || error ? 1.5 : 1 },
+          boxStyle,
           multiline && { minHeight: 104, alignItems: 'flex-start', paddingVertical: 10 },
           readOnly && { backgroundColor: color.surfaceMuted, borderColor: color.line, borderWidth: 1 },
         ]}
