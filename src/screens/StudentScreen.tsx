@@ -1,8 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useMemo, useState } from 'react';
 import { Linking, StyleSheet, View } from 'react-native';
 import { RadarChart } from '../components/RadarChart';
 import { JournalItem } from '../components/Rows';
+import { playIndexedPop } from '../lib/sound';
 import * as Clipboard from 'expo-clipboard';
 import {
   AppText,
@@ -377,6 +378,28 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
   const allJournals = journalsOf(ws.journals, { studentId: student.id }).sort((x, y) => (x.created_at < y.created_at ? 1 : -1));
   const withData = perSubject.filter((p) => p.stats.composite !== null);
 
+  // State pemilihan mapel interaktif
+  const [selectedSubjectId, setSelectedSubjectId] = useState<string | null>(null);
+
+  const selectedSubjectIndex = useMemo(() => {
+    if (!selectedSubjectId) return null;
+    const idx = perSubject.findIndex((p) => p.subject.id === selectedSubjectId);
+    return idx >= 0 ? idx : null;
+  }, [selectedSubjectId, perSubject]);
+
+  const handleToggleSubject = (subjectId: string, index: number) => {
+    playIndexedPop(index);
+    setSelectedSubjectId((prev) => (prev === subjectId ? null : subjectId));
+  };
+
+  const handleSelectRadarIndex = (index: number) => {
+    const p = perSubject[index];
+    if (p) {
+      playIndexedPop(index);
+      setSelectedSubjectId((prev) => (prev === p.subject.id ? null : p.subject.id));
+    }
+  };
+
   useEffect(() => {
     setNote(existing?.catatan || '');
   }, [existing?.id, periode]); // eslint-disable-line react-hooks/exhaustive-deps
@@ -457,23 +480,49 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
           <View style={{ flex: 1 }}>
             <AppText variant="heading">Di mapel mana kuat, di mana tertinggal?</AppText>
             <AppText variant="caption" tone={color.mutedOnWhite}>
-              Skor gabungan 0-100 dari jurnal tiap guru mapel
+              Skor gabungan 0-100 dari jurnal tiap guru mapel · Ketuk untuk rincian
             </AppText>
           </View>
           <StatusPill status={overall} />
         </View>
         {withData.length >= 3 ? (
-          <RadarChart axes={perSubject.map((p) => ({ label: p.subject.nama, value: p.stats.composite }))} width={layout.isCompact ? layout.width - 2 * layout.gutter - 34 : 420} />
+          <RadarChart
+            axes={perSubject.map((p) => ({
+              label: p.subject.nama,
+              value: p.stats.composite,
+              status: p.stats.status,
+              color: subjectPalette[p.subject.warna]?.bg,
+            }))}
+            selectedIndex={selectedSubjectIndex}
+            onSelectIndex={handleSelectRadarIndex}
+            width={layout.isCompact ? layout.width - 2 * layout.gutter - 34 : 420}
+          />
         ) : null}
         {perSubject.length === 0 ? (
           <AppText variant="small" tone={color.mutedOnWhite}>
             Belum ada guru mapel di kelas ini.
           </AppText>
         ) : (
-          perSubject.map((p) => {
+          perSubject.map((p, idx) => {
             const pal = subjectPalette[p.subject.warna];
+            const isSelected = selectedSubjectId === p.subject.id;
+            const r = ws.reports.find((x) => x.assignment_id === p.assignment.id && x.student_id === student.id && x.periode === periode);
+
             return (
-              <View key={p.assignment.id} style={{ gap: 6 }}>
+              <PressableScale
+                key={p.assignment.id}
+                onPress={() => handleToggleSubject(p.subject.id, idx)}
+                scaleTo={0.98}
+                style={[
+                  styles.subjectItemCard,
+                  isSelected && {
+                    borderColor: pal.bg,
+                    backgroundColor: pal.soft,
+                    borderWidth: 1.5,
+                  },
+                ]}
+                accessibilityLabel={`Mapel ${p.subject.nama}, skor ${p.stats.composite ?? 'belum ada data'}. Ketuk untuk rincian.`}
+              >
                 <View style={styles.between}>
                   <View style={styles.subjectLine}>
                     <View style={[styles.dot, { backgroundColor: pal.bg }]} />
@@ -486,10 +535,76 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
                       </AppText>
                     </View>
                   </View>
-                  <StatusPill status={p.stats.status} compact />
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                    <StatusPill status={p.stats.status} compact />
+                    <Ionicons
+                      name={isSelected ? 'chevron-up' : 'chevron-down'}
+                      size={16}
+                      color={isSelected ? pal.ink : color.mutedOnWhite}
+                    />
+                  </View>
                 </View>
-                {p.stats.composite !== null ? <ProgressBar value={p.stats.composite} tint={pal.bg === subjectPalette.yellow.bg ? '#B45309' : pal.bg} label={`${p.subject.nama} ${p.stats.composite}`} /> : null}
-              </View>
+
+                {p.stats.composite !== null ? (
+                  <ProgressBar
+                    value={p.stats.composite}
+                    tint={pal.bg === subjectPalette.yellow.bg ? '#B45309' : pal.bg}
+                    label={`${p.subject.nama} ${p.stats.composite}`}
+                  />
+                ) : null}
+
+                {isSelected ? (
+                  <View style={[styles.detailDrawer, { borderTopColor: pal.bg }]}>
+                    {p.stats.scores ? (
+                      <View style={styles.miniScoreGrid}>
+                        <View style={styles.miniScoreBox}>
+                          <AppText variant="caption" tone={color.mutedOnWhite}>
+                            Kognitif
+                          </AppText>
+                          <AppText variant="body" weight="bold" tone={color.ink}>
+                            {p.stats.scores.kognitif ?? '-'}
+                          </AppText>
+                        </View>
+                        <View style={styles.miniScoreBox}>
+                          <AppText variant="caption" tone={color.mutedOnWhite}>
+                            Keterampilan
+                          </AppText>
+                          <AppText variant="body" weight="bold" tone={color.ink}>
+                            {p.stats.scores.keterampilan ?? '-'}
+                          </AppText>
+                        </View>
+                        <View style={styles.miniScoreBox}>
+                          <AppText variant="caption" tone={color.mutedOnWhite}>
+                            Sikap
+                          </AppText>
+                          <AppText variant="body" weight="bold" tone={color.ink}>
+                            {p.stats.scores.sikap ?? '-'}
+                          </AppText>
+                        </View>
+                      </View>
+                    ) : null}
+
+                    {p.stats.reason ? (
+                      <View style={styles.miniReasonBox}>
+                        <Ionicons name="information-circle-outline" size={14} color={color.accentInk} />
+                        <AppText variant="caption" tone={color.accentInk} style={{ flex: 1 }}>
+                          {p.stats.reason}
+                        </AppText>
+                      </View>
+                    ) : null}
+
+                    {r ? (
+                      <Button
+                        label="Buka Rapor Mapel Ini"
+                        size="sm"
+                        variant="secondary"
+                        icon="document-text-outline"
+                        onPress={() => navigation.navigate('Report', { assignmentId: p.assignment.id, studentId: student.id, periode })}
+                      />
+                    ) : null}
+                  </View>
+                ) : null}
+              </PressableScale>
             );
           })
         )}
@@ -603,4 +718,41 @@ const styles = StyleSheet.create({
   subjectLine: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   dot: { width: 12, height: 12, borderRadius: 4 },
   reportRow: { flexDirection: 'row', alignItems: 'center', gap: 8, minHeight: 44, paddingHorizontal: 10, borderRadius: radius.sm, backgroundColor: color.surfaceMuted },
+  subjectItemCard: {
+    gap: 8,
+    padding: 10,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: 'transparent',
+    backgroundColor: color.surfaceMuted,
+  },
+  detailDrawer: {
+    gap: 10,
+    paddingTop: 10,
+    marginTop: 4,
+    borderTopWidth: 1,
+  },
+  miniScoreGrid: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+  },
+  miniScoreBox: {
+    flex: 1,
+    padding: 8,
+    borderRadius: radius.sm,
+    backgroundColor: color.surface,
+    borderWidth: 1,
+    borderColor: color.line,
+    alignItems: 'center',
+    gap: 2,
+  },
+  miniReasonBox: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    padding: 8,
+    borderRadius: radius.sm,
+    backgroundColor: color.accentSoft,
+  },
 });
