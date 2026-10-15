@@ -1,6 +1,6 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useMemo, useState } from 'react';
-import { StyleSheet, View } from 'react-native';
+import { StyleSheet, View, ScrollView } from 'react-native';
 import { JournalItem, StudentRow } from '../components/Rows';
 import { subjectIcon } from '../components/SubjectCard';
 import {
@@ -13,6 +13,7 @@ import {
   EmptyState,
   EnterView,
   Grid,
+  IconButton,
   PressableScale,
   ProgressBar,
   Screen,
@@ -30,7 +31,7 @@ import { teacherName } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
 import { confirmDialog, toast } from '../store/useUiStore';
 import { color, radius, space, subjectPalette } from '../theme/tokens';
-import { ClassRoom, ReportStatus, TeachingAssignment } from '../types';
+import { ClassRoom, GradeItem, GradeSubmission, ReportStatus, Student, StudentGrade, TeachingAssignment } from '../types';
 
 export function HomeroomScreen({ route, navigation }: any) {
   const ws = useAppStore((s) => s.ws)!;
@@ -48,7 +49,9 @@ export function HomeroomScreen({ route, navigation }: any) {
   }
 
   const students = ws.students.filter((s) => s.class_id === cls.id);
-  const waiting = ws.reports.filter((r) => r.class_id === cls.id && r.status === 'Diajukan' && r.periode === periode).length;
+  const waitingReports = ws.reports.filter((r) => r.class_id === cls.id && r.status === 'Diajukan' && r.periode === periode).length;
+  const assignmentsInClass = ws.assignments.filter((a) => a.class_id === cls.id);
+  const waitingGrades = (ws.gradeSubmissions || []).filter((s) => assignmentsInClass.some((a) => a.id === s.assignment_id) && s.periode === periode && s.status === 'Diajukan').length;
 
   return (
     <Screen header={<ScreenHeader title={`Wali kelas ${cls.nama_kelas}`} subtitle={`${cls.tahun_ajaran} · semester ${cls.semester}`} tone={{ bg: color.brand, fg: '#FFFFFF' }} />}>
@@ -66,13 +69,15 @@ export function HomeroomScreen({ route, navigation }: any) {
         onChange={setTab}
         options={[
           { key: 'ringkasan', label: 'Ringkasan' },
-          { key: 'tinjauan', label: 'Tinjauan', badge: waiting || undefined },
+          { key: 'tinjauan', label: 'Tinjauan', badge: waitingReports || undefined },
+          { key: 'nilai', label: 'Nilai Mapel', badge: waitingGrades || undefined },
           { key: 'siswa', label: 'Siswa' },
           { key: 'mapel', label: 'Mapel' },
         ]}
       />
       {tab === 'ringkasan' ? <OverviewTab cls={cls} periode={periode} navigation={navigation} goReview={() => setTab('tinjauan')} /> : null}
       {tab === 'tinjauan' ? <ReviewTab cls={cls} periode={periode} navigation={navigation} /> : null}
+      {tab === 'nilai' ? <HomeroomGradesTab cls={cls} periode={periode} /> : null}
       {tab === 'siswa' ? <RosterTab cls={cls} navigation={navigation} /> : null}
       {tab === 'mapel' ? <SubjectsTab cls={cls} navigation={navigation} /> : null}
     </Screen>
@@ -446,6 +451,435 @@ function SubjectsTab({ cls, navigation }: { cls: ClassRoom; navigation: any }) {
   );
 }
 
+function HomeroomGradesTab({ cls, periode }: { cls: ClassRoom; periode: string }) {
+  const ws = useAppStore((s) => s.ws)!;
+  const reviewGradeSubmission = useAppStore((s) => s.reviewGradeSubmission);
+  const layout = useLayout();
+
+  const assignments = ws.assignments.filter((a) => a.class_id === cls.id);
+  const [selectedAssignmentId, setSelectedAssignmentId] = useState<string | null>(assignments[0]?.id || null);
+  const [search, setSearch] = useState('');
+  const [reviewNoteDialog, setReviewNoteDialog] = useState(false);
+  const [reviewAction, setReviewAction] = useState<'Disetujui' | 'Revisi'>('Disetujui');
+  const [reviewNote, setReviewNote] = useState('');
+  const [reviewing, setReviewing] = useState(false);
+  const [detailCriterion, setDetailCriterion] = useState<GradeItem | null>(null);
+
+  const selectedAssignment = assignments.find((a) => a.id === selectedAssignmentId) || assignments[0] || null;
+  const subject = selectedAssignment ? ws.subjects.find((s) => s.id === selectedAssignment.subject_id) : null;
+  const palette = subject ? subjectPalette[subject.warna] : null;
+  const teacher = selectedAssignment ? ws.colleagues.find((t) => t.id === selectedAssignment.teacher_id) : null;
+
+  const criteria = selectedAssignment
+    ? (ws.gradeItems || []).filter((g) => g.assignment_id === selectedAssignment.id && g.periode === periode)
+    : [];
+
+  const submission = selectedAssignment
+    ? (ws.gradeSubmissions || []).find((s) => s.assignment_id === selectedAssignment.id && s.periode === periode)
+    : null;
+
+  const students = ws.students.filter((s) => s.class_id === cls.id);
+
+  // Student scores map: student.id -> { scores: Map<criterionId, number>, finalGrade: number | null, count: number }
+  const studentScores = useMemo(() => {
+    const map = new Map<string, { scores: Map<string, number>; finalGrade: number | null; count: number }>();
+    if (!selectedAssignment) return map;
+
+    const assignmentGrades = (ws.studentGrades || []).filter((sg) =>
+      criteria.some((c) => c.id === sg.grade_item_id)
+    );
+
+    students.forEach((st) => {
+      const scores = new Map<string, number>();
+      let weightedSum = 0;
+      let totalWeight = 0;
+      let count = 0;
+
+      criteria.forEach((c) => {
+        const found = assignmentGrades.find((g) => g.grade_item_id === c.id && g.student_id === st.id);
+        if (found && typeof found.nilai === 'number') {
+          scores.set(c.id, found.nilai);
+          weightedSum += found.nilai * (c.bobot || 1);
+          totalWeight += c.bobot || 1;
+          count++;
+        }
+      });
+
+      map.set(st.id, {
+        scores,
+        finalGrade: totalWeight > 0 ? Math.round(weightedSum / totalWeight) : null,
+        count,
+      });
+    });
+    return map;
+  }, [selectedAssignment, criteria, ws.studentGrades, students]);
+
+  // Overall class metrics for this subject
+  const metrics = useMemo(() => {
+    let totalGrade = 0;
+    let studentsWithGrade = 0;
+    let tuntasCount = 0;
+
+    students.forEach((st) => {
+      const info = studentScores.get(st.id);
+      if (info && info.finalGrade !== null) {
+        totalGrade += info.finalGrade;
+        studentsWithGrade++;
+        if (info.finalGrade >= 75) tuntasCount++;
+      }
+    });
+
+    return {
+      classAvg: studentsWithGrade > 0 ? Math.round(totalGrade / studentsWithGrade) : null,
+      gradedCount: studentsWithGrade,
+      tuntasCount,
+      tuntasPercent: studentsWithGrade > 0 ? Math.round((tuntasCount / studentsWithGrade) * 100) : 0,
+    };
+  }, [students, studentScores]);
+
+  const handleReview = async (decision: 'Disetujui' | 'Revisi', note?: string) => {
+    if (!selectedAssignment) return;
+    setReviewing(true);
+    try {
+      await reviewGradeSubmission(selectedAssignment.id, periode, decision, note);
+      toast(decision === 'Disetujui' ? 'Nilai mapel telah disetujui.' : 'Permintaan revisi nilai telah dikirim ke guru mapel.');
+      setReviewNoteDialog(false);
+      setReviewNote('');
+    } catch (e: any) {
+      toast(e?.message || 'Gagal memproses tinjauan.', 'error');
+    } finally {
+      setReviewing(false);
+    }
+  };
+
+  const filteredStudents = useMemo(() => {
+    if (!search.trim()) return students;
+    const q = search.toLowerCase();
+    return students.filter(
+      (s) => s.nama_lengkap.toLowerCase().includes(q) || s.nisn.toLowerCase().includes(q)
+    );
+  }, [students, search]);
+
+  if (assignments.length === 0) {
+    return (
+      <EmptyState
+        icon="book-outline"
+        title="Belum ada penugasan mapel"
+        message="Belum ada guru mata pelajaran yang ditugaskan di kelas ini."
+      />
+    );
+  }
+
+  const submissionStatus = submission ? submission.status : 'Draft';
+
+  return (
+    <View style={{ gap: space.md }}>
+      {/* Subject Selector Chips */}
+      <View style={{ gap: 6 }}>
+        <AppText variant="caption" weight="bold" tone={color.muted}>
+          PILIH MATA PELAJARAN
+        </AppText>
+        <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+          {assignments.map((asg) => {
+            const subj = ws.subjects.find((s) => s.id === asg.subject_id);
+            const isSelected = selectedAssignment?.id === asg.id;
+            const sub = (ws.gradeSubmissions || []).find((s) => s.assignment_id === asg.id && s.periode === periode);
+            const isWaiting = sub?.status === 'Diajukan';
+
+            return (
+              <Chip
+                key={asg.id}
+                label={`${subj?.nama || 'Mapel'}${isWaiting ? ' (Diajukan)' : ''}`}
+                selected={isSelected}
+                onPress={() => setSelectedAssignmentId(asg.id)}
+              />
+            );
+          })}
+        </ScrollView>
+      </View>
+
+      {/* Selected Subject Overview Card */}
+      {selectedAssignment && subject && palette ? (
+        <Card style={{ gap: 14 }}>
+          <View style={styles.between}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              <View style={[styles.iconMd, { backgroundColor: palette.bg }]}>
+                <Ionicons name={subjectIcon(subject.nama)} size={22} color={palette.fg} />
+              </View>
+              <View>
+                <AppText variant="title" weight="bold">
+                  {subject.nama}
+                </AppText>
+                <AppText variant="caption" tone={color.inkSoft}>
+                  Guru Pengampu: {teacher?.nama_lengkap || 'Belum ditentukan'}
+                </AppText>
+              </View>
+            </View>
+            <StatusPill status={submissionStatus} compact />
+          </View>
+
+          {/* Submission Info Banner */}
+          {submission?.submitted_at ? (
+            <View style={[styles.hint, { backgroundColor: submissionStatus === 'Disetujui' ? color.successSoft : color.infoSoft }]}>
+              <Ionicons
+                name={submissionStatus === 'Disetujui' ? 'checkmark-circle' : 'time-outline'}
+                size={18}
+                color={submissionStatus === 'Disetujui' ? color.success : color.info}
+              />
+              <View style={{ flex: 1 }}>
+                <AppText variant="caption" weight="semibold" tone={submissionStatus === 'Disetujui' ? color.success : color.info}>
+                  {submissionStatus === 'Disetujui'
+                    ? `Disetujui oleh Anda pada ${formatShortDate(submission.reviewed_at || submission.submitted_at)}.`
+                    : `Diajukan oleh guru mapel pada ${formatShortDate(submission.submitted_at)}.`}
+                </AppText>
+                {submission.catatan ? (
+                  <AppText variant="caption" tone={color.inkSoft} style={{ marginTop: 2 }}>
+                    Catatan guru mapel: "{submission.catatan}"
+                  </AppText>
+                ) : null}
+              </View>
+            </View>
+          ) : (
+            <AppText variant="caption" tone={color.muted}>
+              Guru mapel belum mengajukan nilai untuk semester {periode}.
+            </AppText>
+          )}
+
+          {/* Review Actions for Homeroom Teacher */}
+          {submissionStatus === 'Diajukan' ? (
+            <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', paddingTop: 4 }}>
+              <Button
+                label="Setujui Nilai Mapel"
+                icon="checkmark-circle-outline"
+                size="sm"
+                variant="primary"
+                loading={reviewing}
+                onPress={() => handleReview('Disetujui')}
+              />
+              <Button
+                label="Minta Catatan / Revisi"
+                icon="chatbox-ellipses-outline"
+                size="sm"
+                variant="subtle"
+                onPress={() => {
+                  setReviewAction('Revisi');
+                  setReviewNoteDialog(true);
+                }}
+              />
+            </View>
+          ) : submissionStatus === 'Disetujui' ? (
+            <View style={{ flexDirection: 'row', gap: 8, alignItems: 'center' }}>
+              <Button
+                label="Ubah Persetujuan / Minta Revisi"
+                icon="refresh-outline"
+                size="sm"
+                variant="ghost"
+                onPress={() => {
+                  setReviewAction('Revisi');
+                  setReviewNoteDialog(true);
+                }}
+              />
+            </View>
+          ) : null}
+
+          {/* KPI Metrics */}
+          <View style={styles.metricRow}>
+            <View style={styles.metricItem}>
+              <AppText variant="caption" tone={color.muted}>RATA-RATA MAPEL</AppText>
+              <AppText variant="title" weight="bold" tone={metrics.classAvg && metrics.classAvg >= 75 ? color.success : color.accentInk}>
+                {metrics.classAvg ?? '-'}
+              </AppText>
+            </View>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricItem}>
+              <AppText variant="caption" tone={color.muted}>KETUNTASAN KELAS</AppText>
+              <AppText variant="title" weight="bold" tone={color.success}>
+                {metrics.tuntasPercent}%
+              </AppText>
+            </View>
+            <View style={styles.metricDivider} />
+            <View style={styles.metricItem}>
+              <AppText variant="caption" tone={color.muted}>KRITERIA TUGAS</AppText>
+              <AppText variant="title" weight="bold">
+                {criteria.length} kriteria
+              </AppText>
+            </View>
+          </View>
+        </Card>
+      ) : null}
+
+      {/* Criteria Breakdown by Subject Teacher */}
+      <Card style={{ gap: 10 }}>
+        <View style={styles.between}>
+          <AppText variant="heading">Kriteria Penilaian Guru Mapel ({criteria.length})</AppText>
+          <AppText variant="caption" tone={color.muted}>
+            Ketuk kriteria untuk baca deskripsi tugas
+          </AppText>
+        </View>
+
+        {criteria.length === 0 ? (
+          <AppText variant="caption" tone={color.muted}>
+            Guru pengampu belum mendefinisikan kriteria tugas / ulangan untuk semester ini.
+          </AppText>
+        ) : (
+          <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ gap: 8 }}>
+            {criteria.map((crit) => (
+              <PressableScale
+                key={crit.id}
+                onPress={() => setDetailCriterion(crit)}
+                scaleTo={0.98}
+                style={[styles.criterionTag, { borderColor: palette?.fg || color.brand }]}
+              >
+                <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <AppText variant="caption" weight="bold">
+                    {crit.judul}
+                  </AppText>
+                  <View style={styles.weightPillSmall}>
+                    <AppText variant="caption" weight="bold" tone={color.ink}>
+                      {crit.bobot}x
+                    </AppText>
+                  </View>
+                </View>
+                <AppText variant="caption" tone={color.muted} numberOfLines={1}>
+                  {crit.kategori}
+                </AppText>
+              </PressableScale>
+            ))}
+          </ScrollView>
+        )}
+      </Card>
+
+      {/* Student Roster & Grade Matrix */}
+      <View style={{ gap: space.sm }}>
+        <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
+          <View style={{ flex: 1 }}>
+            <TextField
+              label="Cari Siswa"
+              placeholder="Cari nama atau NISN siswa..."
+              value={search}
+              onChangeText={setSearch}
+            />
+          </View>
+        </View>
+
+        <Grid columns={layout.isExpanded ? 2 : 1}>
+          {filteredStudents.map((st, i) => {
+            const info = studentScores.get(st.id);
+            const finalGrade = info?.finalGrade;
+            const hasFinal = finalGrade !== null && finalGrade !== undefined;
+            const isTuntas = hasFinal && finalGrade >= 75;
+
+            return (
+              <EnterView key={st.id} index={i}>
+                <Card style={{ gap: 10 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
+                    <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 }}>
+                      <Avatar name={st.nama_lengkap} size={36} />
+                      <View style={{ flex: 1, minWidth: 0 }}>
+                        <AppText variant="body" weight="bold" numberOfLines={1}>
+                          {st.nama_lengkap}
+                        </AppText>
+                        <AppText variant="caption" tone={color.muted}>
+                          NISN {st.nisn}
+                        </AppText>
+                      </View>
+                    </View>
+
+                    {/* Final Weighted Grade */}
+                    <View style={[styles.scoreBadge, hasFinal ? (isTuntas ? styles.scoreTuntas : styles.scoreBelum) : styles.scoreEmpty]}>
+                      <AppText variant="title" weight="bold" tone={hasFinal ? (isTuntas ? color.success : color.accentInk) : color.muted}>
+                        {hasFinal ? finalGrade : '-'}
+                      </AppText>
+                      <AppText variant="caption" tone={hasFinal ? (isTuntas ? color.success : color.accentInk) : color.muted}>
+                        {hasFinal ? (isTuntas ? 'Tuntas' : 'Perlu') : 'Kosong'}
+                      </AppText>
+                    </View>
+                  </View>
+
+                  {/* Breakdown per criteria */}
+                  {criteria.length > 0 ? (
+                    <View style={styles.criteriaChipsRow}>
+                      {criteria.map((crit) => {
+                        const score = info?.scores.get(crit.id);
+                        return (
+                          <View key={crit.id} style={styles.miniScoreBadge}>
+                            <AppText variant="caption" tone={color.muted}>
+                              {crit.judul}:
+                            </AppText>
+                            <AppText
+                              variant="caption"
+                              weight="bold"
+                              tone={score !== undefined ? (score >= 75 ? color.success : color.accentInk) : color.muted}
+                            >
+                              {score !== undefined ? score : '-'}
+                            </AppText>
+                          </View>
+                        );
+                      })}
+                    </View>
+                  ) : null}
+                </Card>
+              </EnterView>
+            );
+          })}
+        </Grid>
+      </View>
+
+      {/* Criterion Detail Dialog */}
+      <Dialog
+        visible={Boolean(detailCriterion)}
+        onClose={() => setDetailCriterion(null)}
+        title={detailCriterion?.judul || 'Rincian Kriteria'}
+        description={`Kategori: ${detailCriterion?.kategori} · Bobot Penilaian: ${detailCriterion?.bobot}x`}
+        footer={<Button label="Tutup" variant="ghost" onPress={() => setDetailCriterion(null)} />}
+      >
+        <View style={{ gap: space.sm }}>
+          <AppText variant="caption" weight="bold">
+            Deskripsi Tugas / Materi:
+          </AppText>
+          <View style={[styles.hint, { backgroundColor: color.surfaceMuted }]}>
+            <AppText variant="body" tone={color.ink}>
+              {detailCriterion?.deskripsi || 'Tidak ada deskripsi tambahan dari guru mapel.'}
+            </AppText>
+          </View>
+          <AppText variant="caption" tone={color.muted}>
+            Tanggal Pelaksanaan: {formatShortDate(detailCriterion?.tanggal || new Date().toISOString())}
+          </AppText>
+        </View>
+      </Dialog>
+
+      {/* Review Feedback Dialog */}
+      <Dialog
+        visible={reviewNoteDialog}
+        onClose={() => setReviewNoteDialog(false)}
+        title="Catatan Revisi Nilai Mapel"
+        description="Kirim catatan atau masukan kepada guru mapel mengenai penilaian kelas ini."
+        footer={
+          <>
+            <Button label="Batal" variant="ghost" onPress={() => setReviewNoteDialog(false)} />
+            <Button
+              label="Kirim Permintaan Revisi"
+              icon="send"
+              loading={reviewing}
+              onPress={() => handleReview('Revisi', reviewNote)}
+            />
+          </>
+        }
+      >
+        <TextField
+          label="Catatan untuk Guru Mapel"
+          placeholder="Contoh: Mohon lengkapi nilai ulangan 2 untuk 3 siswa yang sebelumnya sakit."
+          value={reviewNote}
+          onChangeText={setReviewNote}
+          multiline
+          numberOfLines={3}
+          autoFocus
+        />
+      </Dialog>
+    </View>
+  );
+}
+
 const styles = StyleSheet.create({
   periodRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
@@ -460,4 +894,16 @@ const styles = StyleSheet.create({
   iconMd: { width: 40, height: 40, borderRadius: 12, alignItems: 'center', justifyContent: 'center' },
   reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line },
   rosterTop: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' },
+  hint: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: radius.md, backgroundColor: color.infoSoft },
+  metricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: color.surface, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: color.line },
+  metricItem: { alignItems: 'center', gap: 2 },
+  metricDivider: { width: 1, height: 26, backgroundColor: color.line },
+  criterionTag: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, backgroundColor: color.surfaceMuted, borderWidth: 1, gap: 2 },
+  weightPillSmall: { backgroundColor: color.line, paddingHorizontal: 6, paddingVertical: 1, borderRadius: radius.full },
+  scoreBadge: { alignItems: 'center', justifyContent: 'center', minWidth: 54, height: 46, borderRadius: radius.md, paddingHorizontal: 8 },
+  scoreTuntas: { backgroundColor: color.successSoft },
+  scoreBelum: { backgroundColor: color.accentSoft },
+  scoreEmpty: { backgroundColor: color.surfaceMuted, borderWidth: 1, borderColor: color.lineStrong },
+  criteriaChipsRow: { flexDirection: 'row', flexWrap: 'wrap', gap: 6, paddingTop: 4, borderTopWidth: 1, borderTopColor: color.line },
+  miniScoreBadge: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.sm, backgroundColor: color.surfaceMuted },
 });

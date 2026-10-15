@@ -3,7 +3,8 @@ import * as Crypto from 'expo-crypto';
 import { askGeminiPedagogy, isGeminiConfigured } from '../api/gemini';
 import { localAssistantReply } from '../lib/assistant';
 import { uid } from '../lib/phone';
-import { DailyJournal, SubjectReport } from '../types';
+import { DailyJournal, GradeItem, GradeSubmission, HomeroomReport, StudentGrade, SubjectReport } from '../types';
+import { toISODate } from '../lib/dates';
 import { Repository, RepoError } from './repository';
 import { buildSeed, DEMO_DB_VERSION, DEMO_PASSWORD, DemoDB } from './seed';
 import { canWriteStudents, visibleWorkspace } from './visibility';
@@ -370,6 +371,137 @@ export const demoRepository: Repository = {
     db.groups.push(...rows);
     await persist();
     return rows;
+  },
+
+  async saveGradeItem(input) {
+    const db = await load();
+    const a = db.assignments.find((x) => x.id === input.assignment_id);
+    if (!a || a.teacher_id !== me()) throw new RepoError('Anda tidak mengampu mapel ini di kelas tersebut.', 'forbidden');
+    if (!db.gradeItems) db.gradeItems = [];
+    if (input.id) {
+      const idx = db.gradeItems.findIndex((g) => g.id === input.id);
+      if (idx >= 0) {
+        db.gradeItems[idx] = { ...db.gradeItems[idx], ...input };
+        await persist();
+        return db.gradeItems[idx];
+      }
+    }
+    const item: GradeItem = {
+      id: uid('gi'),
+      assignment_id: input.assignment_id,
+      periode: input.periode,
+      judul: input.judul,
+      kategori: input.kategori,
+      deskripsi: input.deskripsi,
+      bobot: input.bobot ?? 1,
+      tanggal: input.tanggal || new Date().toISOString().slice(0, 10),
+    };
+    db.gradeItems.push(item);
+    await persist();
+    return item;
+  },
+
+  async deleteGradeItem(id) {
+    const db = await load();
+    if (!db.gradeItems) db.gradeItems = [];
+    const item = db.gradeItems.find((g) => g.id === id);
+    if (!item) return;
+    const a = db.assignments.find((x) => x.id === item.assignment_id);
+    if (!a || a.teacher_id !== me()) throw new RepoError('Hanya guru pengampu yang dapat menghapus kriteria nilai ini.', 'forbidden');
+    db.gradeItems = db.gradeItems.filter((g) => g.id !== id);
+    if (db.studentGrades) {
+      db.studentGrades = db.studentGrades.filter((sg) => sg.grade_item_id !== id);
+    }
+    await persist();
+  },
+
+  async saveStudentGrades(gradeItemId, grades) {
+    const db = await load();
+    if (!db.gradeItems) db.gradeItems = [];
+    if (!db.studentGrades) db.studentGrades = [];
+    const item = db.gradeItems.find((g) => g.id === gradeItemId);
+    if (!item) throw new RepoError('Kriteria nilai tidak ditemukan.', 'not_found');
+    const a = db.assignments.find((x) => x.id === item.assignment_id);
+    if (!a || a.teacher_id !== me()) throw new RepoError('Anda tidak memiliki akses mengubah nilai pada kelas ini.', 'forbidden');
+
+    const updated: StudentGrade[] = [];
+    for (const g of grades) {
+      const existing = db.studentGrades.find((sg) => sg.grade_item_id === gradeItemId && sg.student_id === g.student_id);
+      if (existing) {
+        existing.nilai = g.nilai;
+        updated.push(existing);
+      } else {
+        const newRow: StudentGrade = {
+          id: uid('sg'),
+          grade_item_id: gradeItemId,
+          student_id: g.student_id,
+          nilai: g.nilai,
+        };
+        db.studentGrades.push(newRow);
+        updated.push(newRow);
+      }
+    }
+    await persist();
+    return updated;
+  },
+
+  async submitGrades(assignmentId, periode, catatan) {
+    const db = await load();
+    if (!db.gradeSubmissions) db.gradeSubmissions = [];
+    const a = db.assignments.find((x) => x.id === assignmentId);
+    if (!a || a.teacher_id !== me()) throw new RepoError('Anda tidak mengampu mapel ini di kelas tersebut.', 'forbidden');
+    const now = new Date().toISOString();
+    const existing = db.gradeSubmissions.find((s) => s.assignment_id === assignmentId && s.periode === periode);
+    if (existing) {
+      existing.status = 'Diajukan';
+      existing.submitted_at = now;
+      if (catatan !== undefined) existing.catatan = catatan;
+      await persist();
+      return { ...existing };
+    }
+    const sub: GradeSubmission = {
+      id: uid('sub'),
+      assignment_id: assignmentId,
+      periode,
+      status: 'Diajukan',
+      submitted_at: now,
+      reviewed_at: null,
+      catatan: catatan || null,
+    };
+    db.gradeSubmissions.push(sub);
+    await persist();
+    return sub;
+  },
+
+  async reviewGradeSubmission(assignmentId, periode, decision, catatan) {
+    const db = await load();
+    if (!db.gradeSubmissions) db.gradeSubmissions = [];
+    const a = db.assignments.find((x) => x.id === assignmentId);
+    if (!a) throw new RepoError('Penugasan tidak ditemukan.', 'not_found');
+    const cls = db.classes.find((c) => c.id === a.class_id);
+    if (!cls || cls.homeroom_teacher_id !== me()) throw new RepoError('Hanya wali kelas yang dapat meninjau nilai mapel.', 'forbidden');
+    const existing = db.gradeSubmissions.find((s) => s.assignment_id === assignmentId && s.periode === periode);
+    const now = new Date().toISOString();
+    const status = decision === 'Disetujui' ? 'Disetujui' : 'Draft';
+    if (existing) {
+      existing.status = status;
+      existing.reviewed_at = now;
+      if (catatan !== undefined) existing.catatan = catatan;
+      await persist();
+      return { ...existing };
+    }
+    const sub: GradeSubmission = {
+      id: uid('sub'),
+      assignment_id: assignmentId,
+      periode,
+      status,
+      submitted_at: now,
+      reviewed_at: now,
+      catatan: catatan || null,
+    };
+    db.gradeSubmissions.push(sub);
+    await persist();
+    return sub;
   },
 
   async askAssistant(question, history, workspaceSummary) {

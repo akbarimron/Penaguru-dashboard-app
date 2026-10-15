@@ -8,8 +8,8 @@ export type TabParamList = {
   Profile: undefined;
 };
 
-export type SubjectTab = 'ringkasan' | 'siswa' | 'rapor' | 'kelompok';
-export type HomeroomTab = 'ringkasan' | 'tinjauan' | 'siswa' | 'mapel';
+export type SubjectTab = 'ringkasan' | 'siswa' | 'nilai' | 'rapor' | 'kelompok';
+export type HomeroomTab = 'ringkasan' | 'tinjauan' | 'nilai' | 'siswa' | 'mapel';
 
 export type RootStackParamList = {
   Login: undefined;

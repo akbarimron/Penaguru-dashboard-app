@@ -203,16 +203,16 @@ export function HomeScreen({ navigation }: any) {
       <DemoBanner />
       {isAdmin ? (
         <View style={{ gap: space.lg }}>
-          <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1 }}>
+          <Card style={{ backgroundColor: color.brandSoft, borderColor: color.brand, borderWidth: 1 }}>
             <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: space.md }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', gap: space.md, flex: 1, minWidth: 220 }}>
-                <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
+                <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.brand, alignItems: 'center', justifyContent: 'center' }}>
                   <Ionicons name="shield-checkmark" size={24} color="#FFF" />
                 </View>
                 <View style={{ flex: 1, minWidth: 0 }}>
                   <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <AppText variant="title" weight="bold">Akses Administrator</AppText>
-                    <View style={{ backgroundColor: color.primary, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.pill }}>
+                    <View style={{ backgroundColor: color.brand, paddingHorizontal: 8, paddingVertical: 2, borderRadius: radius.full }}>
                       <AppText variant="caption" weight="bold" tone="#FFFFFF">Super Admin</AppText>
                     </View>
                   </View>
@@ -236,7 +236,7 @@ export function HomeScreen({ navigation }: any) {
             <Card style={{ gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <AppText variant="caption" tone={color.muted}>TOTAL GURU</AppText>
-                <Ionicons name="people-outline" size={18} color={color.primary} />
+                <Ionicons name="people-outline" size={18} color={color.brand} />
               </View>
               <AppText variant="display" weight="bold">{ws.colleagues.length || 4}</AppText>
               <AppText variant="caption" tone={color.muted}>Tenaga Pendidik</AppText>
@@ -260,7 +260,7 @@ export function HomeScreen({ navigation }: any) {
             <Card style={{ gap: 4 }}>
               <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
                 <AppText variant="caption" tone={color.muted}>JURNAL 30 HARI</AppText>
-                <Ionicons name="journal-outline" size={18} color={color.warning} />
+                <Ionicons name="journal-outline" size={18} color={color.accent} />
               </View>
               <AppText variant="display" weight="bold">{ws.journals.length}</AppText>
               <AppText variant="caption" tone={color.muted}>Catatan Observasi</AppText>
@@ -286,8 +286,8 @@ export function HomeScreen({ navigation }: any) {
                         <AppText variant="title" weight="bold">{cls.nama_kelas}</AppText>
                         <AppText variant="caption" tone={color.muted}>Tingkat {cls.tingkat} · {cls.tahun_ajaran} ({cls.semester})</AppText>
                       </View>
-                      <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.pill, backgroundColor: color.primarySoft }}>
-                        <AppText variant="caption" weight="bold" tone={color.primary}>{count} Siswa</AppText>
+                      <View style={{ paddingHorizontal: 10, paddingVertical: 4, borderRadius: radius.full, backgroundColor: color.brandSoft }}>
+                        <AppText variant="caption" weight="bold" tone={color.brand}>{count} Siswa</AppText>
                       </View>
                     </View>
                     <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>

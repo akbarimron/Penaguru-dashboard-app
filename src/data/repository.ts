@@ -2,13 +2,19 @@ import {
   Assessment,
   ClassRoom,
   DailyJournal,
+  GradeItem,
+  GradeSubmission,
   HomeroomReport,
+  ScheduleSlot,
   School,
   SessionUser,
   Student,
+  StudentGrade,
   StudyGroup,
   Subject,
+  SubjectColor,
   SubjectReport,
+  Teacher,
   TeachingAssignment,
   Workspace,
 } from '../types';
@@ -63,6 +69,13 @@ export interface Repository {
   deleteAssessment(id: string): Promise<void>;
 
   saveGroups(assignmentId: string, groups: Pick<StudyGroup, 'nama_kelompok' | 'members'>[]): Promise<StudyGroup[]>;
+
+  // Pengelolaan Nilai & Pengajuan ke Wali Kelas
+  saveGradeItem(input: Omit<GradeItem, 'id'> & { id?: string }): Promise<GradeItem>;
+  deleteGradeItem(id: string): Promise<void>;
+  saveStudentGrades(gradeItemId: string, grades: { student_id: string; nilai: number }[]): Promise<StudentGrade[]>;
+  submitGrades(assignmentId: string, periode: string, catatan?: string): Promise<GradeSubmission>;
+  reviewGradeSubmission(assignmentId: string, periode: string, decision: 'Disetujui' | 'Revisi', catatan?: string): Promise<GradeSubmission>;
 
   // Admin Methods (Pengelolaan Penuh oleh Admin)
   updateSchool(input: { nama?: string; npsn?: string | null; kode_gabung?: string }): Promise<School>;

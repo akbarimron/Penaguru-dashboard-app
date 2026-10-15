@@ -148,7 +148,6 @@ export function RadarChart({
                   r={24}
                   fill="transparent"
                   onPress={() => onSelectIndex(i)}
-                  style={{ cursor: 'pointer' }}
                 />
               ) : null}
             </G>

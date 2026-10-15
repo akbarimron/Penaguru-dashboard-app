@@ -138,6 +138,39 @@ export interface StudyGroup {
   created_at: string;
 }
 
+export type GradeCategory = 'Ulangan Harian' | 'Tugas Individu' | 'Tugas Kelompok' | 'Praktikum' | 'Proyek' | 'Lainnya';
+
+// Kriteria penilaian kustom yang dibuat guru per mapel x kelas per semester
+export interface GradeItem {
+  id: string;
+  assignment_id: string;
+  periode: string; // e.g. "PTS Ganjil 2026/2027", "PAS Ganjil 2026/2027"
+  judul: string; // e.g. "Ulangan 1", "Tugas kelompok", "Tugas individu 1"
+  kategori: GradeCategory; // e.g. "Ulangan Harian", "Tugas Individu", "Tugas Kelompok", "Praktikum", "Proyek"
+  deskripsi: string; // e.g. "Materi Algoritma Pencarian Linear & Binary Search"
+  bobot: number; // e.g. 1
+  tanggal: string; // YYYY-MM-DD
+}
+
+// Nilai siswa per kriteria penilaian
+export interface StudentGrade {
+  id: string;
+  grade_item_id: string;
+  student_id: string;
+  nilai: number; // 0-100
+}
+
+// Pengajuan rekap nilai semester dari guru mapel ke wali kelas
+export interface GradeSubmission {
+  id: string;
+  assignment_id: string;
+  periode: string;
+  status: 'Draft' | 'Diajukan' | 'Disetujui';
+  submitted_at: string | null;
+  reviewed_at: string | null;
+  catatan?: string;
+}
+
 export interface ChatMessage {
   id: string;
   sender: 'user' | 'assistant';
@@ -166,6 +199,9 @@ export interface Workspace {
   homeroomReports: HomeroomReport[];
   assessments: Assessment[];
   groups: StudyGroup[];
+  gradeItems: GradeItem[];
+  studentGrades: StudentGrade[];
+  gradeSubmissions: GradeSubmission[];
 }
 
 export interface SessionUser {

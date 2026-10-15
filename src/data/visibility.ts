@@ -26,6 +26,9 @@ export function visibleWorkspace(db: DemoDB, teacherId: string): Workspace {
     homeroomReports: [],
     assessments: [],
     groups: [],
+    gradeItems: [],
+    studentGrades: [],
+    gradeSubmissions: [],
   };
   if (!school) return empty;
 
@@ -40,7 +43,7 @@ export function visibleWorkspace(db: DemoDB, teacherId: string): Workspace {
 
   return {
     ...empty,
-    colleagues: db.teachers.filter((t) => t.school_id === school.id).map((t) => ({ id: t.id, nama_lengkap: t.nama_lengkap })),
+    colleagues: db.teachers.filter((t) => t.school_id === school.id),
     classes,
     subjects: db.subjects.filter((s) => s.school_id === school.id),
     assignments,
@@ -55,6 +58,15 @@ export function visibleWorkspace(db: DemoDB, teacherId: string): Workspace {
     groups: db.groups.filter((g) => {
       const a = assignments.find((x) => x.id === g.assignment_id);
       return myAssignments.has(g.assignment_id) || (a ? homeroom.has(a.class_id) : false);
+    }),
+    gradeItems: (db.gradeItems || []).filter((g) => {
+      const a = assignments.find((x) => x.id === g.assignment_id);
+      return myAssignments.has(g.assignment_id) || (a ? homeroom.has(a.class_id) : false);
+    }),
+    studentGrades: db.studentGrades || [],
+    gradeSubmissions: (db.gradeSubmissions || []).filter((s) => {
+      const a = assignments.find((x) => x.id === s.assignment_id);
+      return myAssignments.has(s.assignment_id) || (a ? homeroom.has(a.class_id) : false);
     }),
   };
 }

@@ -226,8 +226,8 @@ function TeachersTab() {
                   <AppText variant="body" weight="bold">
                     {t.nama_lengkap}
                   </AppText>
-                  {isMe ? <Chip label="Anda" size="sm" /> : null}
-                  <Chip label={t.role === 'admin' ? 'Admin' : 'Guru'} size="sm" selected={t.role === 'admin'} />
+                  {isMe ? <Chip label="Anda" /> : null}
+                  <Chip label={t.role === 'admin' ? 'Admin' : 'Guru'} selected={t.role === 'admin'} />
                 </View>
                 <AppText variant="caption" tone={color.inkSoft}>
                   {t.email} · {t.nip ? `NIP ${t.nip}` : 'NIP -'}
@@ -553,7 +553,7 @@ function StudentsTab() {
                   <AppText variant="body" weight="bold">
                     {s.nama_lengkap}
                   </AppText>
-                  <Chip label={s.jenis_kelamin === 'L' ? 'L' : 'P'} size="sm" />
+                  <Chip label={s.jenis_kelamin === 'L' ? 'L' : 'P'} />
                 </View>
                 <AppText variant="caption" tone={color.inkSoft}>
                   NISN {s.nisn} · {cls?.nama_kelas || '-'} · {journalCount} jurnal

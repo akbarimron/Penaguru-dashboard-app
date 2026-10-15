@@ -90,6 +90,9 @@ export const supabaseRepository: Repository = {
       homeroomReports: [],
       assessments: [],
       groups: [],
+      gradeItems: [],
+      studentGrades: [],
+      gradeSubmissions: [],
     };
     if (!teacher.school_id) return empty;
 
@@ -110,6 +113,22 @@ export const supabaseRepository: Repository = {
         rows(client.from('study_groups').select('id, assignment_id, nama_kelompok, created_at, group_members(student_id, peran)')),
       ]);
 
+    let gradeItems: any[] = [];
+    let studentGrades: any[] = [];
+    let gradeSubmissions: any[] = [];
+    try {
+      const [gi, sg, gs] = await Promise.all([
+        rows(client.from('grade_items').select('*')),
+        rows(client.from('student_grades').select('*')),
+        rows(client.from('grade_submissions').select('*')),
+      ]);
+      gradeItems = gi;
+      studentGrades = sg;
+      gradeSubmissions = gs;
+    } catch {
+      // Table may not yet exist in Supabase
+    }
+
     return {
       ...empty,
       school,
@@ -126,6 +145,9 @@ export const supabaseRepository: Repository = {
       homeroomReports,
       assessments,
       groups: (groups as any[]).map((g) => ({ ...g, members: g.group_members || [] })) as StudyGroup[],
+      gradeItems,
+      studentGrades,
+      gradeSubmissions,
     };
   },
 
@@ -239,6 +261,39 @@ export const supabaseRepository: Repository = {
     const { data, error } = await sb().rpc('replace_study_groups', { p_assignment_id: assignmentId, p_groups: groups });
     if (error) fail(error);
     return ((data as any[]) || []).map((g) => ({ ...g, members: g.members || [] }));
+  },
+
+  async saveGradeItem(input) {
+    const { id, ...rest } = input;
+    if (id) {
+      return one(sb().from('grade_items').update(rest).eq('id', id).select().single());
+    }
+    return one(sb().from('grade_items').insert(rest).select().single());
+  },
+
+  async deleteGradeItem(id) {
+    const { error } = await sb().from('grade_items').delete().eq('id', id);
+    if (error) fail(error);
+  },
+
+  async saveStudentGrades(gradeItemId, grades) {
+    const rows = grades.map((g) => ({ grade_item_id: gradeItemId, student_id: g.student_id, nilai: g.nilai }));
+    const { data, error } = await sb().from('student_grades').upsert(rows, { onConflict: 'grade_item_id,student_id' }).select();
+    if (error) fail(error);
+    return data || [];
+  },
+
+  async submitGrades(assignmentId, periode, catatan) {
+    const now = new Date().toISOString();
+    const row = { assignment_id: assignmentId, periode, status: 'Diajukan', submitted_at: now, catatan: catatan || null };
+    return one(sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single());
+  },
+
+  async reviewGradeSubmission(assignmentId, periode, decision, catatan) {
+    const now = new Date().toISOString();
+    const status = decision === 'Disetujui' ? 'Disetujui' : 'Draft';
+    const row = { assignment_id: assignmentId, periode, status, reviewed_at: now, catatan: catatan || null };
+    return one(sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single());
   },
 
   async askAssistant(question, history, workspaceSummary) {

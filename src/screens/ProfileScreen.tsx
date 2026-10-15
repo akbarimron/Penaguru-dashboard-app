@@ -71,9 +71,9 @@ export function ProfileScreen({ navigation }: any) {
 
   const adminCard = isAdmin ? (
     <EnterView index={1}>
-      <Card style={{ backgroundColor: color.primarySoft, borderColor: color.primary, borderWidth: 1, gap: 12 }}>
+      <Card style={{ backgroundColor: color.brandSoft, borderColor: color.brand, borderWidth: 1, gap: 12 }}>
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
-          <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.primary, alignItems: 'center', justifyContent: 'center' }}>
+          <View style={{ width: 44, height: 44, borderRadius: radius.md, backgroundColor: color.brand, alignItems: 'center', justifyContent: 'center' }}>
             <Ionicons name="shield-checkmark" size={24} color="#FFF" />
           </View>
           <View style={{ flex: 1, minWidth: 0 }}>

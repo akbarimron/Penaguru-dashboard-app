@@ -1,6 +1,10 @@
 import { Platform } from 'react-native';
 import { useSettingsStore } from '../store/useSettingsStore';
 
+declare const window: any;
+declare const navigator: any;
+type AudioContext = any;
+
 let sharedAudioCtx: AudioContext | null = null;
 
 function getAudioContext(): AudioContext | null {

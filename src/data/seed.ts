@@ -5,9 +5,12 @@ import {
   Assessment,
   ClassRoom,
   DailyJournal,
+  GradeItem,
+  GradeSubmission,
   HomeroomReport,
   School,
   Student,
+  StudentGrade,
   StudyGroup,
   Subject,
   SubjectReport,
@@ -38,9 +41,12 @@ export interface DemoDB {
   homeroomReports: HomeroomReport[];
   assessments: Assessment[];
   groups: StudyGroup[];
+  gradeItems: GradeItem[];
+  studentGrades: StudentGrade[];
+  gradeSubmissions: GradeSubmission[];
 }
 
-export const DEMO_DB_VERSION = 4;
+export const DEMO_DB_VERSION = 5;
 
 // Akun demo lokal. Kata sandi ini hanya berlaku di mode demo (tersimpan
 // sebagai hash SHA-256 di perangkat) dan tidak dipakai di Supabase.
@@ -390,7 +396,6 @@ export function buildSeed(now = new Date()): Omit<DemoDB, 'users'> {
       catatan_wali_kelas: note,
       submitted_at: status === 'Draft' ? null : stamp,
       reviewed_at: status === 'Disetujui' || status === 'Revisi' ? stamp : null,
-      reviewed_by: status === 'Disetujui' || status === 'Revisi' ? 't-budi' : null,
       updated_at: stamp,
     });
   };
@@ -462,6 +467,173 @@ export function buildSeed(now = new Date()): Omit<DemoDB, 'users'> {
     mkAssessment('a-inf-x1', 'Penilaian Tengah Semester (PTS)', 'PTS', 15),
   ];
 
+  const gradeItems: GradeItem[] = [
+    {
+      id: 'gi-inf-1',
+      assignment_id: 'a-inf-x1',
+      periode: pts,
+      judul: 'Ulangan 1',
+      kategori: 'Ulangan Harian',
+      deskripsi: 'Algoritma Percabangan & Logika Boolean',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -20)),
+    },
+    {
+      id: 'gi-inf-2',
+      assignment_id: 'a-inf-x1',
+      periode: pts,
+      judul: 'Tugas Individu 1',
+      kategori: 'Tugas Individu',
+      deskripsi: 'Implementasi Flowchart dan Pseudocode Pencarian',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -14)),
+    },
+    {
+      id: 'gi-inf-3',
+      assignment_id: 'a-inf-x1',
+      periode: pts,
+      judul: 'Tugas Kelompok',
+      kategori: 'Tugas Kelompok',
+      deskripsi: 'Studi Kasus Efisiensi Pencarian Data E-Commerce',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -8)),
+    },
+    {
+      id: 'gi-inf-4',
+      assignment_id: 'a-inf-x1',
+      periode: pts,
+      judul: 'Ulangan 2',
+      kategori: 'Ulangan Harian',
+      deskripsi: 'Perulangan For, While, dan Nested Loop',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -2)),
+    },
+    // Kelas X PPLG 2
+    {
+      id: 'gi-inf2-1',
+      assignment_id: 'a-inf-x2',
+      periode: pts,
+      judul: 'Ulangan 1',
+      kategori: 'Ulangan Harian',
+      deskripsi: 'Algoritma Pencarian Linear & Binary Search',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -18)),
+    },
+    {
+      id: 'gi-inf2-2',
+      assignment_id: 'a-inf-x2',
+      periode: pts,
+      judul: 'Tugas Kelompok',
+      kategori: 'Tugas Kelompok',
+      deskripsi: 'Eksperimen Perbandingan Kompleksitas Waktu Running',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -10)),
+    },
+    {
+      id: 'gi-inf2-3',
+      assignment_id: 'a-inf-x2',
+      periode: pts,
+      judul: 'Tugas Individu 1',
+      kategori: 'Tugas Individu',
+      deskripsi: 'Penulisan Kode Python Pencarian Biner',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -4)),
+    },
+    // Web X PPLG 1
+    {
+      id: 'gi-web-1',
+      assignment_id: 'a-web-x1',
+      periode: pts,
+      judul: 'Ulangan 1',
+      kategori: 'Ulangan Harian',
+      deskripsi: 'Dasar HTML5 Semantik & Form Input',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -16)),
+    },
+    {
+      id: 'gi-web-2',
+      assignment_id: 'a-web-x1',
+      periode: pts,
+      judul: 'Tugas Kelompok',
+      kategori: 'Tugas Kelompok',
+      deskripsi: 'Layout Web Responsif Flexbox & Grid',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -6)),
+    },
+    // Basis Data X PPLG 1
+    {
+      id: 'gi-db-1',
+      assignment_id: 'a-db-x1',
+      periode: pts,
+      judul: 'Ulangan 1',
+      kategori: 'Ulangan Harian',
+      deskripsi: 'Normalisasi Basis Data 1NF sampai 3NF',
+      bobot: 1,
+      tanggal: toISODate(addDays(now, -12)),
+    },
+  ];
+
+  // Seed nilai siswa
+  const studentGrades: StudentGrade[] = [];
+  const randScore = (base: number, sIndex: number, gIndex: number) => {
+    const val = base + ((sIndex * 7 + gIndex * 13) % 18) - 4;
+    return Math.max(68, Math.min(98, Math.round(val)));
+  };
+
+  const x1Students = students.filter((s) => s.class_id === 'c-x-pplg-1');
+  const x2Students = students.filter((s) => s.class_id === 'c-x-pplg-2');
+
+  gradeItems.forEach((gi, gIdx) => {
+    const targetStudents = gi.assignment_id === 'a-inf-x2' ? x2Students : x1Students;
+    targetStudents.forEach((st, sIdx) => {
+      studentGrades.push({
+        id: `sg-${gi.id}-${st.id}`,
+        grade_item_id: gi.id,
+        student_id: st.id,
+        nilai: randScore(82, sIdx, gIdx),
+      });
+    });
+  });
+
+  const gradeSubmissions: GradeSubmission[] = [
+    {
+      id: 'gsub-inf-x1',
+      assignment_id: 'a-inf-x1',
+      periode: pts,
+      status: 'Diajukan',
+      submitted_at: addDays(now, -3).toISOString(),
+      reviewed_at: null,
+      catatan: 'Rekap nilai Ulangan 1, Ulangan 2, Tugas Individu, dan Tugas Kelompok lengkap.',
+    },
+    {
+      id: 'gsub-web-x1',
+      assignment_id: 'a-web-x1',
+      periode: pts,
+      status: 'Diajukan',
+      submitted_at: addDays(now, -2).toISOString(),
+      reviewed_at: null,
+      catatan: 'Nilai praktikum web dan tugas kelompok siap ditinjau wali kelas.',
+    },
+    {
+      id: 'gsub-db-x1',
+      assignment_id: 'a-db-x1',
+      periode: pts,
+      status: 'Diajukan',
+      submitted_at: addDays(now, -1).toISOString(),
+      reviewed_at: null,
+      catatan: 'Nilai ulangan normalisasi database telah diisi seluruh siswa.',
+    },
+    {
+      id: 'gsub-inf-x2',
+      assignment_id: 'a-inf-x2',
+      periode: pts,
+      status: 'Draft',
+      submitted_at: null,
+      reviewed_at: null,
+      catatan: '',
+    },
+  ];
+
   return {
     version: DEMO_DB_VERSION,
     schools: [school],
@@ -475,5 +647,8 @@ export function buildSeed(now = new Date()): Omit<DemoDB, 'users'> {
     homeroomReports,
     assessments,
     groups: [],
+    gradeItems,
+    studentGrades,
+    gradeSubmissions,
   };
 }

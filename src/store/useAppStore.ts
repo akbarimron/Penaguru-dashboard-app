@@ -10,10 +10,13 @@ import {
   ChatMessage,
   ClassRoom,
   DailyJournal,
+  GradeItem,
+  GradeSubmission,
   HomeroomReport,
   ScheduleSlot,
   SessionUser,
   Student,
+  StudentGrade,
   StudyGroup,
   Subject,
   SubjectColor,
@@ -73,6 +76,12 @@ interface AppState {
   addAssessment: (input: Omit<Assessment, 'id' | 'class_id' | 'subject_id'>) => Promise<void>;
   deleteAssessment: (id: string) => Promise<void>;
   saveGroups: (assignmentId: string, groups: Pick<StudyGroup, 'nama_kelompok' | 'members'>[]) => Promise<void>;
+
+  saveGradeItem: (input: Omit<GradeItem, 'id'> & { id?: string }) => Promise<GradeItem>;
+  deleteGradeItem: (id: string) => Promise<void>;
+  saveStudentGrades: (gradeItemId: string, grades: { student_id: string; nilai: number }[]) => Promise<void>;
+  submitGrades: (assignmentId: string, periode: string, catatan?: string) => Promise<void>;
+  reviewGradeSubmission: (assignmentId: string, periode: string, decision: 'Disetujui' | 'Revisi', catatan?: string) => Promise<void>;
 
   askAssistant: (question: string) => Promise<void>;
   clearChat: () => Promise<void>;
@@ -438,6 +447,57 @@ export const useAppStore = create<AppState>((set, get) => {
     saveGroups: async (assignmentId, groups) => {
       const rows = await repo.saveGroups(assignmentId, groups);
       patchWs((ws) => ({ groups: [...ws.groups.filter((g) => g.assignment_id !== assignmentId), ...rows] }));
+    },
+
+    saveGradeItem: async (input) => {
+      const item = await repo.saveGradeItem(input);
+      patchWs((ws) => ({
+        gradeItems: ws.gradeItems.some((g) => g.id === item.id)
+          ? ws.gradeItems.map((g) => (g.id === item.id ? item : g))
+          : [...ws.gradeItems, item],
+      }));
+      return item;
+    },
+
+    deleteGradeItem: async (id) => {
+      await repo.deleteGradeItem(id);
+      patchWs((ws) => ({
+        gradeItems: ws.gradeItems.filter((g) => g.id !== id),
+        studentGrades: ws.studentGrades.filter((sg) => sg.grade_item_id !== id),
+      }));
+    },
+
+    saveStudentGrades: async (gradeItemId, grades) => {
+      const rows = await repo.saveStudentGrades(gradeItemId, grades);
+      patchWs((ws) => {
+        const studentIds = new Set(grades.map((g) => g.student_id));
+        const filtered = ws.studentGrades.filter(
+          (sg) => !(sg.grade_item_id === gradeItemId && studentIds.has(sg.student_id))
+        );
+        return {
+          studentGrades: [...filtered, ...rows],
+        };
+      });
+    },
+
+    submitGrades: async (assignmentId, periode, catatan) => {
+      const sub = await repo.submitGrades(assignmentId, periode, catatan);
+      patchWs((ws) => ({
+        gradeSubmissions: [
+          ...ws.gradeSubmissions.filter((s) => !(s.assignment_id === assignmentId && s.periode === periode)),
+          sub,
+        ],
+      }));
+    },
+
+    reviewGradeSubmission: async (assignmentId, periode, decision, catatan) => {
+      const sub = await repo.reviewGradeSubmission(assignmentId, periode, decision, catatan);
+      patchWs((ws) => ({
+        gradeSubmissions: [
+          ...ws.gradeSubmissions.filter((s) => !(s.assignment_id === assignmentId && s.periode === periode)),
+          sub,
+        ],
+      }));
     },
 
     askAssistant: async (question) => {
