@@ -1,5 +1,5 @@
 import { Ionicons } from '@expo/vector-icons';
-import React from 'react';
+import React, { useState } from 'react';
 import {
   Image,
   KeyboardAvoidingView,
@@ -11,15 +11,15 @@ import {
   ViewStyle,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { OrganicBlueBlob } from '../../components/auth/AuthVisuals';
+import { AnimatedDoodleCharacters } from '../../components/auth/AnimatedDoodleCharacters';
+import { TeacherGuideModal } from '../../components/auth/TeacherGuideModal';
 import { AppText, EnterView } from '../../components/ui';
 import { useLayout } from '../../lib/layout';
 import { color } from '../../theme/tokens';
 
-const SchoolIllustration = require('../../assets/school-illustration.png');
-const CuteCharactersImg = require('../../assets/cute-teacher-characters.png');
-const LogoWhite = require('../../assets/logo/penaguru-mark-white.png');
-const LogoSquircle = require('../../assets/logo/penaguru-mark-squircle.png');
+// Logos: pure icon marks without background squircle boxes
+const LogoColorMark = require('../../assets/logo/penaguru-mark-color.png');
+const LogoWhiteMark = require('../../assets/logo/penaguru-mark-white.png');
 
 export interface AuthLayoutProps {
   title?: string;
@@ -41,11 +41,12 @@ export function AuthLayout({
   const layout = useLayout();
   const insets = useSafeAreaInsets();
   const isWide = layout.width >= 900;
+  const [showGuideModal, setShowGuideModal] = useState(false);
 
-  // Mobile Copy & Theming (All in Bahasa Indonesia & Blue Theme)
+  // Mobile Copy & Theming (All in Bahasa Indonesia & Soft Modern Blue)
   const mobileGreeting =
     mode === 'login'
-      ? { title: 'Selamat Datang!', subtitle: 'di PenaGuru' }
+      ? { title: 'Selamat Datang', subtitle: 'di PenaGuru' }
       : mode === 'register'
       ? { title: 'Halo, Guru!', subtitle: 'Mulai langkah mengajar Anda' }
       : { title: 'Lupa Sandi?', subtitle: 'Pulihkan akses akun Anda' };
@@ -65,28 +66,196 @@ export function AuthLayout({
       ? 'Atur sekolah, kelas perwalian, dan mapel yang Anda ajar dengan mudah.'
       : 'Masukkan email Anda untuk menerima instruksi pemulihan kata sandi.');
 
-  // =========================================================================
-  // DESKTOP FULL-WIDTH SPLIT SCREEN LAYOUT (50% Form White | 50% Characters)
-  // =========================================================================
-  if (isWide) {
-    return (
-      <KeyboardAvoidingView
-        behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-        style={styles.desktopFullWidth}
-      >
-        {/* LEFT COLUMN: Clean White Form Area (50% Width) */}
-        <View style={styles.desktopLeftCol}>
+  return (
+    <>
+      {/* ========================================================================= */}
+      {/* DESKTOP FULL-WIDTH SPLIT SCREEN LAYOUT (50% Form White | 50% Characters) */}
+      {/* ========================================================================= */}
+      {isWide ? (
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={styles.desktopFullWidth}
+        >
+          {/* LEFT COLUMN: Clean Airy Form Area (50% Width) */}
+          <View style={styles.desktopLeftCol}>
+            <ScrollView
+              style={{ width: '100%' }}
+              contentContainerStyle={styles.desktopFormScroll}
+              keyboardShouldPersistTaps="handled"
+            >
+              <EnterView style={styles.desktopFormBox}>
+                {/* Back navigation if available */}
+                {onBack ? (
+                  <Pressable
+                    onPress={onBack}
+                    style={styles.backRow}
+                    accessibilityRole="button"
+                    accessibilityLabel="Kembali ke halaman masuk"
+                  >
+                    <Ionicons name="arrow-back" size={18} color="#4F46E5" />
+                    <AppText variant="small" weight="bold" tone="#4F46E5">
+                      Kembali ke halaman masuk
+                    </AppText>
+                  </Pressable>
+                ) : null}
+
+                {/* PenaGuru Brand Logo: Pure Mark Icon without background box */}
+                <View style={styles.desktopLogoRow}>
+                  <Image
+                    source={LogoColorMark}
+                    style={styles.desktopLogoIcon}
+                    resizeMode="contain"
+                  />
+                  <AppText
+                    variant="title"
+                    weight="extrabold"
+                    tone="#0F172A"
+                    style={{ fontSize: 24, letterSpacing: -0.6 }}
+                  >
+                    Pena<AppText variant="title" weight="extrabold" tone="#4F46E5">Guru</AppText>
+                  </AppText>
+                </View>
+
+                {/* Big Headline */}
+                <View style={styles.desktopHeaderBox}>
+                  <AppText
+                    variant="display"
+                    weight="extrabold"
+                    tone="#0F172A"
+                    accessibilityRole="header"
+                    style={styles.desktopMainHeading}
+                  >
+                    {desktopTitle}
+                  </AppText>
+                  <AppText variant="small" tone="#64748B" style={styles.desktopSubHeading}>
+                    {desktopSubtitle}
+                  </AppText>
+                </View>
+
+                {top}
+                {children}
+              </EnterView>
+            </ScrollView>
+          </View>
+
+          {/* RIGHT COLUMN: Soft Pastel Gradient Showcase with Animated Doodle Characters (50% Width) */}
+          <View style={[styles.desktopRightCol, desktopRightBgGradient]}>
+            {/* Ambient decorative radial glow bubbles */}
+            <View style={styles.ambientGlowTopRight} />
+            <View style={styles.ambientGlowBottomLeft} />
+
+            {/* Top-Right Info Badge */}
+            <View style={styles.desktopRightTopBadge}>
+              <View style={styles.badgeHeaderRow}>
+                <Ionicons name="school" size={20} color="#4F46E5" />
+                <AppText variant="body" weight="extrabold" tone="#0F172A">
+                  PenaGuru
+                </AppText>
+              </View>
+              <AppText variant="caption" tone="#64748B" style={styles.badgeSubtext}>
+                Kumpulan tips dan alat cerdas untuk mendampingi pencatatan kelas Anda.
+              </AppText>
+              <Pressable
+                onPress={() => setShowGuideModal(true)}
+                style={({ pressed }) => [
+                  styles.badgeBtn,
+                  pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] },
+                ]}
+                accessibilityRole="button"
+                accessibilityLabel="Buka panduan guru"
+              >
+                <AppText variant="caption" weight="bold" tone="#4F46E5" style={{ letterSpacing: 0.8 }}>
+                  PANDUAN GURU
+                </AppText>
+              </Pressable>
+            </View>
+
+            {/* Centered Animated Doodle Characters Showcase */}
+            <View style={styles.desktopIllustrationCenter}>
+              <AnimatedDoodleCharacters width="100%" height={280} />
+            </View>
+
+            {/* Bottom Footer Note */}
+            <View style={styles.desktopRightBottom}>
+              <AppText variant="caption" tone="#94A3B8">
+                PenaGuru • Ruang Kerja Cerdas Guru Indonesia
+              </AppText>
+            </View>
+          </View>
+        </KeyboardAvoidingView>
+      ) : (
+        /* ========================================================================= */
+        /* MOBILE / APP LAYOUT (Soft Modern Gradient + Mascot Troupe at Bottom)      */
+        /* ========================================================================= */
+        <KeyboardAvoidingView
+          behavior={Platform.OS === 'ios' ? 'padding' : undefined}
+          style={[styles.mobileCanvas, mobileCanvasBgStyle]}
+        >
           <ScrollView
-            style={{ width: '100%' }}
-            contentContainerStyle={styles.desktopFormScroll}
+            style={{ flex: 1 }}
+            contentContainerStyle={[styles.mobileScrollContent, { paddingTop: insets.top }]}
             keyboardShouldPersistTaps="handled"
+            bounces={false}
           >
-            <EnterView style={styles.desktopFormBox}>
-              {/* Back navigation if available */}
+            {/* Top Soft Gradient Banner */}
+            <View style={[styles.mobileTopBanner, mobileBannerGradient]}>
+              {/* Top Brand Logo & Guide Button Row */}
+              <View style={styles.mobileTopBar}>
+                <View style={styles.mobileLogoRow}>
+                  <Image
+                    source={LogoWhiteMark}
+                    style={styles.mobileTopLogo}
+                    resizeMode="contain"
+                  />
+                  <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.5 }}>
+                    Pena<AppText variant="title" weight="extrabold" tone="#93C5FD">Guru</AppText>
+                  </AppText>
+                </View>
+
+                {/* Quick Guide Trigger on Mobile */}
+                <Pressable
+                  onPress={() => setShowGuideModal(true)}
+                  style={({ pressed }) => [
+                    styles.mobileGuidePill,
+                    pressed && { opacity: 0.8 },
+                  ]}
+                  accessibilityRole="button"
+                  accessibilityLabel="Buka panduan guru"
+                >
+                  <Ionicons name="sparkles" size={13} color="#FFFFFF" />
+                  <AppText variant="caption" weight="bold" tone="#FFFFFF" style={{ fontSize: 11 }}>
+                    Panduan
+                  </AppText>
+                </Pressable>
+              </View>
+
+              {/* Greeting Typography */}
+              <View style={styles.mobileGreetingBox}>
+                <AppText
+                  variant="display"
+                  weight="extrabold"
+                  tone="#FFFFFF"
+                  style={styles.mobileGreetingTitle}
+                >
+                  {mobileGreeting.title}
+                </AppText>
+                <AppText
+                  variant="body"
+                  weight="semibold"
+                  tone="rgba(255, 255, 255, 0.95)"
+                  style={styles.mobileGreetingSub}
+                >
+                  {mobileGreeting.subtitle}
+                </AppText>
+              </View>
+            </View>
+
+            {/* White Rounded Bottom Sheet Card with negative margin to completely seal corners */}
+            <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(32, insets.bottom + 20) }]}>
               {onBack ? (
                 <Pressable
                   onPress={onBack}
-                  style={styles.backRow}
+                  style={styles.backRowMobile}
                   accessibilityRole="button"
                   accessibilityLabel="Kembali ke halaman masuk"
                 >
@@ -95,219 +264,88 @@ export function AuthLayout({
                     Kembali ke halaman masuk
                   </AppText>
                 </Pressable>
-              ) : null}
+              ) : (
+                /* Pure Mark Icon without background box */
+                <View style={styles.mobileCardLogoMark}>
+                  <Image
+                    source={LogoColorMark}
+                    style={styles.mobileCardLogo}
+                    resizeMode="contain"
+                  />
+                </View>
+              )}
 
-              {/* PenaGuru Brand Logo Lockup */}
-              <View style={styles.desktopLogoRow}>
-                <Image
-                  source={LogoSquircle}
-                  style={styles.desktopLogoIcon}
-                  resizeMode="contain"
-                />
-                <AppText
-                  variant="title"
-                  weight="extrabold"
-                  tone="#0F172A"
-                  style={{ fontSize: 24, letterSpacing: -0.6 }}
-                >
-                  Pena<AppText variant="title" weight="extrabold" tone="#4F46E5">Guru</AppText>
-                </AppText>
-              </View>
-
-              {/* Big Headline */}
-              <View style={styles.desktopHeaderBox}>
+              <View style={styles.mobileCardHeader}>
                 <AppText
                   variant="display"
                   weight="extrabold"
                   tone="#0F172A"
                   accessibilityRole="header"
-                  style={styles.desktopMainHeading}
+                  style={{ fontSize: 24, letterSpacing: -0.3 }}
                 >
-                  {desktopTitle}
+                  {mobileCardTitle}
                 </AppText>
-                <AppText variant="small" tone="#64748B" style={styles.desktopSubHeading}>
-                  {desktopSubtitle}
-                </AppText>
+                {subtitle && mode !== 'login' ? (
+                  <AppText variant="small" tone={color.muted} style={{ marginTop: 2 }}>
+                    {subtitle}
+                  </AppText>
+                ) : null}
               </View>
 
               {top}
               {children}
-            </EnterView>
+
+              {/* Animated Cute Teacher & Student Doodle Characters at bottom of Mobile Page */}
+              <View style={styles.mobileMascotContainer}>
+                <AnimatedDoodleCharacters width="100%" height={210} />
+              </View>
+            </View>
           </ScrollView>
-        </View>
+        </KeyboardAvoidingView>
+      )}
 
-        {/* RIGHT COLUMN: Soft Pastel Workspace Showcase with Cute Characters (50% Width) */}
-        <View style={styles.desktopRightCol}>
-          {/* Top-Right Info Badge */}
-          <View style={styles.desktopRightTopBadge}>
-            <View style={styles.badgeHeaderRow}>
-              <Ionicons name="school-outline" size={20} color="#0F172A" />
-              <AppText variant="body" weight="extrabold" tone="#0F172A">
-                PenaGuru Edukasi
-              </AppText>
-            </View>
-            <AppText variant="caption" tone="#64748B" style={styles.badgeSubtext}>
-              Kumpulan tips dan alat cerdas untuk mendampingi pencatatan kelas Anda.
-            </AppText>
-            <View style={styles.badgeBtn}>
-              <AppText variant="caption" weight="bold" tone="#0F172A" style={{ letterSpacing: 0.8 }}>
-                PANDUAN GURU
-              </AppText>
-            </View>
-          </View>
-
-          {/* Centered Cute Teacher & Student Characters Showcase */}
-          <View style={styles.desktopIllustrationCenter}>
-            <Image
-              source={CuteCharactersImg}
-              style={styles.desktopMascotImg}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* Bottom Footer Note */}
-          <View style={styles.desktopRightBottom}>
-            <AppText variant="caption" tone="#94A3B8">
-              PenaGuru • Ruang Kerja Cerdas Guru Indonesia
-            </AppText>
-          </View>
-        </View>
-      </KeyboardAvoidingView>
-    );
-  }
-
-  // ==========================================
-  // MOBILE / APP LAYOUT (Seamless Blue Gradient + Mascot Bottom)
-  // ==========================================
-  return (
-    <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-      style={[styles.mobileCanvas, mobileBgGradientStyle]}
-    >
-      <ScrollView
-        style={{ flex: 1 }}
-        contentContainerStyle={[styles.mobileScrollContent, { paddingTop: insets.top }]}
-        keyboardShouldPersistTaps="handled"
-        bounces={false}
-      >
-        {/* Top Blue Banner with Organic Shapes, Logo & School Illustration */}
-        <View style={styles.mobileTopBanner}>
-          {/* Top-Left Organic Shape */}
-          <View style={styles.mobileBlobPosition}>
-            <OrganicBlueBlob width={130} height={120} />
-          </View>
-
-          {/* Top Brand Logo Row on Mobile */}
-          <View style={styles.mobileLogoRow}>
-            <Image
-              source={LogoWhite}
-              style={styles.mobileTopLogo}
-              resizeMode="contain"
-            />
-            <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.5 }}>
-              Pena<AppText variant="title" weight="extrabold" tone="#38BDF8">Guru</AppText>
-            </AppText>
-          </View>
-
-          {/* School Illustration on Mobile (Overlapping card line) */}
-          <View style={styles.mobileIllustrationPosition}>
-            <Image
-              source={SchoolIllustration}
-              style={styles.mobileIllustration}
-              resizeMode="contain"
-            />
-          </View>
-
-          {/* Greeting Typography */}
-          <View style={styles.mobileGreetingBox}>
-            <AppText
-              variant="display"
-              weight="extrabold"
-              tone="#FFFFFF"
-              style={styles.mobileGreetingTitle}
-            >
-              {mobileGreeting.title}
-            </AppText>
-            <AppText
-              variant="body"
-              weight="medium"
-              tone="rgba(255, 255, 255, 0.92)"
-              style={styles.mobileGreetingSub}
-            >
-              {mobileGreeting.subtitle}
-            </AppText>
-          </View>
-        </View>
-
-        {/* White Rounded Bottom Sheet Card with negative margin to completely seal corners */}
-        <View style={[styles.mobileWhiteCard, { paddingBottom: Math.max(36, insets.bottom + 24) }]}>
-          {onBack ? (
-            <Pressable
-              onPress={onBack}
-              style={styles.backRowMobile}
-              accessibilityRole="button"
-              accessibilityLabel="Kembali ke halaman masuk"
-            >
-              <Ionicons name="arrow-back" size={18} color="#4F46E5" />
-              <AppText variant="small" weight="bold" tone="#4F46E5">
-                Kembali ke halaman masuk
-              </AppText>
-            </Pressable>
-          ) : (
-            <View style={styles.mobileCardLogoMark}>
-              <Image
-                source={LogoSquircle}
-                style={styles.mobileCardLogo}
-                resizeMode="contain"
-              />
-            </View>
-          )}
-
-          <View style={styles.mobileCardHeader}>
-            <AppText
-              variant="display"
-              weight="extrabold"
-              tone="#1E3A8A"
-              accessibilityRole="header"
-              style={{ fontSize: 24, letterSpacing: -0.3 }}
-            >
-              {mobileCardTitle}
-            </AppText>
-            {subtitle && mode !== 'login' ? (
-              <AppText variant="small" tone={color.muted} style={{ marginTop: 2 }}>
-                {subtitle}
-              </AppText>
-            ) : null}
-          </View>
-
-          {top}
-          {children}
-
-          {/* Cute Teacher & Student Characters Mascot Troupe placed at bottom of Mobile Page */}
-          <View style={styles.mobileMascotContainer}>
-            <Image
-              source={CuteCharactersImg}
-              style={styles.mobileMascotImg}
-              resizeMode="contain"
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </KeyboardAvoidingView>
+      {/* Teacher Guide Highlight Modal */}
+      <TeacherGuideModal
+        visible={showGuideModal}
+        onClose={() => setShowGuideModal(false)}
+      />
+    </>
   );
 }
 
-// Seamless Gradient Style for Mobile View (No dark cuts or harsh seams)
-const mobileBgGradientStyle: ViewStyle = Platform.select({
+// -------------------------------------------------------------
+// GRADIENTS & STYLES (Soft, Luminous, Modern)
+// -------------------------------------------------------------
+const desktopRightBgGradient: ViewStyle = Platform.select({
   web: {
     background:
-      'radial-gradient(circle at 10% 12%, rgba(56, 189, 248, 0.95) 0%, transparent 40%), ' +
-      'radial-gradient(circle at 88% 18%, rgba(192, 132, 252, 0.92) 0%, transparent 45%), ' +
-      'radial-gradient(circle at 35% 85%, rgba(99, 102, 241, 0.85) 0%, transparent 55%), ' +
-      'linear-gradient(145deg, #1E3A8A 0%, #2563EB 30%, #4F46E5 65%, #7C3AED 100%)',
+      'radial-gradient(circle at 85% 15%, rgba(224, 231, 255, 0.7) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 20% 85%, rgba(252, 231, 243, 0.6) 0%, transparent 50%), ' +
+      'linear-gradient(135deg, #F0F7FF 0%, #EEF2FF 40%, #F5F3FF 70%, #FDF2F8 100%)',
   } as any,
   default: {
-    backgroundColor: '#2563EB',
+    backgroundColor: '#EEF2FF',
+  },
+})!;
+
+const mobileCanvasBgStyle: ViewStyle = Platform.select({
+  web: {
+    backgroundColor: '#F8FAFC',
+  } as any,
+  default: {
+    backgroundColor: '#4F46E5',
+  },
+})!;
+
+const mobileBannerGradient: ViewStyle = Platform.select({
+  web: {
+    background:
+      'radial-gradient(circle at 15% 20%, rgba(147, 197, 253, 0.6) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 85% 25%, rgba(216, 180, 254, 0.5) 0%, transparent 45%), ' +
+      'linear-gradient(145deg, #2563EB 0%, #4F46E5 55%, #6366F1 100%)',
+  } as any,
+  default: {
+    backgroundColor: '#4F46E5',
   },
 })!;
 
@@ -333,7 +371,7 @@ const styles = StyleSheet.create({
     flexGrow: 1,
     justifyContent: 'center',
     alignItems: 'center',
-    paddingHorizontal: 36,
+    paddingHorizontal: 40,
     paddingVertical: 48,
   },
   desktopFormBox: {
@@ -344,13 +382,12 @@ const styles = StyleSheet.create({
   desktopLogoRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 10,
+    gap: 12,
     marginBottom: 8,
   },
   desktopLogoIcon: {
-    width: 42,
-    height: 42,
-    borderRadius: 11,
+    width: 38,
+    height: 38,
   },
   desktopHeaderBox: {
     marginBottom: 8,
@@ -367,23 +404,45 @@ const styles = StyleSheet.create({
     color: '#64748B',
   },
 
-  // Desktop Right Column (Pastel Workspace Showcase with Cute Characters)
+  // Desktop Right Column (Soft Pastel Showcase with Animated Doodles)
   desktopRightCol: {
     flex: 1,
     width: '50%',
-    backgroundColor: '#F0F4FA', // Soft pastel blue/lavender tint matching reference
     paddingHorizontal: 48,
     paddingVertical: 40,
     justifyContent: 'space-between',
     alignItems: 'center',
     borderLeftWidth: 1,
     borderLeftColor: '#E2E8F0',
+    position: 'relative',
+    overflow: 'hidden',
+  },
+  ambientGlowTopRight: {
+    position: 'absolute',
+    top: -60,
+    right: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: '#E0E7FF',
+    opacity: 0.5,
+  },
+  ambientGlowBottomLeft: {
+    position: 'absolute',
+    bottom: -60,
+    left: -60,
+    width: 240,
+    height: 240,
+    borderRadius: 120,
+    backgroundColor: '#FCE7F3',
+    opacity: 0.5,
   },
   desktopRightTopBadge: {
     alignSelf: 'flex-end',
     maxWidth: 320,
     alignItems: 'flex-end',
     gap: 6,
+    zIndex: 10,
   },
   badgeHeaderRow: {
     flexDirection: 'row',
@@ -398,29 +457,26 @@ const styles = StyleSheet.create({
   badgeBtn: {
     marginTop: 6,
     paddingHorizontal: 16,
-    paddingVertical: 7,
-    borderRadius: 6,
+    paddingVertical: 8,
+    borderRadius: 8,
     borderWidth: 1.5,
-    borderColor: '#0F172A',
-    backgroundColor: 'transparent',
+    borderColor: '#4F46E5',
+    backgroundColor: 'rgba(255, 255, 255, 0.7)',
   },
   desktopIllustrationCenter: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 20,
+    marginVertical: 16,
     width: '100%',
-  },
-  desktopMascotImg: {
-    width: '100%',
-    maxWidth: 520,
-    height: 290,
+    zIndex: 10,
   },
   desktopRightBottom: {
     alignSelf: 'center',
+    zIndex: 10,
   },
 
   // ==========================================
-  // Mobile Styles (Unified Seamless Blue Gradient)
+  // Mobile Styles (Soft Modern Gradient)
   // ==========================================
   mobileCanvas: {
     flex: 1,
@@ -429,50 +485,44 @@ const styles = StyleSheet.create({
     flexGrow: 1,
   },
   mobileTopBanner: {
-    minHeight: 230,
-    paddingHorizontal: 26,
-    paddingTop: 20,
-    paddingBottom: 48,
-    position: 'relative',
-    justifyContent: 'flex-end',
+    minHeight: 200,
+    paddingHorizontal: 24,
+    paddingTop: 16,
+    paddingBottom: 44,
+    justifyContent: 'space-between',
   },
-  mobileBlobPosition: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    zIndex: 1,
+  mobileTopBar: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    width: '100%',
   },
   mobileLogoRow: {
-    position: 'absolute',
-    top: 20,
-    left: 26,
-    zIndex: 15,
     flexDirection: 'row',
     alignItems: 'center',
     gap: 8,
   },
   mobileTopLogo: {
-    width: 32,
-    height: 32,
+    width: 30,
+    height: 30,
   },
-  mobileIllustrationPosition: {
-    position: 'absolute',
-    bottom: 12,
-    right: 18,
-    zIndex: 30,
-  },
-  mobileIllustration: {
-    width: 110,
-    height: 130,
+  mobileGuidePill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    paddingHorizontal: 10,
+    paddingVertical: 5,
+    borderRadius: 20,
+    backgroundColor: 'rgba(255, 255, 255, 0.2)',
+    borderWidth: 1,
+    borderColor: 'rgba(255, 255, 255, 0.35)',
   },
   mobileGreetingBox: {
-    zIndex: 5,
-    maxWidth: '65%',
-    marginBottom: 8,
+    marginTop: 18,
   },
   mobileGreetingTitle: {
-    fontSize: 32,
-    lineHeight: 38,
+    fontSize: 30,
+    lineHeight: 36,
     letterSpacing: -0.5,
   },
   mobileGreetingSub: {
@@ -482,37 +532,36 @@ const styles = StyleSheet.create({
   },
   mobileWhiteCard: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 36,
-    borderTopRightRadius: 36,
-    paddingHorizontal: 26,
-    paddingTop: 28,
-    marginTop: -24, // Overlap banner smoothly so rounded corners have 100% gradient behind them
+    borderTopLeftRadius: 32,
+    borderTopRightRadius: 32,
+    paddingHorizontal: 24,
+    paddingTop: 26,
+    marginTop: -22, // Smooth overlap
     gap: 14,
     flexGrow: 1,
     zIndex: 20,
+    shadowColor: '#0F172A',
+    shadowOffset: { width: 0, height: -6 },
+    shadowOpacity: 0.05,
+    shadowRadius: 16,
+    elevation: 4,
   },
   mobileCardLogoMark: {
     marginBottom: -4,
   },
   mobileCardLogo: {
-    width: 44,
-    height: 44,
-    borderRadius: 12,
+    width: 38,
+    height: 38,
   },
   mobileCardHeader: {
     marginBottom: 4,
   },
   mobileMascotContainer: {
     alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 24,
-    marginBottom: 8,
+    justifyContent: 'center',
+    marginTop: 20,
+    marginBottom: 4,
     width: '100%',
-  },
-  mobileMascotImg: {
-    width: '100%',
-    maxWidth: 340,
-    height: 160,
   },
   backRow: {
     flexDirection: 'row',
