@@ -150,6 +150,7 @@ export interface GradeItem {
   deskripsi: string; // e.g. "Materi Algoritma Pencarian Linear & Binary Search"
   bobot: number; // e.g. 1
   tanggal: string; // YYYY-MM-DD
+  created_at?: string;
 }
 
 // Nilai siswa per kriteria penilaian
@@ -158,6 +159,7 @@ export interface StudentGrade {
   grade_item_id: string;
   student_id: string;
   nilai: number; // 0-100
+  updated_at?: string;
 }
 
 // Pengajuan rekap nilai semester dari guru mapel ke wali kelas
@@ -168,7 +170,8 @@ export interface GradeSubmission {
   status: 'Draft' | 'Diajukan' | 'Disetujui';
   submitted_at: string | null;
   reviewed_at: string | null;
-  catatan?: string;
+  catatan?: string | null;
+  created_at?: string;
 }
 
 export interface ChatMessage {

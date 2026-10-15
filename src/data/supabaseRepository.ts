@@ -1,13 +1,180 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { PostgrestError } from '@supabase/supabase-js';
 import { aiFunctionsEnabled, supabase } from '../api/supabase';
 import { askGeminiPedagogy, isGeminiConfigured } from '../api/gemini';
 import { localAssistantReply } from '../lib/assistant';
-import { StudyGroup, Workspace } from '../types';
+import { uid } from '../lib/phone';
+import { GradeCategory, GradeItem, GradeSubmission, StudentGrade, StudyGroup, Workspace } from '../types';
 import { Repository, RepoError } from './repository';
 
 // Implementasi Supabase. Penyaringan data per kelas dan per peran tidak
 // dilakukan di sini: query sengaja memakai select('*') dan RLS di database
 // yang memutuskan baris mana yang boleh dibaca guru ini.
+
+const LOCAL_GRADES_KEY = '@penaguru/supabase-local-grades';
+
+interface LocalGradesData {
+  gradeItems: GradeItem[];
+  studentGrades: StudentGrade[];
+  gradeSubmissions: GradeSubmission[];
+}
+
+async function getLocalGrades(): Promise<LocalGradesData> {
+  try {
+    const raw = await AsyncStorage.getItem(LOCAL_GRADES_KEY);
+    if (!raw) return { gradeItems: [], studentGrades: [], gradeSubmissions: [] };
+    const parsed = JSON.parse(raw);
+    return {
+      gradeItems: Array.isArray(parsed?.gradeItems) ? parsed.gradeItems : [],
+      studentGrades: Array.isArray(parsed?.studentGrades) ? parsed.studentGrades : [],
+      gradeSubmissions: Array.isArray(parsed?.gradeSubmissions) ? parsed.gradeSubmissions : [],
+    };
+  } catch {
+    return { gradeItems: [], studentGrades: [], gradeSubmissions: [] };
+  }
+}
+
+async function setLocalGrades(data: LocalGradesData): Promise<void> {
+  try {
+    await AsyncStorage.setItem(LOCAL_GRADES_KEY, JSON.stringify(data));
+  } catch (err) {
+    console.warn('Gagal menyimpan cache nilai lokal:', err);
+  }
+}
+
+function isMissingTableError(err: any): boolean {
+  if (!err) return false;
+  const msg = String(err?.message || err?.details || err?.hint || '').toLowerCase();
+  const code = String(err?.code || '');
+  const status = Number(err?.status || 0);
+  return (
+    code === 'PGRST205' ||
+    code === '42P01' ||
+    code === 'PGRST204' ||
+    code === 'PGRST100' ||
+    status === 404 ||
+    (status === 400 && msg.includes('relation')) ||
+    msg.includes('schema cache') ||
+    msg.includes('does not exist') ||
+    msg.includes('not found') ||
+    msg.includes('relation') ||
+    msg.includes('could not find the table')
+  );
+}
+
+async function localSaveGradeItem(input: {
+  id?: string;
+  assignment_id: string;
+  periode: string;
+  judul: string;
+  kategori: GradeCategory;
+  bobot: number;
+  deskripsi: string;
+  tanggal?: string;
+}): Promise<GradeItem> {
+  const data = await getLocalGrades();
+  const existing = input.id ? data.gradeItems.find((g) => g.id === input.id) : null;
+  const now = new Date().toISOString();
+  const item: GradeItem = {
+    id: input.id || uid('gi'),
+    assignment_id: input.assignment_id,
+    periode: input.periode,
+    judul: input.judul,
+    kategori: input.kategori,
+    bobot: input.bobot,
+    deskripsi: input.deskripsi,
+    tanggal: input.tanggal || now.slice(0, 10),
+    created_at: existing?.created_at || now,
+  };
+  const nextItems = existing
+    ? data.gradeItems.map((g) => (g.id === item.id ? item : g))
+    : [...data.gradeItems, item];
+  await setLocalGrades({ ...data, gradeItems: nextItems });
+  return item;
+}
+
+async function localDeleteGradeItem(id: string): Promise<void> {
+  const data = await getLocalGrades();
+  await setLocalGrades({
+    ...data,
+    gradeItems: data.gradeItems.filter((g) => g.id !== id),
+    studentGrades: data.studentGrades.filter((sg) => sg.grade_item_id !== id),
+  });
+}
+
+async function localSaveStudentGrades(
+  gradeItemId: string,
+  grades: Array<{ student_id: string; nilai: number }>
+): Promise<StudentGrade[]> {
+  const data = await getLocalGrades();
+  const now = new Date().toISOString();
+  const studentIds = new Set(grades.map((g) => g.student_id));
+  const preserved = data.studentGrades.filter(
+    (sg) => !(sg.grade_item_id === gradeItemId && studentIds.has(sg.student_id))
+  );
+  const updated: StudentGrade[] = grades.map((g) => ({
+    id: uid('sg'),
+    grade_item_id: gradeItemId,
+    student_id: g.student_id,
+    nilai: g.nilai,
+    updated_at: now,
+  }));
+  await setLocalGrades({
+    ...data,
+    studentGrades: [...preserved, ...updated],
+  });
+  return updated;
+}
+
+async function localSubmitGrades(assignmentId: string, periode: string, catatan?: string): Promise<GradeSubmission> {
+  const data = await getLocalGrades();
+  const now = new Date().toISOString();
+  const existing = data.gradeSubmissions.find((s) => s.assignment_id === assignmentId && s.periode === periode);
+  const row: GradeSubmission = {
+    id: existing?.id || uid('sub'),
+    assignment_id: assignmentId,
+    periode,
+    status: 'Diajukan',
+    submitted_at: now,
+    reviewed_at: null,
+    catatan: catatan || null,
+    created_at: existing?.created_at || now,
+  };
+  const filtered = data.gradeSubmissions.filter((s) => !(s.assignment_id === assignmentId && s.periode === periode));
+  await setLocalGrades({
+    ...data,
+    gradeSubmissions: [...filtered, row],
+  });
+  return row;
+}
+
+async function localReviewGradeSubmission(
+  assignmentId: string,
+  periode: string,
+  decision: 'Disetujui' | 'Revisi',
+  catatan?: string
+): Promise<GradeSubmission> {
+  const data = await getLocalGrades();
+  const now = new Date().toISOString();
+  const existing = data.gradeSubmissions.find((s) => s.assignment_id === assignmentId && s.periode === periode);
+  const status: 'Draft' | 'Diajukan' | 'Disetujui' = decision === 'Disetujui' ? 'Disetujui' : 'Draft';
+  const row: GradeSubmission = {
+    id: existing?.id || uid('sub'),
+    assignment_id: assignmentId,
+    periode,
+    status,
+    submitted_at: existing?.submitted_at || null,
+    reviewed_at: now,
+    catatan: catatan || existing?.catatan || null,
+    created_at: existing?.created_at || now,
+  };
+  const filtered = data.gradeSubmissions.filter((s) => !(s.assignment_id === assignmentId && s.periode === periode));
+  await setLocalGrades({
+    ...data,
+    gradeSubmissions: [...filtered, row],
+  });
+  return row;
+}
 
 function sb() {
   if (!supabase) throw new RepoError('Supabase belum dikonfigurasi.', 'unknown');
@@ -76,7 +243,7 @@ export const supabaseRepository: Repository = {
 
   async loadWorkspace(user) {
     const client = sb();
-    const teacher = await one(client.from('teachers').select('id, school_id, nama_lengkap, nip, email, role').eq('id', user.id).single());
+    const teacher = await one(client.from('teachers').select('*').eq('id', user.id).single());
     const empty: Workspace = {
       teacher,
       school: null,
@@ -99,7 +266,7 @@ export const supabaseRepository: Repository = {
     const [school, colleagues, classes, subjects, assignments, students, contacts, journals, reports, homeroomReports, assessments, groups] =
       await Promise.all([
         one(client.from('schools').select('*').eq('id', teacher.school_id).single()),
-        rows(client.from('teachers').select('id, school_id, nama_lengkap, nip, email, role')),
+        rows(client.from('teachers').select('*')),
         rows(client.from('classes').select('*').order('nama_kelas')),
         rows(client.from('subjects').select('*').order('nama')),
         rows(client.from('teaching_assignments').select('*')),
@@ -113,20 +280,45 @@ export const supabaseRepository: Repository = {
         rows(client.from('study_groups').select('id, assignment_id, nama_kelompok, created_at, group_members(student_id, peran)')),
       ]);
 
-    let gradeItems: any[] = [];
-    let studentGrades: any[] = [];
-    let gradeSubmissions: any[] = [];
+    let gradeItems: GradeItem[] = [];
+    let studentGrades: StudentGrade[] = [];
+    let gradeSubmissions: GradeSubmission[] = [];
     try {
-      const [gi, sg, gs] = await Promise.all([
-        rows(client.from('grade_items').select('*')),
-        rows(client.from('student_grades').select('*')),
-        rows(client.from('grade_submissions').select('*')),
+      const [giRes, sgRes, gsRes] = await Promise.all([
+        client.from('grade_items').select('*'),
+        client.from('student_grades').select('*'),
+        client.from('grade_submissions').select('*'),
       ]);
-      gradeItems = gi;
-      studentGrades = sg;
-      gradeSubmissions = gs;
+      if (giRes.error) {
+        if (isMissingTableError(giRes.error)) throw giRes.error;
+        fail(giRes.error);
+      }
+      if (sgRes.error) {
+        if (isMissingTableError(sgRes.error)) throw sgRes.error;
+        fail(sgRes.error);
+      }
+      if (gsRes.error) {
+        if (isMissingTableError(gsRes.error)) throw gsRes.error;
+        fail(gsRes.error);
+      }
+      gradeItems = (giRes.data || []) as GradeItem[];
+      studentGrades = (sgRes.data || []) as StudentGrade[];
+      gradeSubmissions = (gsRes.data || []) as GradeSubmission[];
     } catch {
-      // Table may not yet exist in Supabase
+      // Tabel belum ada di Supabase atau offline, baca dari penyimpanan lokal
+      const local = await getLocalGrades();
+      gradeItems = local.gradeItems;
+      studentGrades = local.studentGrades;
+      gradeSubmissions = local.gradeSubmissions;
+    }
+
+    if (gradeItems.length === 0) {
+      const local = await getLocalGrades();
+      if (local.gradeItems.length > 0) {
+        gradeItems = local.gradeItems;
+        studentGrades = local.studentGrades;
+        gradeSubmissions = local.gradeSubmissions;
+      }
     }
 
     return {
@@ -265,35 +457,105 @@ export const supabaseRepository: Repository = {
 
   async saveGradeItem(input) {
     const { id, ...rest } = input;
-    if (id) {
-      return one(sb().from('grade_items').update(rest).eq('id', id).select().single());
+    try {
+      const res = id
+        ? await sb().from('grade_items').update(rest).eq('id', id).select().single()
+        : await sb().from('grade_items').insert(rest).select().single();
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          return await localSaveGradeItem(input);
+        }
+        fail(res.error);
+      }
+      if (!res.data) fail(null, 'Data tidak ditemukan.');
+      return res.data;
+    } catch (err: any) {
+      if (isMissingTableError(err)) {
+        return await localSaveGradeItem(input);
+      }
+      throw err;
     }
-    return one(sb().from('grade_items').insert(rest).select().single());
   },
 
   async deleteGradeItem(id) {
-    const { error } = await sb().from('grade_items').delete().eq('id', id);
-    if (error) fail(error);
+    try {
+      const res = await sb().from('grade_items').delete().eq('id', id);
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          await localDeleteGradeItem(id);
+          return;
+        }
+        fail(res.error);
+      }
+    } catch (err: any) {
+      if (isMissingTableError(err)) {
+        await localDeleteGradeItem(id);
+        return;
+      }
+      throw err;
+    }
   },
 
   async saveStudentGrades(gradeItemId, grades) {
-    const rows = grades.map((g) => ({ grade_item_id: gradeItemId, student_id: g.student_id, nilai: g.nilai }));
-    const { data, error } = await sb().from('student_grades').upsert(rows, { onConflict: 'grade_item_id,student_id' }).select();
-    if (error) fail(error);
-    return data || [];
+    const rowsList = grades.map((g) => ({ grade_item_id: gradeItemId, student_id: g.student_id, nilai: g.nilai }));
+    try {
+      const res = await sb().from('student_grades').upsert(rowsList, { onConflict: 'grade_item_id,student_id' }).select();
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          return await localSaveStudentGrades(gradeItemId, grades);
+        }
+        fail(res.error);
+      }
+      return (res.data || []) as StudentGrade[];
+    } catch (err: any) {
+      if (isMissingTableError(err)) {
+        return await localSaveStudentGrades(gradeItemId, grades);
+      }
+      throw err;
+    }
   },
 
   async submitGrades(assignmentId, periode, catatan) {
     const now = new Date().toISOString();
     const row = { assignment_id: assignmentId, periode, status: 'Diajukan', submitted_at: now, catatan: catatan || null };
-    return one(sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single());
+    try {
+      const res = await sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single();
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          return await localSubmitGrades(assignmentId, periode, catatan);
+        }
+        fail(res.error);
+      }
+      if (!res.data) fail(null, 'Data tidak ditemukan.');
+      return res.data;
+    } catch (err: any) {
+      if (isMissingTableError(err)) {
+        return await localSubmitGrades(assignmentId, periode, catatan);
+      }
+      throw err;
+    }
   },
 
   async reviewGradeSubmission(assignmentId, periode, decision, catatan) {
     const now = new Date().toISOString();
     const status = decision === 'Disetujui' ? 'Disetujui' : 'Draft';
     const row = { assignment_id: assignmentId, periode, status, reviewed_at: now, catatan: catatan || null };
-    return one(sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single());
+    try {
+      const res = await sb().from('grade_submissions').upsert(row, { onConflict: 'assignment_id,periode' }).select().single();
+      if (res.error) {
+        if (isMissingTableError(res.error)) {
+          return await localReviewGradeSubmission(assignmentId, periode, decision, catatan);
+        }
+        fail(res.error);
+      }
+      if (!res.data) fail(null, 'Data tidak ditemukan.');
+      return res.data;
+    } catch (err: any) {
+      if (isMissingTableError(err)) {
+        return await localReviewGradeSubmission(assignmentId, periode, decision, catatan);
+      }
+      throw err;
+    }
   },
 
   async askAssistant(question, history, workspaceSummary) {

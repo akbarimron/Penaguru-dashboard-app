@@ -605,6 +605,8 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
         });
       }
       toast('4 kriteria penilaian default berhasil dibuat.');
+    } catch (e: any) {
+      toast(e?.message || 'Gagal membuat kriteria default.', 'error');
     } finally {
       setCreatingDefaults(false);
     }
@@ -618,9 +620,13 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
       destructive: true,
     });
     if (!ok) return;
-    await deleteGradeItem(crit.id);
-    if (activeCriterionId === crit.id) setActiveCriterionId(null);
-    toast(`Kriteria ${crit.judul} dihapus.`);
+    try {
+      await deleteGradeItem(crit.id);
+      if (activeCriterionId === crit.id) setActiveCriterionId(null);
+      toast(`Kriteria ${crit.judul} dihapus.`);
+    } catch (e: any) {
+      toast(e?.message || 'Gagal menghapus kriteria.', 'error');
+    }
   };
 
   const filteredStudents = React.useMemo(() => {
