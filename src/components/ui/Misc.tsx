@@ -1,11 +1,12 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, Animated, LayoutChangeEvent, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { Animated, LayoutChangeEvent, StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
 import { initials } from '../../lib/phone';
 import { duration, easing, isReducedMotion, useEntrance } from '../../lib/motion';
 import { color, radius, space, SubjectPalette } from '../../theme/tokens';
 import { AppText } from './AppText';
 import { Button } from './Button';
+import { Skeleton } from './Skeleton';
 
 type IconName = React.ComponentProps<typeof Ionicons>['name'];
 
@@ -117,11 +118,14 @@ export function ErrorState({ message, onRetry }: { message: string; onRetry?: ()
 
 export function LoadingState({ label }: { label: string }) {
   return (
-    <View style={[styles.state, { borderWidth: 0, backgroundColor: 'transparent' }]} accessibilityLiveRegion="polite">
-      <ActivityIndicator color={color.brand} />
-      <AppText variant="small" tone={color.muted} align="center">
-        {label}
-      </AppText>
+    <View style={[styles.state, { borderWidth: 0, backgroundColor: 'transparent', gap: 10 }]} accessibilityLiveRegion="polite">
+      <Skeleton width={160} height={16} />
+      <Skeleton width={240} height={12} />
+      {label ? (
+        <AppText variant="caption" tone={color.muted} align="center">
+          {label}
+        </AppText>
+      ) : null}
     </View>
   );
 }

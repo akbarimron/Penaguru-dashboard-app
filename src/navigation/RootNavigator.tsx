@@ -1,8 +1,8 @@
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import React from 'react';
-import { ActivityIndicator, View } from 'react-native';
-import { AppText, Button } from '../components/ui';
+import { View } from 'react-native';
+import { AppText, Button, SkeletonDashboard } from '../components/ui';
 import { useLayout } from '../lib/layout';
 import { AdminDashboardScreen } from '../screens/AdminDashboardScreen';
 import { AgendaScreen } from '../screens/AgendaScreen';
@@ -45,30 +45,22 @@ function MainTabs() {
 }
 
 function BootScreen() {
-  const bootError = useAppStore((s) => s.bootError);
   const boot = useAppStore((s) => s.boot);
-  return (
-    <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: color.bg, padding: 24 }}>
-      <AppText variant="display" tone={color.brandDeep}>
-        PenaGuru
-      </AppText>
-      {bootError ? (
-        <>
-          <AppText tone={color.danger} align="center">
-            {bootError}
-          </AppText>
-          <Button label="Coba lagi" icon="refresh" onPress={boot} />
-        </>
-      ) : (
-        <>
-          <ActivityIndicator color={color.brand} />
-          <AppText variant="small" tone={color.muted}>
-            Memuat ruang kerja Anda
-          </AppText>
-        </>
-      )}
-    </View>
-  );
+  const bootError = useAppStore((s) => s.bootError);
+  if (bootError) {
+    return (
+      <View style={{ flex: 1, alignItems: 'center', justifyContent: 'center', gap: 16, backgroundColor: color.bg, padding: 24 }}>
+        <AppText variant="display" tone={color.brandDeep}>
+          PenaGuru
+        </AppText>
+        <AppText tone={color.danger} align="center">
+          {bootError}
+        </AppText>
+        <Button label="Coba lagi" icon="refresh" onPress={boot} />
+      </View>
+    );
+  }
+  return <SkeletonDashboard />;
 }
 
 export function RootNavigator() {

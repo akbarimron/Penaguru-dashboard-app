@@ -12,3 +12,4 @@ export { StatusPill } from './StatusPill';
 export { TextField } from './TextField';
 export { ToastHost } from './ToastHost';
 export { MiniNibbyAvatar } from './MiniNibbyAvatar';
+export { Skeleton, SkeletonText, SkeletonChatBubble, SkeletonCard, SkeletonDashboard } from './Skeleton';

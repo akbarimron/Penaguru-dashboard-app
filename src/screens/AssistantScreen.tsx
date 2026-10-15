@@ -1,9 +1,9 @@
 import { Ionicons } from '@expo/vector-icons';
 import * as Clipboard from 'expo-clipboard';
 import React, { useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
+import { FlatList, KeyboardAvoidingView, Platform, ScrollView, StyleSheet, TextInput, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
-import { AppText, Chip, EnterView, IconButton, MarkdownView, MiniNibbyAvatar } from '../components/ui';
+import { AppText, Chip, EnterView, IconButton, MarkdownView, MiniNibbyAvatar, SkeletonChatBubble } from '../components/ui';
 import { focusStyle } from '../components/ui/PressableScale';
 import { QUICK_TOPICS } from '../lib/assistant';
 import { useLayout } from '../lib/layout';
@@ -106,21 +106,7 @@ export function AssistantScreen() {
         }}
         contentContainerStyle={[inner, { paddingVertical: space.md, gap: 12 }]}
         renderItem={({ item, index }) => <Bubble message={item} index={index} />}
-        ListFooterComponent={
-          busy ? (
-            <View style={styles.botMessageRow} accessibilityLiveRegion="polite">
-              <View style={styles.botAvatarContainer}>
-                <MiniNibbyAvatar size={34} isThinking={true} />
-              </View>
-              <View style={[styles.bubble, styles.botBubble, styles.typingBubble]}>
-                <ActivityIndicator size="small" color={color.brand} />
-                <AppText variant="small" tone={color.muted}>
-                  Asisten Guru sedang menyusun saran terbaik...
-                </AppText>
-              </View>
-            </View>
-          ) : null
-        }
+        ListFooterComponent={busy ? <SkeletonChatBubble /> : null}
       />
       <View style={styles.inputWrap}>
         <View style={[inner, styles.inputRow]}>

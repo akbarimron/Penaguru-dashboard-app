@@ -165,63 +165,229 @@ export function buildWorkspaceSummary(ws: Workspace | null): string {
   const schoolName = ws.school?.nama || 'Sekolah';
   const homeroomClasses = ws.classes.filter((c) => c.homeroom_teacher_id === teacher.id);
   const myAssignments = ws.assignments.filter((a) => a.teacher_id === teacher.id);
+  const gradeItems = ws.gradeItems || [];
+  const studentGrades = ws.studentGrades || [];
+  const gradeSubmissions = ws.gradeSubmissions || [];
+  const reports = ws.reports || [];
+  const homeroomReports = ws.homeroomReports || [];
+  const groups = ws.groups || [];
+  const assessments = ws.assessments || [];
 
-  let text = `[DATA AKADEMIK & KELAS GURU SAAT INI]\n`;
-  text += `Nama Guru: ${teacher.nama_lengkap}\n`;
+  let text = `[DATA LENGKAP AKADEMIK, NILAI SISWA, & KELAS PENAGURU]\n`;
+  text += `Nama Guru: ${teacher.nama_lengkap} (NIP: ${teacher.nip || '-'})\n`;
   text += `Sekolah: ${schoolName}\n`;
-  if (homeroomClasses.length > 0) {
-    text += `Status Wali Kelas: Mengampu kelas perwalian ${homeroomClasses.map((c) => c.nama_kelas).join(', ')}\n`;
-  }
+  text += `Peran Guru:\n`;
+  text += `- Guru Mata Pelajaran: ${
+    myAssignments.length > 0
+      ? myAssignments
+          .map((a) => {
+            const s = ws.subjects.find((sub) => sub.id === a.subject_id);
+            const c = ws.classes.find((cls) => cls.id === a.class_id);
+            return `${s?.nama || 'Mapel'} (${c?.nama_kelas || '-'})`;
+          })
+          .join(', ')
+      : 'Belum mengampu mapel'
+  }\n`;
+  text += `- Wali Kelas: ${
+    homeroomClasses.length > 0
+      ? homeroomClasses.map((c) => `Kelas ${c.nama_kelas}`).join(', ')
+      : 'Bukan wali kelas saat ini'
+  }\n`;
 
-  text += `\nDaftar Kelas & Siswa:\n`;
-  if (ws.classes.length === 0) {
-    text += `(Guru belum mendaftarkan kelas di sistem. Jika guru meminta membagi kelompok, arahkan untuk membuat kelas dan menambahkan siswa terlebih dahulu)\n`;
+  // =========================================================================
+  // 1. DATA GURU MAPEL: KRITERIA PENILAIAN, NILAI SISWA, & PENGAJUAN
+  // =========================================================================
+  text += `\n============================================================\n`;
+  text += `[BAGIAN 1: DATA SEBAGAI GURU MATA PELAJARAN]\n`;
+  text += `============================================================\n`;
+
+  if (myAssignments.length === 0) {
+    text += `(Guru belum memiliki penugasan mengajar mata pelajaran.)\n`;
   } else {
-    for (const c of ws.classes) {
-      const isHomeroom = c.homeroom_teacher_id === teacher.id;
-      const classStudents = ws.students.filter((s) => s.class_id === c.id);
-      text += `\n• Kelas: ${c.nama_kelas} (${c.tingkat})${isHomeroom ? ' [KELAS PERWALIAN ANDA]' : ''} - Total ${classStudents.length} Siswa:\n`;
-      if (classStudents.length === 0) {
-        text += `  - (Belum ada siswa terdaftar di kelas ini)\n`;
+    for (const a of myAssignments) {
+      const subj = ws.subjects.find((s) => s.id === a.subject_id);
+      const cls = ws.classes.find((c) => c.id === a.class_id);
+      const studentsInClass = ws.students.filter((s) => s.class_id === a.class_id);
+      const asgCriteria = gradeItems.filter((gi) => gi.assignment_id === a.id);
+      const submission = gradeSubmissions.find((gs) => gs.assignment_id === a.id);
+
+      text += `\n▶ MAPEL: ${subj?.nama || 'Mapel'} | KELAS: ${cls?.nama_kelas || '-'} (${cls?.tingkat || '-'}) | ${studentsInClass.length} Siswa\n`;
+      text += `  Materi Aktif: "${a.materi_aktif || 'Belum diisi'}"\n`;
+      text += `  Status Pengajuan Semester ke Wali Kelas: ${submission?.status || 'Draft'}${
+        submission?.catatan ? ` (Catatan pengantar: "${submission.catatan}")` : ''
+      }\n`;
+
+      // Kriteria Penilaian
+      if (asgCriteria.length === 0) {
+        text += `  Kriteria Penilaian: Belum ada kriteria penilaian yang dibuat untuk mapel ini.\n`;
       } else {
-        classStudents.forEach((s, idx) => {
-          const studentJournals = ws.journals.filter((j) => j.student_id === s.id);
-          const tags = [...new Set(studentJournals.flatMap((j) => j.tags))].slice(0, 3);
-          const tagInfo = tags.length > 0 ? ` [Catatan Jurnal: ${tags.join(', ')}]` : '';
-          const waliInfo = s.nama_wali ? ` (Wali: ${s.nama_wali})` : '';
-          text += `  ${idx + 1}. ${s.nama_lengkap} (${s.jenis_kelamin})${waliInfo}${tagInfo}\n`;
+        text += `  Kriteria Penilaian (${asgCriteria.length} Komponen):\n`;
+        asgCriteria.forEach((crit, cIdx) => {
+          text += `    ${cIdx + 1}. ${crit.judul} [Kategori: ${crit.kategori}, Bobot: ${crit.bobot}x, Tanggal: ${crit.tanggal}] - Deskripsi: "${crit.deskripsi || 'Tidak ada deskripsi'}"\n`;
+        });
+
+        // Rekapitulasi Nilai Siswa
+        text += `  Daftar Nilai Lengkap Siswa di Mapel Ini:\n`;
+        studentsInClass.forEach((st, sIdx) => {
+          const scoresDetails: string[] = [];
+          let totalScore = 0;
+          let totalWeight = 0;
+          let gradedCount = 0;
+
+          asgCriteria.forEach((crit) => {
+            const entry = studentGrades.find((sg) => sg.grade_item_id === crit.id && sg.student_id === st.id);
+            if (entry && typeof entry.nilai === 'number') {
+              scoresDetails.push(`${crit.judul}=${entry.nilai}`);
+              totalScore += entry.nilai * (crit.bobot || 1);
+              totalWeight += crit.bobot || 1;
+              gradedCount++;
+            } else {
+              scoresDetails.push(`${crit.judul}=(belum dinilai)`);
+            }
+          });
+
+          const finalAverage = totalWeight > 0 && gradedCount > 0 ? Math.round(totalScore / totalWeight) : null;
+          const statusTuntas =
+            finalAverage !== null ? (finalAverage >= 75 ? 'TUNTAS' : 'PERLU REMEDIAL') : 'BELUM LENGKAP';
+
+          // Ambil catatan rapor mapel untuk siswa ini jika ada
+          const rep = reports.find((r) => r.assignment_id === a.id && r.student_id === st.id);
+          const repNote = rep
+            ? ` | Rapor Mapel: Keunggulan="${rep.keunggulan}", Rekomendasi="${rep.rekomendasi}"`
+            : '';
+
+          text += `    ${sIdx + 1}. ${st.nama_lengkap} (NISN: ${st.nisn}): [${scoresDetails.join(', ')}] -> Rata-rata Akhir: ${
+            finalAverage !== null ? finalAverage : '-'
+          } (${statusTuntas})${repNote}\n`;
+        });
+      }
+
+      // Kelompok belajar di mapel ini
+      const asgGroups = groups.filter((g) => g.assignment_id === a.id);
+      if (asgGroups.length > 0) {
+        text += `  Pembagian Kelompok Belajar Aktif:\n`;
+        asgGroups.forEach((g) => {
+          const memberDetails = g.members
+            .map((m) => {
+              const st = ws.students.find((s) => s.id === m.student_id);
+              return `${st?.nama_lengkap || 'Siswa'} (${m.peran})`;
+            })
+            .join(', ');
+          text += `    • ${g.nama_kelompok}: ${memberDetails}\n`;
         });
       }
     }
   }
 
-  if (myAssignments.length > 0) {
-    text += `\nMata Pelajaran yang Diampu Guru:\n`;
-    for (const a of myAssignments) {
-      const subj = ws.subjects.find((s) => s.id === a.subject_id);
-      const cls = ws.classes.find((c) => c.id === a.class_id);
-      text += `• ${subj?.nama || 'Mapel'} di kelas ${cls?.nama_kelas || '-'}${a.materi_aktif ? ` (Materi aktif: ${a.materi_aktif})` : ''}\n`;
+  // =========================================================================
+  // 2. DATA SEBAGAI WALI KELAS: KELAS PERWALIAN, LINTAS MAPEL, & RAPOR
+  // =========================================================================
+  text += `\n============================================================\n`;
+  text += `[BAGIAN 2: DATA SEBAGAI WALI KELAS]\n`;
+  text += `============================================================\n`;
+
+  if (homeroomClasses.length === 0) {
+    text += `(Guru saat ini bukan wali kelas dari kelas mana pun.)\n`;
+  } else {
+    for (const hClass of homeroomClasses) {
+      const hStudents = ws.students.filter((s) => s.class_id === hClass.id);
+      const classAssignments = ws.assignments.filter((a) => a.class_id === hClass.id);
+
+      text += `\n★ KELAS PERWALIAN: ${hClass.nama_kelas} (${hClass.tingkat}) | Tahun Ajaran: ${hClass.tahun_ajaran} (${hClass.semester}) | Total ${hStudents.length} Siswa Perwalian\n`;
+
+      text += `  Mata Pelajaran di Kelas Ini (${classAssignments.length} Mapel):\n`;
+      classAssignments.forEach((ca) => {
+        const sub = ws.subjects.find((s) => s.id === ca.subject_id);
+        const t =
+          ws.colleagues.find((col) => col.id === ca.teacher_id) || (ca.teacher_id === teacher.id ? teacher : null);
+        const subStatus = gradeSubmissions.find((gs) => gs.assignment_id === ca.id);
+        text += `    • ${sub?.nama || 'Mapel'} - Guru Pengampu: ${t?.nama_lengkap || 'Guru'} | Status Pengajuan Nilai: ${
+          subStatus?.status || 'Draft'
+        }\n`;
+      });
+
+      text += `  Profil & Rekapitulasi Seluruh Siswa Perwalian:\n`;
+      hStudents.forEach((st, idx) => {
+        const wali = st.nama_wali
+          ? `Wali: ${st.nama_wali} (WA: ${st.no_whatsapp_wali || '-'})`
+          : 'Kontak wali belum diisi';
+
+        // Kumpulkan nilai siswa dari SEMUA mapel di kelas perwalian ini
+        const subjectGradesSummary: string[] = [];
+        classAssignments.forEach((ca) => {
+          const sub = ws.subjects.find((s) => s.id === ca.subject_id);
+          const caCrit = gradeItems.filter((gi) => gi.assignment_id === ca.id);
+          if (caCrit.length > 0) {
+            let total = 0;
+            let weight = 0;
+            let count = 0;
+            caCrit.forEach((c) => {
+              const g = studentGrades.find((sg) => sg.grade_item_id === c.id && sg.student_id === st.id);
+              if (g && typeof g.nilai === 'number') {
+                total += g.nilai * (c.bobot || 1);
+                weight += c.bobot || 1;
+                count++;
+              }
+            });
+            if (count > 0 && weight > 0) {
+              const avg = Math.round(total / weight);
+              subjectGradesSummary.push(`${sub?.nama || 'Mapel'}=${avg}`);
+            }
+          }
+        });
+
+        // Catatan Rapor Wali Kelas
+        const hrRep = homeroomReports.find((hr) => hr.class_id === hClass.id && hr.student_id === st.id);
+        const hrNote = hrRep?.catatan
+          ? ` | Catatan Rapor Wali Kelas: "${hrRep.catatan}" (${hrRep.status})`
+          : '';
+
+        const scoresStr =
+          subjectGradesSummary.length > 0
+            ? `Nilai Mapel: [${subjectGradesSummary.join(', ')}]`
+            : 'Belum ada nilai terinput';
+        text += `    ${idx + 1}. ${st.nama_lengkap} (${st.jenis_kelamin}, NISN ${st.nisn}) | ${wali} | ${scoresStr}${hrNote}\n`;
+      });
     }
   }
 
-  // Riwayat lengkap seluruh daily journal yang telah dicatat guru
-  if (ws.journals.length > 0) {
-    text += `\n[SELURUH RIWAYAT CATATAN DAILY JOURNAL & OBSERVASI GURU]:\n`;
+  // =========================================================================
+  // 3. RIWAYAT LENGKAP JURNAL HARIAN & OBSERVASI
+  // =========================================================================
+  text += `\n============================================================\n`;
+  text += `[BAGIAN 3: CATATAN OBSERVASI HARIAN & JURNAL GURU]\n`;
+  text += `============================================================\n`;
+
+  if (ws.journals.length === 0) {
+    text += `(Belum ada catatan daily journal di sistem.)\n`;
+  } else {
     const sortedJournals = [...ws.journals].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1));
     for (const j of sortedJournals) {
       const student = ws.students.find((s) => s.id === j.student_id);
       const subject = ws.subjects.find((s) => s.id === j.subject_id);
       const cls = student ? ws.classes.find((c) => c.id === student.class_id) : null;
-      const tagStr = j.tags && j.tags.length ? ` | Tag: [${j.tags.join(', ')}]` : '';
-      const scoreStr = ` | Skor: Kognitif=${j.nilai_kognitif}, Terampil=${j.nilai_keterampilan}, Sikap=${j.skor_sikap}`;
-      const noteStr = j.catatan ? ` | Catatan Observasi Guru: "${j.catatan}"` : ' | (Tidak ada catatan khusus)';
-      text += `- [Tanggal ${j.tanggal}] Siswa: ${student?.nama_lengkap || 'Siswa'} (${cls?.nama_kelas || '-'}, Mapel ${subject?.nama || 'Mapel'}) | Materi: "${j.materi}"${scoreStr}${tagStr}${noteStr}\n`;
+      const tagStr = j.tags && j.tags.length ? ` | Tag Karakter: [${j.tags.join(', ')}]` : '';
+      const scoreStr = ` | Skor: Kognitif=${j.nilai_kognitif}/5, Terampil=${j.nilai_keterampilan}/5, Sikap=${j.skor_sikap}/5`;
+      const noteStr = j.catatan ? ` | Catatan: "${j.catatan}"` : '';
+      text += `- [Tanggal ${j.tanggal}] Siswa: ${student?.nama_lengkap || 'Siswa'} (${cls?.nama_kelas || '-'}, Mapel: ${
+        subject?.nama || 'Mapel'
+      }) | Materi: "${j.materi}"${scoreStr}${tagStr}${noteStr}\n`;
     }
-  } else {
-    text += `\n[CATATAN DAILY JOURNAL]: Belum ada catatan daily journal di sistem.\n`;
   }
 
-  text += `[AKHIR DATA AKADEMIK]\n`;
+  // =========================================================================
+  // 4. JADWAL ASESMEN & AGENDA
+  // =========================================================================
+  if (assessments.length > 0) {
+    text += `\n[AGENDA ASESMEN]:\n`;
+    assessments.forEach((ass) => {
+      const sub = ws.subjects.find((s) => s.id === ass.subject_id);
+      const cls = ws.classes.find((c) => c.id === ass.class_id);
+      text += `- [${ass.tanggal}] ${ass.jenis}: "${ass.judul}" untuk ${sub?.nama || 'Mapel'} di kelas ${cls?.nama_kelas || '-'}\n`;
+    });
+  }
+
+  text += `\n[AKHIR DATA LENGKAP AKADEMIK PENAGURU]\n`;
   return text;
 }
 
