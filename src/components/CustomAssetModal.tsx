@@ -82,8 +82,30 @@ export function CustomAssetModal({
       : resolveSubjectIcon(currentName, selectedIcon);
 
   return (
-    <Dialog visible={open} onClose={onClose} title={title}>
-      <ScrollView contentContainerStyle={styles.scroll} showsVerticalScrollIndicator={false}>
+    <Dialog
+      visible={open}
+      onClose={onClose}
+      title={title}
+      footer={
+        <View style={{ width: '100%', flexDirection: 'row', gap: 10, justifyContent: 'flex-end' }}>
+          <Button
+            label="Batal"
+            variant="ghost"
+            onPress={onClose}
+            style={{ flex: 1 }}
+          />
+          <Button
+            label="Simpan Pengaturan"
+            icon="checkmark"
+            variant="primary"
+            loading={saving}
+            onPress={handleSave}
+            style={{ flex: 2 }}
+          />
+        </View>
+      }
+    >
+      <View style={styles.contentWrap}>
         {/* Preview Card */}
         <View style={styles.previewSection}>
           <AppText variant="caption" weight="bold" tone={color.muted}>
@@ -212,25 +234,15 @@ export function CustomAssetModal({
           </View>
         ) : null}
 
-        {/* Simpan */}
-        <View style={{ marginTop: 12 }}>
-          <Button
-            label="Simpan Pengaturan"
-            icon="checkmark"
-            variant="primary"
-            loading={saving}
-            onPress={handleSave}
-          />
-        </View>
-      </ScrollView>
+      </View>
     </Dialog>
   );
 }
 
 const styles = StyleSheet.create({
-  scroll: {
+  contentWrap: {
     gap: 18,
-    paddingVertical: space.sm,
+    paddingVertical: space.xs,
   },
   previewSection: {
     gap: 8,
@@ -285,8 +297,6 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     flexWrap: 'wrap',
     gap: 8,
-    maxHeight: 220,
-    paddingRight: 4,
   },
   iconCell: {
     width: '22%',

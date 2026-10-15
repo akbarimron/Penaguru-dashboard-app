@@ -12,7 +12,7 @@ import { playPopSound } from '../lib/sound';
 import { assignmentLabel, myAssignments } from '../store/selectors';
 import { useAppStore } from '../store/useAppStore';
 import { toast } from '../store/useUiStore';
-import { color, radius, space, subjectPalette } from '../theme/tokens';
+import { color, elevation, radius, space, subjectPalette } from '../theme/tokens';
 
 export function JournalScreen({ navigation, route }: any) {
   const ws = useAppStore((s) => s.ws)!;
@@ -232,26 +232,16 @@ export function JournalScreen({ navigation, route }: any) {
         <RatingInput label="Keterampilan" description="Praktik dan penyelesaian tugas" value={ket} onChange={setKet} error={submitted && !ket} />
         <RatingInput label="Sikap" description="Kerja sama, disiplin, keaktifan" value={sik} onChange={setSik} error={submitted && !sik} />
         <View style={{ gap: 8, marginTop: 4 }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' }}>
-            <AppText variant="small" weight="bold" tone={color.ink}>
-              Catatan Observasi (Opsional)
-            </AppText>
-            <Button
-              label="Dikte Mikrofon"
-              icon="mic"
-              size="sm"
-              variant="secondary"
-              onPress={() => setVoiceModalOpen(true)}
-            />
-          </View>
+          <AppText variant="small" weight="bold" tone={color.ink}>
+            Catatan Observasi
+          </AppText>
           <TextField
-            label=""
-            optional
+            label="Catatan Observasi"
+            hideLabel
             multiline
             value={note}
             onChangeText={setNote}
-            placeholder="Apa yang Anda amati? Tulis singkat atau tekan Dikte Mikrofon untuk berbicara langsung."
-            hint="Dapat didikte langsung lewat mikrofon dengan pemetaan otomatis AI."
+            placeholder="Tulis catatan observasi pembelajaran siswa..."
           />
         </View>
       </Card>
@@ -261,16 +251,27 @@ export function JournalScreen({ navigation, route }: any) {
   return (
     <Screen
       footer={
-        <View style={styles.footer}>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText variant="small" weight="bold" numberOfLines={1}>
-              {selected.length} siswa · {tags.length} tag
-            </AppText>
-            <AppText variant="caption" tone={offline ? color.accentInk : color.mutedOnWhite} numberOfLines={1}>
-              {offline ? 'Mode luring: disimpan di perangkat' : formatLongDate(toISODate(new Date()))}
-            </AppText>
+        <View style={{ width: '100%', position: 'relative' }}>
+          <View style={styles.floatingMicRow} pointerEvents="box-none">
+            <PressableScale
+              onPress={() => setVoiceModalOpen(true)}
+              style={styles.stickyMicFab}
+              accessibilityLabel="Dikte suara mikrofon"
+            >
+              <Ionicons name="mic" size={24} color="#FFFFFF" />
+            </PressableScale>
           </View>
-          <Button label="Simpan jurnal" icon="checkmark" onPress={save} loading={saving} />
+          <View style={styles.footer}>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="small" weight="bold" numberOfLines={1}>
+                {selected.length} siswa · {tags.length} tag
+              </AppText>
+              <AppText variant="caption" tone={offline ? color.accentInk : color.mutedOnWhite} numberOfLines={1}>
+                {offline ? 'Mode luring: disimpan di perangkat' : formatLongDate(toISODate(new Date()))}
+              </AppText>
+            </View>
+            <Button label="Simpan jurnal" icon="checkmark" onPress={save} loading={saving} />
+          </View>
         </View>
       }
     >
@@ -298,33 +299,6 @@ export function JournalScreen({ navigation, route }: any) {
           </View>
         ) : null}
       </View>
-
-      <EnterView>
-        <PressableScale
-          onPress={() => setVoiceModalOpen(true)}
-          style={styles.voiceBanner}
-          accessibilityLabel="Mulai dikte suara lewat mikrofon"
-        >
-          <View style={styles.voiceIconWrap}>
-            <Ionicons name="mic" size={20} color="#FFFFFF" />
-          </View>
-          <View style={{ flex: 1, minWidth: 0 }}>
-            <AppText variant="small" weight="bold" tone={color.brandDeep}>
-              Dikte Jurnal Lewat Mikrofon
-            </AppText>
-            <AppText variant="caption" tone={color.muted}>
-              Tekan untuk berbicara langsung & isi catatan atau form otomatis dengan AI
-            </AppText>
-          </View>
-          <Button
-            label="Mulai Dikte"
-            icon="mic"
-            size="sm"
-            variant="secondary"
-            onPress={() => setVoiceModalOpen(true)}
-          />
-        </PressableScale>
-      </EnterView>
 
       {layout.twoPane ? (
         <View style={{ flexDirection: 'row', gap: space.lg, alignItems: 'flex-start' }}>
@@ -386,22 +360,21 @@ const styles = StyleSheet.create({
   footer: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   titleRow: { flexDirection: 'row', alignItems: 'center', gap: 10 },
   offline: { flexDirection: 'row', alignItems: 'center', gap: 4, paddingHorizontal: 8, paddingVertical: 4, borderRadius: radius.sm, backgroundColor: color.accentSoft },
-  voiceBanner: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 12,
-    backgroundColor: color.brandSoft,
-    borderColor: color.brand,
-    borderWidth: 1,
-    padding: space.md,
-    borderRadius: radius.lg,
+  floatingMicRow: {
+    position: 'absolute',
+    top: -64,
+    right: 4,
+    zIndex: 99,
   },
-  voiceIconWrap: {
-    width: 38,
-    height: 38,
-    borderRadius: 19,
+  stickyMicFab: {
+    width: 52,
+    height: 52,
+    borderRadius: 26,
     backgroundColor: color.brand,
     alignItems: 'center',
     justifyContent: 'center',
+    ...elevation.floating,
+    borderWidth: 2,
+    borderColor: '#FFFFFF',
   },
 });

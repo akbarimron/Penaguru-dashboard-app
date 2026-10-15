@@ -63,54 +63,87 @@ export function SubjectClassScreen({ route, navigation }: any) {
         <ScreenHeader
           title={subject.nama}
           subtitle={`${cls.nama_kelas} · ${summary.rows.length} siswa`}
-          tone={{ bg: p.bg, fg: p.fg }}
           right={
             <IconButton
               icon="color-palette-outline"
               label="Atur Ikon & Gambar Mapel"
               onPress={() => setAssetModalOpen(true)}
+              variant="surface"
             />
           }
         />
       }
     >
       <EnterView>
-        <View style={[styles.band, { backgroundColor: p.soft }]}>
-          <View style={[styles.bandIcon, { backgroundColor: p.bg, overflow: 'hidden' }]}>
-            {subject.gambar ? (
-              <Image source={{ uri: subject.gambar }} style={{ width: '100%', height: '100%', borderRadius: 14 }} resizeMode="cover" />
-            ) : (
-              <Ionicons name={resolveSubjectIcon(subject.nama, subject.icon)} size={22} color={p.fg} />
-            )}
+        <Card style={styles.heroCard}>
+          <View style={styles.heroTopRow}>
+            {/* Subject Image / Icon Thumbnail */}
+            <View style={[styles.heroThumbnail, { backgroundColor: p.soft, borderColor: p.iconBox }]}>
+              {subject.gambar ? (
+                <Image source={{ uri: subject.gambar }} style={styles.heroImg} resizeMode="cover" />
+              ) : (
+                <Ionicons name={resolveSubjectIcon(subject.nama, subject.icon)} size={26} color={p.fg} />
+              )}
+            </View>
+
+            {/* Subject Info & Active Topic */}
+            <View style={{ flex: 1, minWidth: 0, gap: 4 }}>
+              <View style={styles.heroMetaHeader}>
+                <View style={[styles.topicBadge, { backgroundColor: p.soft }]}>
+                  <Ionicons name="book-outline" size={12} color={p.ink} />
+                  <AppText variant="caption" weight="bold" tone={p.ink} style={{ textTransform: 'uppercase', fontSize: 10, letterSpacing: 0.5 }}>
+                    Materi Aktif
+                  </AppText>
+                </View>
+                <PressableScale
+                  onPress={() => setEditOpen(true)}
+                  style={[styles.editPill, { borderColor: p.soft }]}
+                  accessibilityLabel="Ubah materi yang sedang diajarkan"
+                >
+                  <Ionicons name="pencil" size={12} color={p.ink} />
+                  <AppText variant="caption" weight="bold" tone={p.ink} style={{ fontSize: 11 }}>
+                    Ubah
+                  </AppText>
+                </PressableScale>
+              </View>
+
+              <AppText variant="heading" weight="bold" tone={color.ink} numberOfLines={2}>
+                {a.materi_aktif || 'Belum ada materi aktif'}
+              </AppText>
+
+              <View style={styles.scheduleRow}>
+                <Ionicons name="calendar-outline" size={13} color={color.muted} />
+                <AppText variant="caption" tone={color.muted} numberOfLines={1}>
+                  {a.jadwal.length ? a.jadwal.map((j) => `${HARI[j.hari]} ${j.jam_mulai}`).join(' · ') : 'Jadwal belum diisi'}
+                </AppText>
+              </View>
+            </View>
           </View>
-          <View style={{ flex: 1, minWidth: 0, gap: 2 }}>
-            <AppText variant="caption" weight="bold" tone={p.ink}>
-              Materi yang sedang diajarkan
-            </AppText>
-            <AppText variant="body" weight="bold" tone={color.ink}>
-              {a.materi_aktif || 'Belum diisi'}
-            </AppText>
-            <AppText variant="caption" tone={color.inkSoft}>
-              {a.jadwal.length ? a.jadwal.map((j) => `${HARI[j.hari]} ${j.jam_mulai}`).join(' · ') : 'Jadwal belum diisi'}
-            </AppText>
+
+          {/* Action Footer inside Card */}
+          <View style={styles.heroActionFooter}>
+            <Button
+              label="Catat Jurnal"
+              icon="create-outline"
+              size="sm"
+              onPress={() => navigation.navigate('Main', { screen: 'Journal', params: { assignmentId: a.id } })}
+              style={{ flex: 1 }}
+            />
+            {attention ? (
+              <PressableScale
+                onPress={() => setTab('siswa')}
+                style={styles.attentionPill}
+                accessibilityLabel={`${attention} siswa perlu perhatian`}
+              >
+                <Ionicons name="alert-circle" size={15} color={color.accentInk} />
+                <AppText variant="caption" weight="bold" tone={color.accentInk}>
+                  {attention} Perlu Perhatian
+                </AppText>
+              </PressableScale>
+            ) : null}
           </View>
-          <View style={{ gap: 4, alignItems: 'flex-end' }}>
-            <Button label="Ubah Materi" size="sm" variant="ghost" fg={p.ink} onPress={() => setEditOpen(true)} />
-            <Button label="Ikon & Foto" size="sm" variant="ghost" fg={p.ink} icon="images-outline" onPress={() => setAssetModalOpen(true)} />
-          </View>
-        </View>
+        </Card>
       </EnterView>
-      <View style={styles.actions}>
-        <Button label="Catat jurnal" icon="create-outline" onPress={() => navigation.navigate('Main', { screen: 'Journal', params: { assignmentId: a.id } })} />
-        {attention ? (
-          <View style={styles.attention}>
-            <Ionicons name="alert-circle" size={16} color={color.accentInk} />
-            <AppText variant="small" weight="bold" tone={color.accentInk}>
-              {attention} siswa perlu perhatian
-            </AppText>
-          </View>
-        ) : null}
-      </View>
       <Segmented
         accessibilityLabel="Bagian dashboard mapel"
         value={tab}
@@ -1500,6 +1533,76 @@ function EditMateriDialog({ visible, onClose, a }: { visible: boolean; onClose: 
 }
 
 const styles = StyleSheet.create({
+  heroCard: {
+    padding: space.md,
+    gap: space.md,
+    borderRadius: radius.xl,
+    backgroundColor: color.surface,
+  },
+  heroTopRow: {
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 12,
+  },
+  heroThumbnail: {
+    width: 52,
+    height: 52,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderWidth: 1,
+    overflow: 'hidden',
+  },
+  heroImg: {
+    width: '100%',
+    height: '100%',
+  },
+  heroMetaHeader: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+  },
+  topicBadge: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+  },
+  editPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    paddingHorizontal: 8,
+    paddingVertical: 3,
+    borderRadius: radius.full,
+    borderWidth: 1,
+    backgroundColor: color.surfaceMuted,
+  },
+  scheduleRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 5,
+    marginTop: 2,
+  },
+  heroActionFooter: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 10,
+    borderTopWidth: 1,
+    borderTopColor: color.line,
+    paddingTop: space.sm,
+  },
+  attentionPill: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: radius.md,
+    backgroundColor: color.accentSoft,
+  },
   band: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 14, borderRadius: radius.lg },
   bandIcon: { width: 46, height: 46, borderRadius: 14, alignItems: 'center', justifyContent: 'center' },
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
