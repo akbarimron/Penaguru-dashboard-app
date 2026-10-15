@@ -263,16 +263,7 @@ export function AuthLayout({
                       Kembali ke halaman masuk
                     </AppText>
                   </Pressable>
-                ) : (
-                  /* Pure Mark Icon without background box */
-                  <View style={styles.mobileCardLogoMark}>
-                    <Image
-                      source={LogoColorMark}
-                      style={styles.mobileCardLogo}
-                      resizeMode="contain"
-                    />
-                  </View>
-                )}
+                ) : null}
 
                 <View style={styles.mobileCardHeader}>
                   <AppText
@@ -537,13 +528,6 @@ const styles = StyleSheet.create({
   mobileCardTopSection: {
     width: '100%',
     gap: 8,
-  },
-  mobileCardLogoMark: {
-    marginBottom: -4,
-  },
-  mobileCardLogo: {
-    width: 32,
-    height: 32,
   },
   mobileCardHeader: {
     marginBottom: 2,
