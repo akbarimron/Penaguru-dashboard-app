@@ -644,10 +644,15 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
 
       {/* Submission Status & Action Banner */}
       <Card style={{ gap: 12 }}>
-        <View style={styles.between}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
-            <AppText variant="heading">Status Pengajuan Semester</AppText>
-            <StatusPill status={submissionStatus} compact />
+        <View style={styles.headerBetween}>
+          <View style={{ flex: 1, minWidth: 200, gap: 4 }}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+              <AppText variant="heading">Status Pengajuan Semester</AppText>
+              <StatusPill status={submissionStatus} compact />
+            </View>
+            <AppText variant="caption" tone={color.muted}>
+              Input nilai harian dan tugas siswa, lalu ajukan ke wali kelas untuk dirangkum ke buku rapor semester.
+            </AppText>
           </View>
           <Button
             label={submissionStatus === 'Diajukan' ? 'Perbarui Pengajuan' : submissionStatus === 'Disetujui' ? 'Sudah Disetujui' : 'Ajukan ke Wali Kelas'}
@@ -656,6 +661,7 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
             variant={submissionStatus === 'Disetujui' ? 'ghost' : 'primary'}
             disabled={submissionStatus === 'Disetujui'}
             onPress={() => setSubmitDialogOpen(true)}
+            style={{ alignSelf: 'flex-start' }}
           />
         </View>
 
@@ -679,17 +685,13 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
               ) : null}
             </View>
           </View>
-        ) : (
-          <AppText variant="caption" tone={color.muted}>
-            Input nilai harian dan tugas siswa, lalu ajukan ke wali kelas untuk dirangkum ke buku rapor semester.
-          </AppText>
-        )}
+        ) : null}
       </Card>
 
       {/* Criteria Selection Header & Management */}
       <Card style={{ gap: 14 }}>
-        <View style={styles.between}>
-          <View>
+        <View style={styles.headerBetween}>
+          <View style={{ flex: 1, minWidth: 160, gap: 2 }}>
             <AppText variant="heading">Kriteria Penilaian ({criteria.length})</AppText>
             <AppText variant="caption" tone={color.muted}>
               Kustomisasi komponen nilai untuk kelas ini
@@ -704,6 +706,7 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
               setEditingCriterion(null);
               setCriterionDialogOpen(true);
             }}
+            style={{ alignSelf: 'flex-start' }}
           />
         </View>
 
@@ -744,8 +747,8 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
             {/* Active Criterion Detail Box */}
             {activeCriterion ? (
               <View style={[styles.criterionBox, { borderLeftColor: palette.fg }]}>
-                <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 8 }}>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' }}>
+                <View style={styles.headerBetween}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap', flex: 1, minWidth: 160 }}>
                     <AppText variant="title" weight="bold">
                       {activeCriterion.judul}
                     </AppText>
@@ -760,7 +763,7 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
                       </AppText>
                     </View>
                   </View>
-                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6 }}>
+                  <View style={{ flexDirection: 'row', alignItems: 'center', gap: 6, flexWrap: 'wrap' }}>
                     <Button
                       label="Tempel Excel"
                       icon="clipboard-outline"
@@ -829,8 +832,8 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
       {/* Student Grades Roster */}
       {activeCriterion ? (
         <View style={{ gap: space.sm }}>
-          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm }}>
-            <View style={{ flex: 1 }}>
+          <View style={{ flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: space.sm, flexWrap: 'wrap' }}>
+            <View style={{ flex: 1, minWidth: 180 }}>
               <TextField
                 label="Cari Siswa"
                 placeholder="Cari nama atau NISN siswa..."
@@ -844,6 +847,7 @@ function GradesTab({ a, palette }: { a: TeachingAssignment; palette: SubjectPale
               size="sm"
               variant="subtle"
               onPress={() => setBulkDialogOpen(true)}
+              style={{ alignSelf: 'flex-start' }}
             />
           </View>
 
@@ -1456,6 +1460,7 @@ const styles = StyleSheet.create({
   actions: { flexDirection: 'row', alignItems: 'center', gap: 12, flexWrap: 'wrap' },
   attention: { flexDirection: 'row', alignItems: 'center', gap: 6, paddingHorizontal: 10, paddingVertical: 8, borderRadius: radius.md, backgroundColor: color.accentSoft },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  headerBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   counts: { flexDirection: 'row', flexWrap: 'wrap', gap: 8, borderTopWidth: 1, borderTopColor: color.line, paddingTop: 12 },
   countItem: { flexGrow: 1, minWidth: 70, gap: 4 },
   countInline: { flexDirection: 'row', alignItems: 'center', gap: 6 },

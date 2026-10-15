@@ -601,12 +601,12 @@ function HomeroomGradesTab({ cls, periode }: { cls: ClassRoom; periode: string }
       {/* Selected Subject Overview Card */}
       {selectedAssignment && subject && palette ? (
         <Card style={{ gap: 14 }}>
-          <View style={styles.between}>
-            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+          <View style={styles.headerBetween}>
+            <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12, flex: 1, minWidth: 200, flexWrap: 'wrap' }}>
               <View style={[styles.iconMd, { backgroundColor: palette.bg }]}>
                 <Ionicons name={subjectIcon(subject.nama)} size={22} color={palette.fg} />
               </View>
-              <View>
+              <View style={{ flex: 1, minWidth: 140 }}>
                 <AppText variant="title" weight="bold">
                   {subject.nama}
                 </AppText>
@@ -710,7 +710,7 @@ function HomeroomGradesTab({ cls, periode }: { cls: ClassRoom; periode: string }
 
       {/* Criteria Breakdown by Subject Teacher */}
       <Card style={{ gap: 10 }}>
-        <View style={styles.between}>
+        <View style={{ gap: 2 }}>
           <AppText variant="heading">Kriteria Penilaian Guru Mapel ({criteria.length})</AppText>
           <AppText variant="caption" tone={color.muted}>
             Ketuk kriteria untuk baca deskripsi tugas
@@ -883,6 +883,7 @@ function HomeroomGradesTab({ cls, periode }: { cls: ClassRoom; periode: string }
 const styles = StyleSheet.create({
   periodRow: { flexDirection: 'row', alignItems: 'center', gap: 8, flexWrap: 'wrap' },
   between: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', gap: 8 },
+  headerBetween: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: 12 },
   subjectLine: { flexDirection: 'row', alignItems: 'center', gap: 10, flex: 1, minWidth: 0 },
   dot: { width: 12, height: 12, borderRadius: 4 },
   waitingBox: { flexDirection: 'row', alignItems: 'center', gap: 10, padding: 12, borderRadius: radius.md, backgroundColor: color.infoSoft },
