@@ -8,35 +8,30 @@ import { assignmentLabel, myAssignments, myHomeroomClasses } from '../store/sele
 import { useAppStore } from '../store/useAppStore';
 import { confirmDialog, toast } from '../store/useUiStore';
 import { color, radius, space, subjectPalette } from '../theme/tokens';
+import { useSettingsStore } from '../store/useSettingsStore';
 
 export function ProfileScreen({ navigation }: any) {
   const ws = useAppStore((s) => s.ws)!;
   const mode = useAppStore((s) => s.mode);
-  const offline = useAppStore((s) => s.offline);
-  const pending = useAppStore((s) => s.pending.length);
-  const syncing = useAppStore((s) => s.syncing);
-  const setOffline = useAppStore((s) => s.setOffline);
-  const syncPending = useAppStore((s) => s.syncPending);
   const signOut = useAppStore((s) => s.signOut);
   const resetDemo = useAppStore((s) => s.resetDemo);
+  const muteSound = useSettingsStore((s) => s.muteSound);
+  const setMuteSound = useSettingsStore((s) => s.setMuteSound);
+  const hapticFeedback = useSettingsStore((s) => s.hapticFeedback);
+  const setHapticFeedback = useSettingsStore((s) => s.setHapticFeedback);
+  const scheduleReminder = useSettingsStore((s) => s.scheduleReminder);
+  const setScheduleReminder = useSettingsStore((s) => s.setScheduleReminder);
+  const compactMode = useSettingsStore((s) => s.compactMode);
+  const setCompactMode = useSettingsStore((s) => s.setCompactMode);
   const layout = useLayout();
   const homerooms = myHomeroomClasses(ws);
   const mine = myAssignments(ws);
   const isAdmin = ws.teacher.role === 'admin' || ws.teacher.email.toLowerCase().includes('admin');
 
-  const sync = async () => {
-    try {
-      const n = await syncPending();
-      toast(`${n} catatan berhasil disinkronkan.`);
-    } catch (e: any) {
-      toast(e?.message || 'Sinkronisasi gagal. Data tetap aman di perangkat.', 'error');
-    }
-  };
-
   const logout = async () => {
     const ok = await confirmDialog({
       title: 'Keluar dari PenaGuru?',
-      message: pending ? `${pending} catatan belum tersinkron dan tetap tersimpan di perangkat ini sampai Anda masuk lagi.` : 'Anda perlu masuk lagi untuk membuka data kelas.',
+      message: 'Anda perlu masuk lagi dengan email dan kata sandi untuk membuka data kelas.',
       confirmLabel: 'Keluar',
     });
     if (ok) await signOut();
@@ -153,48 +148,119 @@ export function ProfileScreen({ navigation }: any) {
     </EnterView>
   );
 
-  const syncCard = (
+  const settingsCard = (
     <EnterView index={3}>
       <View style={{ gap: space.sm }}>
-        <SectionHeader title="Penyimpanan & sinkron" />
+        <SectionHeader title="Pengaturan Aplikasi" />
         <Card style={{ gap: 14 }}>
-          <View style={styles.row}>
-            <Ionicons name={mode === 'demo' ? 'phone-portrait-outline' : 'cloud-outline'} size={22} color={color.brandDeep} />
-            <View style={{ flex: 1 }}>
-              <AppText variant="body" weight="bold">
-                {mode === 'demo' ? 'Mode demo (lokal)' : 'Terhubung ke Supabase'}
-              </AppText>
-              <AppText variant="caption" tone={color.mutedOnWhite}>
-                {mode === 'demo' ? 'Data contoh tersimpan di perangkat ini. Isi .env Supabase untuk memakai database sekolah.' : 'Data tersimpan di database dan dilindungi aturan akses per kelas.'}
-              </AppText>
+          {/* Setting 1: Bisukan Efek Suara */}
+          <View style={styles.settingRow}>
+            <View style={styles.settingIconWrap}>
+              <Ionicons
+                name={muteSound ? 'volume-mute-outline' : 'volume-high-outline'}
+                size={20}
+                color={muteSound ? color.muted : color.brand}
+              />
             </View>
-          </View>
-          <Divider />
-          <View style={styles.row}>
-            <Ionicons name="cloud-offline-outline" size={22} color={color.inkSoft} />
-            <View style={{ flex: 1 }}>
-              <AppText variant="body" weight="bold" nativeID="offline-label">
-                Mode luring
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="body" weight="bold">
+                Bisukan Efek Suara
               </AppText>
               <AppText variant="caption" tone={color.mutedOnWhite}>
-                Jurnal disimpan di perangkat dulu, cocok saat sinyal lab lemah.
+                Menonaktifkan suara notifikasi dan interaksi aplikasi
               </AppText>
             </View>
             <Switch
-              value={offline}
-              onValueChange={setOffline}
-              accessibilityLabel="Mode luring"
-              trackColor={{ true: color.brand, false: '#94A3B8' }}
+              value={muteSound}
+              onValueChange={setMuteSound}
+              accessibilityLabel="Bisukan Efek Suara"
+              trackColor={{ true: color.brand, false: '#CBD5E1' }}
               thumbColor="#FFFFFF"
-              {...({ activeThumbColor: '#FFFFFF' } as any)}
             />
           </View>
-          <View style={[styles.pending, pending ? { backgroundColor: color.accentSoft } : null]}>
-            <Ionicons name={pending ? 'cloud-upload-outline' : 'checkmark-done'} size={18} color={pending ? color.accentInk : color.success} />
-            <AppText variant="small" weight="semibold" tone={pending ? color.accentInk : color.success} style={{ flex: 1 }}>
-              {pending ? `${pending} catatan menunggu sinkron` : 'Semua catatan sudah tersinkron'}
-            </AppText>
-            {pending ? <Button label="Sinkronkan" size="sm" icon="sync" onPress={sync} loading={syncing} /> : null}
+
+          <Divider />
+
+          {/* Setting 2: Pengingat Jadwal Mengajar */}
+          <View style={styles.settingRow}>
+            <View style={styles.settingIconWrap}>
+              <Ionicons
+                name="notifications-outline"
+                size={20}
+                color={scheduleReminder ? color.brand : color.muted}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="body" weight="bold">
+                Pengingat Jadwal Mengajar
+              </AppText>
+              <AppText variant="caption" tone={color.mutedOnWhite}>
+                Pemberitahuan otomatis 15 menit sebelum kelas dimulai
+              </AppText>
+            </View>
+            <Switch
+              value={scheduleReminder}
+              onValueChange={setScheduleReminder}
+              accessibilityLabel="Pengingat Jadwal Mengajar"
+              trackColor={{ true: color.brand, false: '#CBD5E1' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          <Divider />
+
+          {/* Setting 3: Umpan Balik Getar */}
+          <View style={styles.settingRow}>
+            <View style={styles.settingIconWrap}>
+              <Ionicons
+                name="phone-portrait-outline"
+                size={20}
+                color={hapticFeedback ? color.brand : color.muted}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="body" weight="bold">
+                Umpan Balik Getar
+              </AppText>
+              <AppText variant="caption" tone={color.mutedOnWhite}>
+                Getaran halus saat mencatat presensi atau aksi penting
+              </AppText>
+            </View>
+            <Switch
+              value={hapticFeedback}
+              onValueChange={setHapticFeedback}
+              accessibilityLabel="Umpan Balik Getar"
+              trackColor={{ true: color.brand, false: '#CBD5E1' }}
+              thumbColor="#FFFFFF"
+            />
+          </View>
+
+          <Divider />
+
+          {/* Setting 4: Tampilan Ringkas */}
+          <View style={styles.settingRow}>
+            <View style={styles.settingIconWrap}>
+              <Ionicons
+                name="contract-outline"
+                size={20}
+                color={compactMode ? color.brand : color.muted}
+              />
+            </View>
+            <View style={{ flex: 1, minWidth: 0 }}>
+              <AppText variant="body" weight="bold">
+                Tampilan Ringkas
+              </AppText>
+              <AppText variant="caption" tone={color.mutedOnWhite}>
+                Kepadatan tinggi untuk menampilkan lebih banyak daftar siswa
+              </AppText>
+            </View>
+            <Switch
+              value={compactMode}
+              onValueChange={setCompactMode}
+              accessibilityLabel="Tampilan Ringkas"
+              trackColor={{ true: color.brand, false: '#CBD5E1' }}
+              thumbColor="#FFFFFF"
+            />
           </View>
         </Card>
       </View>
@@ -224,7 +290,7 @@ export function ProfileScreen({ navigation }: any) {
             {roles}
           </View>
           <View style={{ flex: 1, gap: space.lg }}>
-            {syncCard}
+            {settingsCard}
             {account}
           </View>
         </View>
@@ -234,7 +300,7 @@ export function ProfileScreen({ navigation }: any) {
           {adminCard}
           {school}
           {roles}
-          {syncCard}
+          {settingsCard}
           {account}
         </>
       )}
@@ -266,5 +332,6 @@ const styles = StyleSheet.create({
   row: { flexDirection: 'row', alignItems: 'center', gap: 12 },
   roleRow: { flexDirection: 'row', alignItems: 'center', gap: 12, paddingHorizontal: space.md, paddingVertical: 12, minHeight: 60, borderBottomWidth: 1, borderBottomColor: color.line },
   roleIcon: { width: 36, height: 36, borderRadius: 11, alignItems: 'center', justifyContent: 'center' },
-  pending: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 12, borderRadius: radius.md, backgroundColor: color.successSoft, flexWrap: 'wrap' },
+  settingRow: { flexDirection: 'row', alignItems: 'center', gap: 12 },
+  settingIconWrap: { width: 36, height: 36, borderRadius: 10, backgroundColor: color.surfaceMuted, alignItems: 'center', justifyContent: 'center' },
 });

@@ -48,7 +48,7 @@ export function AdminDashboardScreen({ navigation }: any) {
     <Screen
       header={
         <ScreenHeader
-          title="🛡️ Dashboard Admin"
+          title="Dashboard Admin"
           subtitle={`${ws.school?.nama || 'Sekolah'} · ${ws.teacher.nama_lengkap}`}
           tone={{ bg: color.brandDeep, fg: '#FFFFFF' }}
         />
@@ -227,7 +227,7 @@ function TeachersTab() {
                     {t.nama_lengkap}
                   </AppText>
                   {isMe ? <Chip label="Anda" size="sm" /> : null}
-                  <Chip label={t.role === 'admin' ? '🛡️ Admin' : 'Guru'} size="sm" selected={t.role === 'admin'} />
+                  <Chip label={t.role === 'admin' ? 'Admin' : 'Guru'} size="sm" selected={t.role === 'admin'} />
                 </View>
                 <AppText variant="caption" tone={color.inkSoft}>
                   {t.email} · {t.nip ? `NIP ${t.nip}` : 'NIP -'}
@@ -267,7 +267,7 @@ function TeachersTab() {
             </AppText>
             <View style={{ flexDirection: 'row', gap: 8 }}>
               <Chip label="Guru Mapel / Wali" selected={role === 'guru'} onPress={() => setRole('guru')} />
-              <Chip label="🛡️ Administrator" selected={role === 'admin'} onPress={() => setRole('admin')} />
+              <Chip label="Administrator" selected={role === 'admin'} onPress={() => setRole('admin')} />
             </View>
           </View>
         </View>

@@ -1,3 +1,4 @@
+import { Ionicons } from '@expo/vector-icons';
 import React from 'react';
 import { StyleSheet, Text, View } from 'react-native';
 import { color, font, radius } from '../../theme/tokens';
@@ -100,7 +101,7 @@ export function MarkdownView({ content, isUser = false }: MarkdownViewProps) {
       const tipText = line.replace(/^>\s*/, '');
       elements.push(
         <View key={`tip-${i}`} style={styles.tipBox}>
-          <Text style={styles.tipIcon}>💡</Text>
+          <Ionicons name="bulb-outline" size={18} color="#D97706" style={{ marginTop: 2 }} />
           <View style={{ flex: 1 }}>{renderInline(tipText, false)}</View>
         </View>
       );

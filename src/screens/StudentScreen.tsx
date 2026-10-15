@@ -188,7 +188,7 @@ ${allJournalsList}
           {homeroom ? (
             <Button label="Ubah data" size="sm" variant="secondary" icon="create-outline" onPress={() => navigation.navigate('StudentForm', { classId: student.class_id, studentId: student.id })} />
           ) : null}
-          <Button label="💬 Pesan Ortu (AI)" size="sm" variant="subtle" icon="sparkles" onPress={handleOpenModal} />
+          <Button label="Pesan Ortu (AI)" size="sm" variant="subtle" icon="sparkles" onPress={handleOpenModal} />
           {wa ? <Button label="Chat wali" size="sm" variant="ghost" icon="logo-whatsapp" onPress={() => Linking.openURL(wa)} /> : null}
         </View>
       </Card>
@@ -196,7 +196,7 @@ ${allJournalsList}
       <Dialog
         visible={parentModalVisible}
         onClose={() => setParentModalVisible(false)}
-        title="💬 Pesan untuk Wali Murid"
+        title="Pesan untuk Wali Murid"
         description={`Kepada ${student.nama_wali || 'Orang Tua/Wali'} (${student.nama_lengkap})`}
         footer={
           <View style={{ flexDirection: 'row', gap: 8, flexWrap: 'wrap', justifyContent: 'flex-end', width: '100%' }}>
@@ -513,7 +513,7 @@ function HomeroomView({ student, navigation }: { student: Student; navigation: a
               <Button label="Buka kunci untuk diubah" size="sm" variant="ghost" icon="lock-open-outline" onPress={() => save('Draft')} loading={saving === 'Draft'} />
             ) : (
               <>
-                <Button label="✨ Susun dengan AI" size="sm" icon="sparkles" onPress={composeAI} loading={generatingAI} />
+                <Button label="Susun dengan AI" size="sm" icon="sparkles" onPress={composeAI} loading={generatingAI} />
                 <Button label="Draf template" size="sm" variant="subtle" icon="document-text-outline" onPress={compose} />
                 <Button label="Simpan draf" size="sm" variant="secondary" onPress={() => save('Draft')} loading={saving === 'Draft'} />
                 <Button label="Finalkan" size="sm" icon="lock-closed-outline" onPress={() => save('Final')} loading={saving === 'Final'} />
