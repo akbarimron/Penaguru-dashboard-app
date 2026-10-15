@@ -4,14 +4,27 @@
     "slug": "penaguru-dashboard-app",
     "version": "1.0.0",
     "orientation": "portrait",
+    "icon": "./assets/logo/penaguru-mark-squircle.png",
     "userInterfaceStyle": "light",
     "splash": {
+      "image": "./assets/logo/penaguru-mark-color.png",
       "resizeMode": "contain",
-      "backgroundColor": "#ffffff"
+      "backgroundColor": "#FFFFFF"
     },
     "assetBundlePatterns": [
       "**/*"
     ],
+    "ios": {
+      "supportsTablet": true,
+      "bundleIdentifier": "com.penaguru.app"
+    },
+    "android": {
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/logo/penaguru-mark-color.png",
+        "backgroundColor": "#FFFFFF"
+      },
+      "package": "com.penaguru.app"
+    },
     "plugins": [
       "expo-font",
       "expo-status-bar"

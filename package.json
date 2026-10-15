@@ -9,7 +9,9 @@
     "ios": "expo start --ios",
     "web": "expo start --web",
     "build": "expo export -p web",
-    "build:web": "expo export -p web"
+    "build:web": "expo export -p web",
+    "export:android": "expo export -p android",
+    "build:apk": "eas build -p android --profile preview"
   },
   "repository": {
     "type": "git",
