@@ -273,15 +273,6 @@ export function JournalScreen({ navigation, route }: any) {
             Pengamatan singkat selama atau setelah kelas.
           </AppText>
         </View>
-        {assignment ? (
-          <Button
-            label={layout.isCompact ? 'Dashboard' : 'Dashboard kelas'}
-            size="sm"
-            variant="secondary"
-            icon="easel-outline"
-            onPress={() => navigation.navigate('SubjectClass', { assignmentId: assignment.id })}
-          />
-        ) : null}
         {offline ? (
           <View style={styles.offline}>
             <Ionicons name="cloud-offline-outline" size={14} color={color.accentInk} />
