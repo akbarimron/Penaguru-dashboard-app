@@ -153,7 +153,7 @@ const styles = StyleSheet.create({
     zIndex: 9999,
   },
   backdropDismiss: {
-    ...StyleSheet.absoluteFillObject,
+    ...((StyleSheet.absoluteFill as any) || {}),
   },
   modalCard: {
     width: '100%',

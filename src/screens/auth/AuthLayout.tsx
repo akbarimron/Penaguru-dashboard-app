@@ -176,7 +176,7 @@ export function AuthLayout({
 
             {/* Centered Animated Doodle Characters Showcase */}
             <View style={styles.desktopIllustrationCenter}>
-              <AnimatedDoodleCharacters width="100%" height={280} isDarkBg={true} />
+              <AnimatedDoodleCharacters width="100%" height={290} isDarkBg={true} />
             </View>
 
             {/* Bottom Footer Note */}
@@ -451,9 +451,11 @@ const styles = StyleSheet.create({
   desktopIllustrationCenter: {
     alignItems: 'center',
     justifyContent: 'center',
-    marginVertical: 16,
+    marginVertical: 8,
     width: '100%',
+    minHeight: 290,
     zIndex: 10,
+    overflow: 'visible',
   },
   desktopRightBottom: {
     alignSelf: 'center',

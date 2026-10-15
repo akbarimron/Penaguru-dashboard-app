@@ -45,26 +45,28 @@ export function AnimatedDoodleCharacters({
   // -------------------------------------------------------------
   const animStarHop = useRef(new Animated.Value(0)).current;
   const animStarSquash = useRef(new Animated.Value(1)).current;
+  const animNibbyHop = useRef(new Animated.Value(0)).current;
+  const animNibbySquash = useRef(new Animated.Value(1)).current;
+  const animBukuHop = useRef(new Animated.Value(0)).current;
+  const animBukuRotate = useRef(new Animated.Value(0)).current;
   const animPuffY = useRef(new Animated.Value(0)).current;
-  const animNibbyBreathe = useRef(new Animated.Value(1)).current;
-  const animBukuWobble = useRef(new Animated.Value(0)).current;
   const animBlink = useRef(new Animated.Value(1)).current;
 
   useEffect(() => {
-    // 1. Star-Jelly Bounce Loop (Squash, Launch, Stretch, Land, Settle)
+    // 1. Star-Jelly Bounce Loop (Squash, Launch, Stretch, Land, Settle) - Leads the dance (0 - 45%)
     const starHopLoop = Animated.loop(
       Animated.sequence([
         // Anticipation (Squash down)
         Animated.parallel([
           Animated.timing(animStarSquash, {
-            toValue: 0.82,
-            duration: 180,
+            toValue: 0.78,
+            duration: 160,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(animStarHop, {
             toValue: 4,
-            duration: 180,
+            duration: 160,
             easing: Easing.out(Easing.quad),
             useNativeDriver: true,
           }),
@@ -72,14 +74,14 @@ export function AnimatedDoodleCharacters({
         // Launch up (Stretch)
         Animated.parallel([
           Animated.timing(animStarHop, {
-            toValue: -26,
-            duration: 380,
+            toValue: -32,
+            duration: 360,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }),
           Animated.timing(animStarSquash, {
-            toValue: 1.18,
-            duration: 380,
+            toValue: 1.22,
+            duration: 360,
             easing: Easing.out(Easing.cubic),
             useNativeDriver: true,
           }),
@@ -88,84 +90,192 @@ export function AnimatedDoodleCharacters({
         Animated.parallel([
           Animated.timing(animStarHop, {
             toValue: 0,
-            duration: 340,
+            duration: 320,
             easing: Easing.in(Easing.quad),
             useNativeDriver: true,
           }),
           Animated.timing(animStarSquash, {
-            toValue: 0.8,
-            duration: 340,
+            toValue: 0.76,
+            duration: 320,
             easing: Easing.in(Easing.quad),
             useNativeDriver: true,
           }),
         ]),
         // Impact squash & rebound settle
         Animated.sequence([
-          Animated.timing(animStarSquash, {
-            toValue: 1.1,
-            duration: 160,
-            easing: Easing.out(Easing.quad),
-            useNativeDriver: true,
-          }),
-          Animated.timing(animStarSquash, {
-            toValue: 1.0,
-            duration: 200,
-            easing: Easing.inOut(Easing.sin),
-            useNativeDriver: true,
-          }),
+          Animated.parallel([
+            Animated.timing(animStarHop, {
+              toValue: -8,
+              duration: 160,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(animStarSquash, {
+              toValue: 1.06,
+              duration: 160,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(animStarHop, {
+              toValue: 0,
+              duration: 180,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(animStarSquash, {
+              toValue: 1.0,
+              duration: 180,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
         ]),
-        Animated.delay(600),
+        // Cheering rest while Nibby hops
+        Animated.delay(1820),
       ])
     );
 
-    // 2. Puff Float Loop (Helium drifting hover)
+    // 2. Nibby Joyful Leap Loop (Staggered to follow Star-Jelly)
+    const nibbyHopLoop = Animated.loop(
+      Animated.sequence([
+        // Wait for Star-Jelly
+        Animated.delay(1050),
+        // Anticipation crouch
+        Animated.parallel([
+          Animated.timing(animNibbySquash, {
+            toValue: 0.86,
+            duration: 180,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animNibbyHop, {
+            toValue: 4,
+            duration: 180,
+            easing: Easing.out(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        // Joyful leap!
+        Animated.parallel([
+          Animated.timing(animNibbyHop, {
+            toValue: -28,
+            duration: 400,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animNibbySquash, {
+            toValue: 1.15,
+            duration: 400,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+        ]),
+        // Land impact
+        Animated.parallel([
+          Animated.timing(animNibbyHop, {
+            toValue: 0,
+            duration: 360,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animNibbySquash, {
+            toValue: 0.84,
+            duration: 360,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+        ]),
+        // Rebound & settle
+        Animated.sequence([
+          Animated.parallel([
+            Animated.timing(animNibbyHop, {
+              toValue: -6,
+              duration: 180,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+            Animated.timing(animNibbySquash, {
+              toValue: 1.04,
+              duration: 180,
+              easing: Easing.out(Easing.quad),
+              useNativeDriver: true,
+            }),
+          ]),
+          Animated.parallel([
+            Animated.timing(animNibbyHop, {
+              toValue: 0,
+              duration: 200,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+            Animated.timing(animNibbySquash, {
+              toValue: 1.0,
+              duration: 200,
+              easing: Easing.inOut(Easing.sin),
+              useNativeDriver: true,
+            }),
+          ]),
+        ]),
+        Animated.delay(470),
+      ])
+    );
+
+    // 3. Buku Companion Squish-Hop Loop
+    const bukuHopLoop = Animated.loop(
+      Animated.sequence([
+        Animated.delay(1250),
+        Animated.parallel([
+          Animated.timing(animBukuHop, {
+            toValue: -16,
+            duration: 360,
+            easing: Easing.out(Easing.cubic),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animBukuRotate, {
+            toValue: 1,
+            duration: 360,
+            easing: Easing.out(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.parallel([
+          Animated.timing(animBukuHop, {
+            toValue: 0,
+            duration: 340,
+            easing: Easing.in(Easing.quad),
+            useNativeDriver: true,
+          }),
+          Animated.timing(animBukuRotate, {
+            toValue: -1,
+            duration: 340,
+            easing: Easing.in(Easing.sin),
+            useNativeDriver: true,
+          }),
+        ]),
+        Animated.timing(animBukuRotate, {
+          toValue: 0,
+          duration: 250,
+          easing: Easing.out(Easing.sin),
+          useNativeDriver: true,
+        }),
+        Animated.delay(800),
+      ])
+    );
+
+    // 4. Puff Float Loop (Helium drifting hover)
     const puffFloatLoop = Animated.loop(
       Animated.sequence([
         Animated.timing(animPuffY, {
           toValue: -14,
-          duration: 1600,
+          duration: 1800,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
         Animated.timing(animPuffY, {
           toValue: 4,
-          duration: 1600,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    // 3. Nibby Breathing Loop
-    const nibbyBreatheLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(animNibbyBreathe, {
-          toValue: 1.035,
           duration: 1800,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(animNibbyBreathe, {
-          toValue: 0.985,
-          duration: 1800,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-      ])
-    );
-
-    // 4. Buku Wobble Loop
-    const bukuWobbleLoop = Animated.loop(
-      Animated.sequence([
-        Animated.timing(animBukuWobble, {
-          toValue: 1,
-          duration: 1400,
-          easing: Easing.inOut(Easing.sin),
-          useNativeDriver: true,
-        }),
-        Animated.timing(animBukuWobble, {
-          toValue: -1,
-          duration: 1400,
           easing: Easing.inOut(Easing.sin),
           useNativeDriver: true,
         }),
@@ -192,23 +302,23 @@ export function AnimatedDoodleCharacters({
     );
 
     starHopLoop.start();
+    nibbyHopLoop.start();
+    bukuHopLoop.start();
     puffFloatLoop.start();
-    nibbyBreatheLoop.start();
-    bukuWobbleLoop.start();
     blinkLoop.start();
 
     return () => {
       starHopLoop.stop();
+      nibbyHopLoop.stop();
+      bukuHopLoop.stop();
       puffFloatLoop.stop();
-      nibbyBreatheLoop.stop();
-      bukuWobbleLoop.stop();
       blinkLoop.stop();
     };
   }, []);
 
-  const bukuRotate = animBukuWobble.interpolate({
+  const bukuRotate = animBukuRotate.interpolate({
     inputRange: [-1, 1],
-    outputRange: ['-3deg', '3deg'],
+    outputRange: ['-4deg', '4deg'],
   });
 
   return (
@@ -230,89 +340,122 @@ export function AnimatedDoodleCharacters({
       {Platform.OS === 'web' && (
         <style dangerouslySetInnerHTML={{ __html: `
           @keyframes starJellyHop {
-            0% { transform: translateY(0) scale(1, 1); }
-            12% { transform: translateY(4px) scale(1.22, 0.78); } /* Anticipation squash */
-            40% { transform: translateY(-28px) scale(0.85, 1.22); } /* Peak stretch */
-            68% { transform: translateY(0) scale(1.24, 0.76); } /* Landing impact */
-            82% { transform: translateY(-5px) scale(0.96, 1.05); } /* Rebound */
-            100% { transform: translateY(0) scale(1, 1); }
+            0% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+            6% { transform: translateY(4px) scale(1.24, 0.76) rotate(0deg); } /* Anticipation squash */
+            20% { transform: translateY(-34px) scale(0.86, 1.22) rotate(-5deg); } /* Peak stretch leap */
+            32% { transform: translateY(0) scale(1.26, 0.74) rotate(0deg); } /* Landing impact squash */
+            40% { transform: translateY(-10px) scale(0.94, 1.06) rotate(2deg); } /* Rebound hop */
+            48% { transform: translateY(0) scale(1, 1) rotate(0deg); } /* Settle */
+            68% { transform: translateY(-3px) scale(1.04, 0.96) rotate(-2deg); } /* Cheering wiggle while Nibby hops */
+            84% { transform: translateY(0) scale(0.98, 1.02) rotate(2deg); }
+            100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+          }
+          @keyframes nibbyHop {
+            0%, 34% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+            40% { transform: translateY(4px) scale(1.14, 0.86) rotate(-1deg); } /* Anticipation windup */
+            54% { transform: translateY(-30px) scale(0.90, 1.16) rotate(3deg); } /* Big joyful jump! */
+            68% { transform: translateY(0) scale(1.16, 0.84) rotate(0deg); } /* Impact squash */
+            78% { transform: translateY(-8px) scale(0.96, 1.04) rotate(-1deg); } /* Rebound */
+            88% { transform: translateY(0) scale(1.02, 0.98) rotate(0deg); } /* Settle */
+            100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+          }
+          @keyframes bukuSquishHop {
+            0%, 42% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+            48% { transform: translateY(3px) scale(1.12, 0.88) rotate(-2deg); } /* Anticipation */
+            60% { transform: translateY(-18px) scale(0.92, 1.10) rotate(4deg); } /* Companion hop */
+            72% { transform: translateY(0) scale(1.15, 0.85) rotate(0deg); } /* Squishy land */
+            82% { transform: translateY(-5px) scale(0.97, 1.03) rotate(-1deg); } /* Soft bounce */
+            92% { transform: translateY(0) scale(1, 1) rotate(0deg); }
+            100% { transform: translateY(0) scale(1, 1) rotate(0deg); }
           }
           @keyframes puffCloudHover {
             0%, 100% { transform: translateY(0) rotate(0deg); }
-            35% { transform: translateY(-12px) rotate(2deg); }
-            70% { transform: translateY(-4px) rotate(-1.5deg); }
+            25% { transform: translateY(-14px) rotate(2.5deg); }
+            50% { transform: translateY(-5px) rotate(-1deg); }
+            75% { transform: translateY(-16px) rotate(-2.5deg); }
           }
-          @keyframes nibbyBreathe {
-            0%, 100% { transform: scaleY(1) scaleX(1); }
-            50% { transform: scaleY(1.04) scaleX(0.98); }
-          }
-          @keyframes bukuJiggle {
-            0%, 100% { transform: rotate(0deg) scale(1, 1); }
-            25% { transform: rotate(-2.5deg) scale(1.03, 0.97); }
-            75% { transform: rotate(2.5deg) scale(0.97, 1.03); }
+          @keyframes podiumPulse {
+            0%, 100% { transform: scaleX(1); opacity: 0.18; }
+            20% { transform: scaleX(0.85); opacity: 0.10; } /* Star in air */
+            32% { transform: scaleX(1.10); opacity: 0.28; } /* Star lands impact */
+            54% { transform: scaleX(0.82); opacity: 0.10; } /* Nibby in air */
+            68% { transform: scaleX(1.12); opacity: 0.30; } /* Nibby lands impact */
           }
           @keyframes eyeBlink {
             0%, 94%, 98%, 100% { transform: scaleY(1); }
             96% { transform: scaleY(0.12); }
           }
           @keyframes starPinWiggle {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(18deg) scale(1.1); }
+            0%, 35%, 100% { transform: rotate(0deg); }
+            40% { transform: rotate(-12deg); }
+            54% { transform: rotate(24deg) scale(1.15); } /* Secondary inertia during leap */
+            68% { transform: rotate(-10deg); }
+            78% { transform: rotate(4deg); }
           }
           @keyframes bookmarkRibbonWiggle {
-            0%, 100% { transform: rotate(0deg); }
-            50% { transform: rotate(-15deg); }
+            0%, 42%, 100% { transform: rotate(0deg); }
+            48% { transform: rotate(14deg); }
+            60% { transform: rotate(-22deg) scale(1.08); } /* Flutters with hop */
+            72% { transform: rotate(8deg); }
+            82% { transform: rotate(-4deg); }
           }
           .pg-star-hop {
-            animation: starJellyHop 1.9s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+            animation: starJellyHop 3s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+            transform-origin: 50% 100%;
+          }
+          .pg-nibby-hop {
+            animation: nibbyHop 3s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
+            transform-origin: 50% 100%;
+          }
+          .pg-buku-hop {
+            animation: bukuSquishHop 3s cubic-bezier(0.34, 1.3, 0.64, 1) infinite;
             transform-origin: 50% 100%;
           }
           .pg-puff-hover {
-            animation: puffCloudHover 3.2s ease-in-out infinite;
+            animation: puffCloudHover 3.6s ease-in-out infinite;
+            transform-origin: 50% 50%;
           }
-          .pg-nibby-breathe {
-            animation: nibbyBreathe 2.8s ease-in-out infinite;
-            transform-origin: 50% 100%;
-          }
-          .pg-buku-jiggle {
-            animation: bukuJiggle 2.6s ease-in-out infinite;
-            transform-origin: 50% 100%;
+          .pg-podium-pulse {
+            animation: podiumPulse 3s ease-out infinite;
+            transform-origin: 50% 50%;
           }
           .pg-eye-blink {
             animation: eyeBlink 3.6s infinite;
             transform-origin: 50% 50%;
           }
           .pg-pin-wiggle {
-            animation: starPinWiggle 2.8s ease-in-out infinite;
+            animation: starPinWiggle 3s ease-in-out infinite;
             transform-origin: 50% 100%;
           }
           .pg-ribbon-wiggle {
-            animation: bookmarkRibbonWiggle 2.4s ease-in-out infinite;
+            animation: bookmarkRibbonWiggle 3s ease-in-out infinite;
             transform-origin: 0% 0%;
           }
         `}} />
       )}
 
       {/* ------------------------------------------------------------- */}
-      {/* SCENE STAGE (380 x 250 coordinate space, scaled responsively)  */}
+      {/* SCENE STAGE (420 x 290 coordinate space, scaled responsively)  */}
       {/* ------------------------------------------------------------- */}
       <View
         style={[
           styles.sceneContainer,
           {
-            transform: [{ scale: Math.min(1.15, height / 235) }],
+            transform: [{ scale: Math.min(1.15, height / 250) }],
             ...(Platform.OS === 'web' ? { transformOrigin: 'bottom center' } : {}),
           } as any,
         ]}
       >
         {/* Soft Stage Platform Glow under feet */}
-        <View
+        <Animated.View
           style={[
             styles.stagePodium,
             isDarkBg
               ? styles.stagePodiumDark
               : styles.stagePodiumLight,
           ]}
+          // @ts-ignore Web class
+          className="pg-podium-pulse"
         />
 
         {/* ============================================================= */}
@@ -322,13 +465,16 @@ export function AnimatedDoodleCharacters({
           style={[
             styles.charNibbyWrap,
             Platform.OS !== 'web' && {
-              transform: [{ scaleY: animNibbyBreathe }],
+              transform: [
+                { translateY: animNibbyHop },
+                { scaleY: animNibbySquash },
+              ],
             },
           ]}
           // @ts-ignore Web class
-          className="pg-nibby-breathe"
+          className="pg-nibby-hop"
         >
-          <Svg width={140} height={210} viewBox="0 0 140 210">
+          <Svg width={160} height={250} viewBox="0 0 160 250" style={{ overflow: 'visible' }}>
             <Defs>
               <LinearGradient id="nibbyBodyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <Stop offset="0%" stopColor="#38BDF8" />
@@ -338,17 +484,17 @@ export function AnimatedDoodleCharacters({
             </Defs>
 
             {/* Squishy Feet */}
-            <Ellipse cx={50} cy={202} rx={16} ry={7} fill="#1E40AF" />
-            <Ellipse cx={90} cy={202} rx={16} ry={7} fill="#1E40AF" />
+            <Ellipse cx={60} cy={242} rx={16} ry={7} fill="#1E40AF" />
+            <Ellipse cx={100} cy={242} rx={16} ry={7} fill="#1E40AF" />
 
-            {/* Main Pen-Nib Body (Smooth Teardrop Arch) */}
+            {/* Main Pen-Nib Body (Teardrop Arch with Ample Headroom) */}
             <Path
               d="
-                M 70 30
-                C 85 55 125 110 125 160
-                C 125 188 102 202 70 202
-                C 38 202 15 188 15 160
-                C 15 110 55 55 70 30
+                M 80 70
+                C 95 95 135 150 135 200
+                C 135 228 112 242 80 242
+                C 48 242 25 228 25 200
+                C 25 150 65 95 80 70
                 Z
               "
               fill="url(#nibbyBodyGrad)"
@@ -359,11 +505,11 @@ export function AnimatedDoodleCharacters({
             {/* Lavender Belly Patch */}
             <Path
               d="
-                M 70 120
-                C 85 120 102 140 102 170
-                C 102 188 88 196 70 196
-                C 52 196 38 188 38 170
-                C 38 140 55 120 70 120
+                M 80 160
+                C 95 160 112 180 112 210
+                C 112 228 98 236 80 236
+                C 62 236 48 228 48 210
+                C 48 180 65 160 80 160
                 Z
               "
               fill="#EEF2FF"
@@ -371,35 +517,35 @@ export function AnimatedDoodleCharacters({
             />
 
             {/* Soft Rosy Cheeks */}
-            <Circle cx={44} cy={138} r={7} fill="#FDA4AF" opacity={0.8} />
-            <Circle cx={96} cy={138} r={7} fill="#FDA4AF" opacity={0.8} />
+            <Circle cx={54} cy={178} r={7} fill="#FDA4AF" opacity={0.8} />
+            <Circle cx={106} cy={178} r={7} fill="#FDA4AF" opacity={0.8} />
 
             {/* Large Anime/Cartoon Eyes */}
             <G className="pg-eye-blink">
               {/* Left Eye */}
-              <Circle cx={52} cy={125} r={10} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.5} />
-              <Circle cx={53.5} cy={125} r={5.5} fill="#0F172A" />
-              <Circle cx={55.5} cy={122.5} r={2} fill="#FFFFFF" />
-              <Circle cx={52} cy={127} r={1} fill="#FFFFFF" />
+              <Circle cx={62} cy={165} r={10} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.5} />
+              <Circle cx={63.5} cy={165} r={5.5} fill="#0F172A" />
+              <Circle cx={65.5} cy={162.5} r={2} fill="#FFFFFF" />
+              <Circle cx={62} cy={167} r={1} fill="#FFFFFF" />
 
               {/* Right Eye */}
-              <Circle cx={88} cy={125} r={10} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.5} />
-              <Circle cx={89.5} cy={125} r={5.5} fill="#0F172A" />
-              <Circle cx={91.5} cy={122.5} r={2} fill="#FFFFFF" />
-              <Circle cx={88} cy={127} r={1} fill="#FFFFFF" />
+              <Circle cx={98} cy={165} r={10} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.5} />
+              <Circle cx={99.5} cy={165} r={5.5} fill="#0F172A" />
+              <Circle cx={101.5} cy={162.5} r={2} fill="#FFFFFF" />
+              <Circle cx={98} cy={167} r={1} fill="#FFFFFF" />
             </G>
 
             {/* Sweet Happy Smile */}
             <Path
-              d="M 64 140 Q 70 148 76 140"
+              d="M 74 180 Q 80 188 86 180"
               stroke="#0F172A"
               strokeWidth={3}
               strokeLinecap="round"
               fill="none"
             />
 
-            {/* Golden Star Headpin / Tassel (Wiggles with secondary motion) */}
-            <G className="pg-pin-wiggle" transform="translate(70, 24)">
+            {/* Golden Star Headpin / Tassel (Wiggles with secondary motion, 46px headroom) */}
+            <G className="pg-pin-wiggle" transform="translate(80, 64)">
               <Polygon
                 points="0,-18 5,-6 18,-4 8,6 11,18 0,11 -11,18 -8,6 -18,-4 -5,-6"
                 fill="#F59E0B"
@@ -418,13 +564,16 @@ export function AnimatedDoodleCharacters({
           style={[
             styles.charBukuWrap,
             Platform.OS !== 'web' && {
-              transform: [{ rotate: bukuRotate }],
+              transform: [
+                { translateY: animBukuHop },
+                { rotate: bukuRotate },
+              ],
             },
           ]}
           // @ts-ignore Web class
-          className="pg-buku-jiggle"
+          className="pg-buku-hop"
         >
-          <Svg width={150} height={190} viewBox="0 0 150 190">
+          <Svg width={170} height={220} viewBox="0 0 170 220" style={{ overflow: 'visible' }}>
             <Defs>
               <LinearGradient id="bukuCoverGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <Stop offset="0%" stopColor="#FB7185" />
@@ -433,15 +582,15 @@ export function AnimatedDoodleCharacters({
             </Defs>
 
             {/* Cream Notebook Pages base */}
-            <Rect x={20} y={160} width={105} height={18} rx={6} fill="#FEF3C7" stroke="#D97706" strokeWidth={1.5} />
+            <Rect x={30} y={185} width={105} height={18} rx={6} fill="#FEF3C7" stroke="#D97706" strokeWidth={1.5} />
             {/* Page line divisions */}
-            <Line x1={25} y1={166} x2={120} y2={166} stroke="#FDE68A" strokeWidth={1.5} />
-            <Line x1={25} y1={171} x2={120} y2={171} stroke="#FDE68A" strokeWidth={1.5} />
+            <Line x1={35} y1={191} x2={130} y2={191} stroke="#FDE68A" strokeWidth={1.5} />
+            <Line x1={35} y1={196} x2={130} y2={196} stroke="#FDE68A" strokeWidth={1.5} />
 
             {/* Main Chubby Squishy Book Body */}
             <Rect
-              x={16}
-              y={38}
+              x={26}
+              y={63}
               width={112}
               height={128}
               rx={28}
@@ -452,15 +601,15 @@ export function AnimatedDoodleCharacters({
 
             {/* White Soft Spine Accent Band */}
             <Path
-              d="M 28 38 L 28 166"
+              d="M 38 63 L 38 191"
               stroke="#FFF1F2"
               strokeWidth={4}
               strokeLinecap="round"
               opacity={0.8}
             />
 
-            {/* Bookmark Ribbon Tail dangling out top-right (wiggles) */}
-            <G className="pg-ribbon-wiggle" transform="translate(102, 38)">
+            {/* Bookmark Ribbon Tail dangling out top-right (wiggles, 39px headroom) */}
+            <G className="pg-ribbon-wiggle" transform="translate(112, 63)">
               <Path
                 d="M 0 0 C 8 -18 20 -12 24 -24 L 28 -22 C 22 -8 10 -10 2 6 Z"
                 fill="#818CF8"
@@ -472,32 +621,32 @@ export function AnimatedDoodleCharacters({
             {/* Round Glasses Rims (Tortoiseshell/Navy style) */}
             <G id="glasses">
               {/* Left Lens */}
-              <Circle cx={50} cy={92} r={17} fill="#FFFFFF" stroke="#0F172A" strokeWidth={3} />
+              <Circle cx={60} cy={117} r={17} fill="#FFFFFF" stroke="#0F172A" strokeWidth={3} />
               {/* Right Lens */}
-              <Circle cx={94} cy={92} r={17} fill="#FFFFFF" stroke="#0F172A" strokeWidth={3} />
+              <Circle cx={104} cy={117} r={17} fill="#FFFFFF" stroke="#0F172A" strokeWidth={3} />
               {/* Bridge */}
-              <Path d="M 67 90 Q 72 85 77 90" stroke="#0F172A" strokeWidth={3} fill="none" />
+              <Path d="M 77 115 Q 82 110 87 115" stroke="#0F172A" strokeWidth={3} fill="none" />
               {/* Frame arms extending to sides */}
-              <Line x1={33} y1={92} x2={18} y2={88} stroke="#0F172A" strokeWidth={2.5} strokeLinecap="round" />
-              <Line x1={111} y1={92} x2={126} y2={88} stroke="#0F172A" strokeWidth={2.5} strokeLinecap="round" />
+              <Line x1={43} y1={117} x2={28} y2={113} stroke="#0F172A" strokeWidth={2.5} strokeLinecap="round" />
+              <Line x1={121} y1={117} x2={136} y2={113} stroke="#0F172A" strokeWidth={2.5} strokeLinecap="round" />
 
               {/* Expressive Pupils behind glasses */}
               <G className="pg-eye-blink">
-                <Circle cx={52} cy={93} r={7} fill="#0F172A" />
-                <Circle cx={54.5} cy={90.5} r={2.5} fill="#FFFFFF" />
+                <Circle cx={62} cy={118} r={7} fill="#0F172A" />
+                <Circle cx={64.5} cy={115.5} r={2.5} fill="#FFFFFF" />
 
-                <Circle cx={96} cy={93} r={7} fill="#0F172A" />
-                <Circle cx={98.5} cy={90.5} r={2.5} fill="#FFFFFF" />
+                <Circle cx={106} cy={118} r={7} fill="#0F172A" />
+                <Circle cx={108.5} cy={115.5} r={2.5} fill="#FFFFFF" />
               </G>
             </G>
 
             {/* Cheeks */}
-            <Circle cx={36} cy={114} r={6} fill="#FECDD3" opacity={0.8} />
-            <Circle cx={108} cy={114} r={6} fill="#FECDD3" opacity={0.8} />
+            <Circle cx={46} cy={139} r={6} fill="#FECDD3" opacity={0.8} />
+            <Circle cx={118} cy={139} r={6} fill="#FECDD3" opacity={0.8} />
 
             {/* Cute Content Smile */}
             <Path
-              d="M 64 116 Q 72 126 80 116"
+              d="M 74 141 Q 82 151 90 141"
               stroke="#0F172A"
               strokeWidth={3}
               strokeLinecap="round"
@@ -522,7 +671,7 @@ export function AnimatedDoodleCharacters({
           // @ts-ignore Web class
           className="pg-star-hop"
         >
-          <Svg width={110} height={120} viewBox="0 0 110 120">
+          <Svg width={140} height={140} viewBox="0 0 140 140" style={{ overflow: 'visible' }}>
             <Defs>
               <LinearGradient id="starJellyGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <Stop offset="0%" stopColor="#FDE047" />
@@ -532,21 +681,21 @@ export function AnimatedDoodleCharacters({
             </Defs>
 
             {/* Tiny Golden Feet */}
-            <Ellipse cx={38} cy={110} rx={10} ry={5} fill="#D97706" />
-            <Ellipse cx={72} cy={110} rx={10} ry={5} fill="#D97706" />
+            <Ellipse cx={53} cy={126} rx={10} ry={5} fill="#D97706" />
+            <Ellipse cx={87} cy={126} rx={10} ry={5} fill="#D97706" />
 
             {/* Chubby 4-Point Star-Jelly Body */}
             <Path
               d="
-                M 55 12
-                C 62 26 70 34 84 38
-                C 98 42 104 50 102 62
-                C 100 74 88 80 82 92
-                C 76 104 68 108 55 106
-                C 42 108 34 104 28 92
-                C 22 80 10 74 8 62
-                C 6 50 12 42 26 38
-                C 40 34 48 26 55 12
+                M 70 28
+                C 77 42 85 50 99 54
+                C 113 58 119 66 117 78
+                C 115 90 103 96 97 108
+                C 91 120 83 124 70 122
+                C 57 124 49 120 43 108
+                C 37 96 25 90 23 78
+                C 21 66 27 58 41 54
+                C 55 50 63 42 70 28
                 Z
               "
               fill="url(#starJellyGrad)"
@@ -556,7 +705,7 @@ export function AnimatedDoodleCharacters({
 
             {/* Star Highlight Glow Crescent */}
             <Path
-              d="M 32 35 C 44 26 64 25 76 33"
+              d="M 47 51 C 59 42 79 41 91 49"
               stroke="#FEF08A"
               strokeWidth={3.5}
               strokeLinecap="round"
@@ -566,29 +715,29 @@ export function AnimatedDoodleCharacters({
 
             {/* Big Enthusiastic Eyes */}
             <G className="pg-eye-blink">
-              <Circle cx={42} cy={54} r={8} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.2} />
-              <Circle cx={44} cy={54} r={4.5} fill="#0F172A" />
-              <Circle cx={45.5} cy={52} r={1.6} fill="#FFFFFF" />
+              <Circle cx={57} cy={70} r={8} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.2} />
+              <Circle cx={59} cy={70} r={4.5} fill="#0F172A" />
+              <Circle cx={60.5} cy={68} r={1.6} fill="#FFFFFF" />
 
-              <Circle cx={68} cy={54} r={8} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.2} />
-              <Circle cx={70} cy={54} r={4.5} fill="#0F172A" />
-              <Circle cx={71.5} cy={52} r={1.6} fill="#FFFFFF" />
+              <Circle cx={83} cy={70} r={8} fill="#FFFFFF" stroke="#0F172A" strokeWidth={2.2} />
+              <Circle cx={85} cy={70} r={4.5} fill="#0F172A" />
+              <Circle cx={86.5} cy={68} r={1.6} fill="#FFFFFF" />
             </G>
 
             {/* Rosy Cheeks */}
-            <Circle cx={31} cy={64} r={5} fill="#FB923C" opacity={0.7} />
-            <Circle cx={79} cy={64} r={5} fill="#FB923C" opacity={0.7} />
+            <Circle cx={46} cy={80} r={5} fill="#FB923C" opacity={0.7} />
+            <Circle cx={94} cy={80} r={5} fill="#FB923C" opacity={0.7} />
 
             {/* Laughing Open Mouth with pink tongue (:D) */}
             <Path
-              d="M 46 66 C 46 78 64 78 64 66 Z"
+              d="M 61 82 C 61 94 79 94 79 82 Z"
               fill="#991B1B"
               stroke="#0F172A"
               strokeWidth={2}
             />
             {/* Tongue */}
             <Path
-              d="M 50 74 C 54 70 56 70 60 74 Z"
+              d="M 65 90 C 69 86 71 86 75 90 Z"
               fill="#F472B6"
             />
           </Svg>
@@ -607,7 +756,7 @@ export function AnimatedDoodleCharacters({
           // @ts-ignore Web class
           className="pg-puff-hover"
         >
-          <Svg width={120} height={90} viewBox="0 0 120 90">
+          <Svg width={130} height={105} viewBox="0 0 130 105" style={{ overflow: 'visible' }}>
             <Defs>
               <LinearGradient id="puffCloudGrad" x1="0%" y1="0%" x2="100%" y2="100%">
                 <Stop offset="0%" stopColor="#5EEAD4" />
@@ -618,15 +767,15 @@ export function AnimatedDoodleCharacters({
             {/* Fluffy Mint Marshmallow Cloud Body */}
             <Path
               d="
-                M 30 65
-                C 15 65 10 50 18 38
-                C 10 26 24 12 40 16
-                C 50 4 72 4 82 14
-                C 95 6 110 20 106 35
-                C 118 45 112 65 98 68
-                C 94 80 78 82 70 75
-                C 60 84 42 82 34 72
-                C 24 75 16 68 30 65
+                M 35 77
+                C 20 77 15 62 23 50
+                C 15 38 29 24 45 28
+                C 55 16 77 16 87 26
+                C 100 18 115 32 111 47
+                C 123 57 117 77 103 80
+                C 99 92 83 94 75 87
+                C 65 96 47 94 39 84
+                C 29 87 21 80 35 77
                 Z
               "
               fill="url(#puffCloudGrad)"
@@ -636,14 +785,14 @@ export function AnimatedDoodleCharacters({
 
             {/* Blissful Curved Closed Eyes (^  ^) */}
             <Path
-              d="M 42 42 Q 47 36 52 42"
+              d="M 47 54 Q 52 48 57 54"
               stroke="#0F172A"
               strokeWidth={2.6}
               strokeLinecap="round"
               fill="none"
             />
             <Path
-              d="M 68 42 Q 73 36 78 42"
+              d="M 73 54 Q 78 48 83 54"
               stroke="#0F172A"
               strokeWidth={2.6}
               strokeLinecap="round"
@@ -651,12 +800,12 @@ export function AnimatedDoodleCharacters({
             />
 
             {/* Cheeks */}
-            <Circle cx={38} cy={48} r={5} fill="#F472B6" opacity={0.65} />
-            <Circle cx={82} cy={48} r={5} fill="#F472B6" opacity={0.65} />
+            <Circle cx={43} cy={60} r={5} fill="#F472B6" opacity={0.65} />
+            <Circle cx={87} cy={60} r={5} fill="#F472B6" opacity={0.65} />
 
             {/* Tiny Smile */}
             <Path
-              d="M 57 48 Q 60 52 63 48"
+              d="M 62 60 Q 65 64 68 60"
               stroke="#0F172A"
               strokeWidth={2.2}
               strokeLinecap="round"
@@ -664,7 +813,7 @@ export function AnimatedDoodleCharacters({
             />
 
             {/* Fairy Mini Pencil Companion hovering next to Puff */}
-            <G transform="translate(94, 10) rotate(25)">
+            <G transform="translate(99, 22) rotate(25)">
               {/* Pencil Body */}
               <Rect x={0} y={0} width={8} height={20} rx={2} fill="#F59E0B" />
               {/* Eraser */}
@@ -703,18 +852,19 @@ export function AnimatedDoodleCharacters({
 
 const styles = StyleSheet.create({
   sceneContainer: {
-    width: 380,
-    height: 250,
+    width: 420,
+    height: 290,
     position: 'relative',
     alignItems: 'center',
     justifyContent: 'flex-end',
+    overflow: 'visible',
   },
   stagePodium: {
     position: 'absolute',
     bottom: 2,
-    width: 340,
-    height: 22,
-    borderRadius: 22,
+    width: 370,
+    height: 24,
+    borderRadius: 24,
   },
   stagePodiumDark: {
     backgroundColor: 'rgba(255, 255, 255, 0.18)',
@@ -733,6 +883,7 @@ const styles = StyleSheet.create({
     left: 45,
     bottom: 12,
     zIndex: 10,
+    overflow: 'visible',
   },
   // Character 2: Buku (Coral Squishy Notebook, Center-Right)
   charBukuWrap: {
@@ -740,31 +891,34 @@ const styles = StyleSheet.create({
     right: 40,
     bottom: 12,
     zIndex: 8,
+    overflow: 'visible',
   },
   // Character 3: Star-Jelly (Energetic Golden Star, Front Center)
   charStarWrap: {
     position: 'absolute',
-    left: 135,
+    left: 140,
     bottom: 8,
     zIndex: 25,
+    overflow: 'visible',
   },
   // Character 4: Puff (Dreamy Mint Cloud, Hovering Top-Right)
   charPuffWrap: {
     position: 'absolute',
-    right: 20,
-    top: 6,
+    right: 22,
+    top: 22,
     zIndex: 30,
+    overflow: 'visible',
   },
   sparkleTopLeft: {
     position: 'absolute',
-    top: 25,
+    top: 30,
     left: 30,
     zIndex: 5,
   },
   sparkleBottomRight: {
     position: 'absolute',
-    bottom: 40,
-    right: 25,
+    bottom: 45,
+    right: 30,
     zIndex: 5,
   },
 });
