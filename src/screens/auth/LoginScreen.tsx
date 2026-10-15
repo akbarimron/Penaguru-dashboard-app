@@ -1,8 +1,7 @@
 import { Ionicons } from '@expo/vector-icons';
 import React, { useRef, useState } from 'react';
 import { Animated, Platform, Pressable, StyleSheet, TextInput, View } from 'react-native';
-import { AppText, Button, PressableScale, TextField } from '../../components/ui';
-import { DEMO_ACCOUNTS, DEMO_PASSWORD } from '../../data/seed';
+import { AppText, Button, TextField } from '../../components/ui';
 import { shake } from '../../lib/motion';
 import { useAppStore } from '../../store/useAppStore';
 import { color, radius } from '../../theme/tokens';
@@ -127,43 +126,6 @@ export function LoginScreen({ navigation }: any) {
         />
       </Animated.View>
 
-      {/* Quick Demo Access Pills (Tanpa garis / tulisan "or continue with") */}
-      <View style={styles.demoSection}>
-        <View style={styles.demoPillsWrap}>
-          {DEMO_ACCOUNTS.map((acc) => {
-            const isSelectedLoading = loading === acc.email;
-            const isAccountAdmin = acc.email.includes('admin');
-            return (
-              <PressableScale
-                key={acc.email}
-                onPress={() => submit(acc.email, DEMO_PASSWORD)}
-                disabled={Boolean(loading)}
-                accessibilityLabel={`Masuk sebagai ${acc.label}`}
-                scaleTo={0.96}
-                style={[
-                  styles.demoPill,
-                  isAccountAdmin && styles.demoPillAdmin,
-                ]}
-              >
-                <Ionicons
-                  name={isAccountAdmin ? 'shield-checkmark' : 'person-circle-outline'}
-                  size={16}
-                  color={isAccountAdmin ? '#DC2626' : brandActionColor}
-                />
-                <AppText
-                  variant="caption"
-                  weight="bold"
-                  tone={isAccountAdmin ? '#991B1B' : color.ink}
-                  numberOfLines={1}
-                >
-                  {isSelectedLoading ? 'Masuk...' : acc.label}
-                </AppText>
-              </PressableScale>
-            );
-          })}
-        </View>
-      </View>
-
       {/* Sign Up Footer (Bahasa Indonesia) */}
       <View style={styles.footerRow}>
         <AppText variant="small" tone="#64748B">
@@ -206,6 +168,7 @@ const styles = StyleSheet.create({
   submitButton: {
     minHeight: 50,
     borderWidth: 0,
+    marginTop: 4,
   },
   glowShadow: Platform.select({
     web: {
@@ -219,35 +182,10 @@ const styles = StyleSheet.create({
       elevation: 6,
     },
   })!,
-  demoSection: {
-    marginTop: 8,
-    gap: 8,
-  },
-  demoPillsWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-    justifyContent: 'center',
-  },
-  demoPill: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 6,
-    paddingHorizontal: 14,
-    paddingVertical: 8,
-    borderRadius: 20,
-    backgroundColor: '#F8FAFC',
-    borderWidth: 1,
-    borderColor: '#E2E8F0',
-  },
-  demoPillAdmin: {
-    backgroundColor: '#FEF2F2',
-    borderColor: '#FECACA',
-  },
   footerRow: {
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 4,
+    marginTop: 16,
   },
 });
