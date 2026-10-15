@@ -212,7 +212,18 @@ export function AnimatedDoodleCharacters({
   });
 
   return (
-    <View style={[{ width: width as any, height, alignItems: 'center', justifyContent: 'center' }, style]}>
+    <View
+      style={[
+        {
+          width: width as any,
+          height,
+          alignItems: 'center',
+          justifyContent: 'flex-end',
+          overflow: 'visible',
+        },
+        style,
+      ]}
+    >
       {/* ------------------------------------------------------------- */}
       {/* WEB CSS KEYFRAMES: Disney-Grade Physics, Squash & Secondary Lag */}
       {/* ------------------------------------------------------------- */}
@@ -289,7 +300,7 @@ export function AnimatedDoodleCharacters({
         style={[
           styles.sceneContainer,
           {
-            transform: [{ scale: Math.min(1.05, height / 250) }],
+            transform: [{ scale: Math.min(1.15, height / 235) }],
             ...(Platform.OS === 'web' ? { transformOrigin: 'bottom center' } : {}),
           } as any,
         ]}
@@ -696,7 +707,7 @@ const styles = StyleSheet.create({
     height: 250,
     position: 'relative',
     alignItems: 'center',
-    justifyContent: 'center',
+    justifyContent: 'flex-end',
   },
   stagePodium: {
     position: 'absolute',

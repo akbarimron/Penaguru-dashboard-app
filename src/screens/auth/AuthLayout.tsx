@@ -286,9 +286,9 @@ export function AuthLayout({
                 {children}
               </View>
 
-              {/* Animated Cute Teacher & Student Doodle Characters at bottom of Mobile Page - 100% visible, never cut off! */}
+              {/* Animated Cute Teacher & Student Doodle Characters at bottom of Mobile Page - Bigger and zero cutoff! */}
               <View style={styles.mobileMascotContainer}>
-                <AnimatedDoodleCharacters width="100%" height={140} />
+                <AnimatedDoodleCharacters width="100%" height={180} />
               </View>
             </View>
           </View>
@@ -475,10 +475,10 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
   },
   mobileTopBanner: {
-    height: 125,
+    height: 185,
     paddingHorizontal: 22,
-    paddingTop: 12,
-    paddingBottom: 22,
+    paddingTop: 16,
+    paddingBottom: 28,
     justifyContent: 'space-between',
   },
   mobileTopBar: {
@@ -497,24 +497,24 @@ const styles = StyleSheet.create({
     height: 26,
   },
   mobileGreetingBox: {
-    marginTop: 4,
+    marginTop: 6,
   },
   mobileGreetingTitle: {
-    fontSize: 22,
-    lineHeight: 26,
+    fontSize: 24,
+    lineHeight: 28,
     letterSpacing: -0.4,
   },
   mobileGreetingSub: {
     fontSize: 13,
     lineHeight: 18,
-    marginTop: 1,
+    marginTop: 2,
   },
   mobileWhiteCard: {
     backgroundColor: '#FFFFFF',
-    borderTopLeftRadius: 28,
-    borderTopRightRadius: 28,
+    borderTopLeftRadius: 30,
+    borderTopRightRadius: 30,
     paddingHorizontal: 22,
-    paddingTop: 16,
+    paddingTop: 20,
     marginTop: -16, // Smooth overlap
     flex: 1,
     zIndex: 20,
@@ -536,9 +536,9 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'flex-end',
     width: '100%',
-    height: 140,
-    overflow: 'hidden',
-    marginTop: 2,
+    height: 180,
+    overflow: 'visible',
+    marginTop: 6,
     marginBottom: 0,
   },
   backRow: {
