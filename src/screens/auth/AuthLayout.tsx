@@ -92,8 +92,8 @@ export function AuthLayout({
                     accessibilityRole="button"
                     accessibilityLabel="Kembali ke halaman masuk"
                   >
-                    <Ionicons name="arrow-back" size={18} color="#4F46E5" />
-                    <AppText variant="small" weight="bold" tone="#4F46E5">
+                    <Ionicons name="arrow-back" size={18} color={color.brand} />
+                    <AppText variant="small" weight="bold" tone={color.brand}>
                       Kembali ke halaman masuk
                     </AppText>
                   </Pressable>
@@ -112,7 +112,7 @@ export function AuthLayout({
                     tone="#0F172A"
                     style={{ fontSize: 24, letterSpacing: -0.6 }}
                   >
-                    PenaGuru
+                    Pena<AppText variant="title" weight="extrabold" tone={color.brand} style={{ fontSize: 24, letterSpacing: -0.6 }}>Guru</AppText>
                   </AppText>
                 </View>
 
@@ -138,8 +138,8 @@ export function AuthLayout({
             </ScrollView>
           </View>
 
-          {/* RIGHT COLUMN: Soft Blue Gradient Showcase with Animated Doodle Characters (50% Width) */}
-          <View style={[styles.desktopRightCol, sharedBrandBlueGradient]}>
+          {/* RIGHT COLUMN: Emerald/Teal Brand Gradient Showcase with Animated Doodle Characters (50% Width) */}
+          <View style={[styles.desktopRightCol, sharedBrandTealGradient]}>
             {/* Ambient decorative radial glow bubbles */}
             <View style={styles.ambientGlowTopRight} />
             <View style={styles.ambientGlowBottomLeft} />
@@ -153,10 +153,10 @@ export function AuthLayout({
                   resizeMode="contain"
                 />
                 <AppText variant="body" weight="extrabold" tone="#FFFFFF" style={{ letterSpacing: -0.3 }}>
-                  Pena<AppText variant="body" weight="extrabold" tone="#93C5FD">Guru</AppText>
+                  Pena<AppText variant="body" weight="extrabold" tone="#99F6E4">Guru</AppText>
                 </AppText>
               </View>
-              <AppText variant="caption" tone="rgba(255, 255, 255, 0.88)" style={styles.badgeSubtext}>
+              <AppText variant="caption" tone="rgba(255, 255, 255, 0.9)" style={styles.badgeSubtext}>
                 Aplikasi ruang kerja cerdas untuk mengelola presensi, penilaian, dan administrasi kelas Anda.
               </AppText>
               <Pressable
@@ -181,7 +181,7 @@ export function AuthLayout({
 
             {/* Bottom Footer Note */}
             <View style={styles.desktopRightBottom}>
-              <AppText variant="caption" tone="rgba(255, 255, 255, 0.75)">
+              <AppText variant="caption" tone="rgba(255, 255, 255, 0.78)">
                 PenaGuru | Ruang Kerja Cerdas Guru Indonesia
               </AppText>
             </View>
@@ -196,8 +196,8 @@ export function AuthLayout({
           style={[styles.mobileCanvas, mobileCanvasBgStyle]}
         >
           <View style={[styles.mobileContainerFixed, { paddingTop: insets.top }]}>
-            {/* Top Soft Gradient Banner (Compact) */}
-            <View style={[styles.mobileTopBanner, sharedBrandBlueGradient]}>
+            {/* Top Soft Emerald/Teal Gradient Banner (Compact) */}
+            <View style={[styles.mobileTopBanner, sharedBrandTealGradient]}>
               {/* Top Brand Logo & Guide Button Row */}
               <View style={styles.mobileTopBar}>
                 <View style={styles.mobileLogoRow}>
@@ -207,7 +207,7 @@ export function AuthLayout({
                     resizeMode="contain"
                   />
                   <AppText variant="title" weight="extrabold" tone="#FFFFFF" style={{ fontSize: 18, letterSpacing: -0.4 }}>
-                    Pena<AppText variant="title" weight="extrabold" tone="#93C5FD">Guru</AppText>
+                    Pena<AppText variant="title" weight="extrabold" tone="#99F6E4" style={{ fontSize: 18, letterSpacing: -0.4 }}>Guru</AppText>
                   </AppText>
                 </View>
 
@@ -258,8 +258,8 @@ export function AuthLayout({
                     accessibilityRole="button"
                     accessibilityLabel="Kembali ke halaman masuk"
                   >
-                    <Ionicons name="arrow-back" size={16} color="#4F46E5" />
-                    <AppText variant="small" weight="bold" tone="#4F46E5">
+                    <Ionicons name="arrow-back" size={16} color={color.brand} />
+                    <AppText variant="small" weight="bold" tone={color.brand}>
                       Kembali ke halaman masuk
                     </AppText>
                   </Pressable>
@@ -305,18 +305,18 @@ export function AuthLayout({
 }
 
 // -------------------------------------------------------------
-// GRADIENTS & STYLES (Soft, Luminous, Modern)
-// Shared Brand Blue Gradient (Identical between Desktop Right Showcase & Mobile Banner)
-const sharedBrandBlueGradient: ViewStyle = Platform.select({
+// GRADIENTS & STYLES (Emerald / Teal Brand Consistent with Dashboard)
+// Shared Brand Emerald/Teal Gradient (Identical between Desktop Right Showcase & Mobile Banner)
+const sharedBrandTealGradient: ViewStyle = Platform.select({
   web: {
     background:
-      'radial-gradient(circle at 15% 15%, rgba(147, 197, 253, 0.45) 0%, transparent 40%), ' +
-      'radial-gradient(circle at 85% 20%, rgba(216, 180, 254, 0.35) 0%, transparent 45%), ' +
-      'radial-gradient(circle at 50% 85%, rgba(99, 102, 241, 0.4) 0%, transparent 50%), ' +
-      'linear-gradient(145deg, #1E40AF 0%, #2563EB 30%, #4F46E5 65%, #6366F1 100%)',
+      'radial-gradient(circle at 15% 15%, rgba(94, 234, 212, 0.35) 0%, transparent 42%), ' +
+      'radial-gradient(circle at 85% 20%, rgba(167, 243, 208, 0.28) 0%, transparent 45%), ' +
+      'radial-gradient(circle at 50% 85%, rgba(20, 184, 166, 0.35) 0%, transparent 50%), ' +
+      'linear-gradient(145deg, #115E59 0%, #0F766E 38%, #0D9488 72%, #059669 100%)',
   } as any,
   default: {
-    backgroundColor: '#2563EB',
+    backgroundColor: color.brand,
   },
 })!;
 
@@ -325,7 +325,7 @@ const mobileCanvasBgStyle: ViewStyle = Platform.select({
     backgroundColor: '#F8FAFC',
   } as any,
   default: {
-    backgroundColor: '#4F46E5',
+    backgroundColor: color.brand,
   },
 })!;
 

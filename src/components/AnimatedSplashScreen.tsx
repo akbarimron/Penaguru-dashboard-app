@@ -242,7 +242,7 @@ export function AnimatedSplashScreen({ isReady, onFinish }: AnimatedSplashScreen
             <AppText
               variant="display"
               weight="extrabold"
-              tone="#2563EB"
+              tone="#0F766E"
               style={styles.brandTitle}
             >
               Guru
@@ -304,9 +304,9 @@ const styles = StyleSheet.create({
     width: 118,
     height: 118,
     borderRadius: 59,
-    backgroundColor: '#EFF6FF',
+    backgroundColor: '#F0FDFA',
     borderWidth: 1.5,
-    borderColor: '#DBEAFE',
+    borderColor: '#CCFBF1',
   },
   logoBox: {
     width: 104,

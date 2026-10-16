@@ -20,7 +20,7 @@ export function LoginScreen({ navigation }: any) {
   const shakeX = useRef(new Animated.Value(0)).current;
   const passwordRef = useRef<TextInput>(null);
 
-  const brandActionColor = '#4F46E5'; // Vibrant Brand Indigo
+  const brandActionColor = color.brand; // Emerald/Teal Brand (#0F766E)
 
   const submit = async (overrideEmail?: string, overridePassword?: string) => {
     const e = (overrideEmail ?? email).trim();
@@ -107,7 +107,7 @@ export function LoginScreen({ navigation }: any) {
             <Ionicons
               name={rememberMe ? 'checkbox' : 'square-outline'}
               size={18}
-              color={rememberMe ? '#4F46E5' : '#94A3B8'}
+              color={rememberMe ? color.brand : '#94A3B8'}
             />
             <AppText variant="small" tone="#475569">
               Ingat saya
@@ -123,7 +123,7 @@ export function LoginScreen({ navigation }: any) {
             <AppText
               variant="small"
               weight="semibold"
-              tone="#4F46E5"
+              tone={color.brand}
             >
               Lupa kata sandi?
             </AppText>
@@ -158,7 +158,7 @@ export function LoginScreen({ navigation }: any) {
           <AppText
             variant="small"
             weight="bold"
-            tone="#4F46E5"
+            tone={color.brand}
           >
             {' '}Daftar sebagai guru
           </AppText>
@@ -201,10 +201,10 @@ const styles = StyleSheet.create({
   },
   glowShadow: Platform.select({
     web: {
-      boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)',
+      boxShadow: '0 8px 20px rgba(15, 118, 110, 0.35)',
     } as any,
     default: {
-      shadowColor: '#4F46E5',
+      shadowColor: '#0F766E',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.35,
       shadowRadius: 14,

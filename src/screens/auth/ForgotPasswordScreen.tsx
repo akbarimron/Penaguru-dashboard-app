@@ -20,7 +20,7 @@ export function ForgotPasswordScreen({ navigation }: any) {
   const [loading, setLoading] = useState(false);
   const [sent, setSent] = useState(false);
 
-  const brandActionColor = '#4F46E5';
+  const brandActionColor = color.brand;
 
   const submit = async () => {
     if (!EMAIL_RE.test(email.trim())) {
@@ -116,10 +116,10 @@ const styles = StyleSheet.create({
   },
   desktopGlow: Platform.select({
     web: {
-      boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)',
+      boxShadow: '0 8px 20px rgba(15, 118, 110, 0.35)',
     } as any,
     default: {
-      shadowColor: '#4F46E5',
+      shadowColor: '#0F766E',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.35,
       shadowRadius: 14,

@@ -36,7 +36,7 @@ export function RegisterScreen({ navigation }: any) {
     confirm: useRef<TextInput>(null),
   };
 
-  const brandActionColor = '#4F46E5';
+  const brandActionColor = color.brand;
 
   const set = (k: Field) => (t: string) => {
     setValues((v) => ({ ...v, [k]: t }));
@@ -230,7 +230,7 @@ export function RegisterScreen({ navigation }: any) {
           <AppText
             variant="small"
             weight="bold"
-            tone={isWide ? '#4F46E5' : '#076356'}
+            tone={color.brand}
           >
             {' '}Masuk
           </AppText>
@@ -258,10 +258,10 @@ const styles = StyleSheet.create({
   },
   desktopGlow: Platform.select({
     web: {
-      boxShadow: '0 8px 20px rgba(79, 70, 229, 0.35)',
+      boxShadow: '0 8px 20px rgba(15, 118, 110, 0.35)',
     } as any,
     default: {
-      shadowColor: '#4F46E5',
+      shadowColor: '#0F766E',
       shadowOffset: { width: 0, height: 6 },
       shadowOpacity: 0.35,
       shadowRadius: 14,
