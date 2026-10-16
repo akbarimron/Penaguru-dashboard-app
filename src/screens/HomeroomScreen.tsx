@@ -713,26 +713,116 @@ function HomeroomGradesTab({ cls, periode }: { cls: ClassRoom; periode: string }
             </View>
           ) : null}
 
-          {/* KPI Metrics */}
-          <View style={styles.metricRow}>
-            <View style={styles.metricItem}>
-              <AppText variant="caption" tone={color.muted}>RATA-RATA MAPEL</AppText>
-              <AppText variant="title" weight="bold" tone={metrics.classAvg && metrics.classAvg >= 75 ? color.success : color.accentInk}>
+          {/* KPI Metrics Grid (Clean 3-Column Bento Stat Cards) */}
+          <View style={styles.metricsGrid}>
+            {/* Card 1: Rata-rata Mapel */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricCardTop}>
+                <View
+                  style={[
+                    styles.metricIconBadge,
+                    {
+                      backgroundColor:
+                        metrics.classAvg !== null && metrics.classAvg >= 75
+                          ? color.successSoft
+                          : color.accentSoft,
+                    },
+                  ]}
+                >
+                  <Ionicons
+                    name="stats-chart"
+                    size={14}
+                    color={
+                      metrics.classAvg !== null && metrics.classAvg >= 75
+                        ? color.success
+                        : color.accentInk
+                    }
+                  />
+                </View>
+                <AppText
+                  variant="caption"
+                  weight="semibold"
+                  tone={color.muted}
+                  numberOfLines={1}
+                  style={styles.metricLabel}
+                >
+                  Rata-rata
+                </AppText>
+              </View>
+              <AppText
+                variant="title"
+                weight="extrabold"
+                tone={
+                  metrics.classAvg !== null
+                    ? metrics.classAvg >= 75
+                      ? color.success
+                      : color.accentInk
+                    : color.muted
+                }
+                style={styles.metricValue}
+              >
                 {metrics.classAvg ?? '-'}
               </AppText>
-            </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <AppText variant="caption" tone={color.muted}>KETUNTASAN KELAS</AppText>
-              <AppText variant="title" weight="bold" tone={color.success}>
-                {metrics.tuntasPercent}%
+              <AppText variant="caption" tone={color.muted} numberOfLines={1} style={styles.metricSub}>
+                {metrics.gradedCount}/{students.length} dinilai
               </AppText>
             </View>
-            <View style={styles.metricDivider} />
-            <View style={styles.metricItem}>
-              <AppText variant="caption" tone={color.muted}>KRITERIA TUGAS</AppText>
-              <AppText variant="title" weight="bold">
-                {criteria.length} kriteria
+
+            {/* Card 2: Ketuntasan Kelas */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricCardTop}>
+                <View style={[styles.metricIconBadge, { backgroundColor: color.successSoft }]}>
+                  <Ionicons name="checkmark-done-circle" size={15} color={color.success} />
+                </View>
+                <AppText
+                  variant="caption"
+                  weight="semibold"
+                  tone={color.muted}
+                  numberOfLines={1}
+                  style={styles.metricLabel}
+                >
+                  Ketuntasan
+                </AppText>
+              </View>
+              <AppText
+                variant="title"
+                weight="extrabold"
+                tone={color.success}
+                style={styles.metricValue}
+              >
+                {metrics.tuntasPercent}%
+              </AppText>
+              <AppText variant="caption" tone={color.muted} numberOfLines={1} style={styles.metricSub}>
+                {metrics.tuntasCount} siswa ≥75
+              </AppText>
+            </View>
+
+            {/* Card 3: Kriteria Tugas */}
+            <View style={styles.metricCard}>
+              <View style={styles.metricCardTop}>
+                <View style={[styles.metricIconBadge, { backgroundColor: color.brandSoft }]}>
+                  <Ionicons name="layers" size={14} color={color.brandDeep} />
+                </View>
+                <AppText
+                  variant="caption"
+                  weight="semibold"
+                  tone={color.muted}
+                  numberOfLines={1}
+                  style={styles.metricLabel}
+                >
+                  Kriteria
+                </AppText>
+              </View>
+              <AppText
+                variant="title"
+                weight="extrabold"
+                tone={color.ink}
+                style={styles.metricValue}
+              >
+                {criteria.length}
+              </AppText>
+              <AppText variant="caption" tone={color.muted} numberOfLines={1} style={styles.metricSub}>
+                komponen nilai
               </AppText>
             </View>
           </View>
@@ -927,9 +1017,47 @@ const styles = StyleSheet.create({
   reviewRow: { flexDirection: 'row', alignItems: 'center', gap: 12, padding: 12, backgroundColor: color.surface, borderRadius: radius.lg, borderWidth: 1, borderColor: color.line },
   rosterTop: { flexDirection: 'row', gap: 12, flexWrap: 'wrap', alignItems: 'flex-end' },
   hint: { flexDirection: 'row', alignItems: 'center', gap: 8, padding: 10, borderRadius: radius.md, backgroundColor: color.infoSoft },
-  metricRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-around', backgroundColor: color.surface, padding: 10, borderRadius: radius.md, borderWidth: 1, borderColor: color.line },
-  metricItem: { alignItems: 'center', gap: 2 },
-  metricDivider: { width: 1, height: 26, backgroundColor: color.line },
+  metricsGrid: {
+    flexDirection: 'row',
+    gap: 8,
+    marginTop: 2,
+  },
+  metricCard: {
+    flex: 1,
+    minWidth: 0,
+    backgroundColor: color.surfaceMuted,
+    borderRadius: radius.md,
+    borderWidth: 1,
+    borderColor: color.line,
+    paddingHorizontal: 10,
+    paddingVertical: 10,
+    gap: 4,
+  },
+  metricCardTop: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 6,
+  },
+  metricIconBadge: {
+    width: 24,
+    height: 24,
+    borderRadius: 7,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  metricLabel: {
+    flex: 1,
+    fontSize: 11,
+  },
+  metricValue: {
+    fontSize: 20,
+    lineHeight: 24,
+    marginTop: 2,
+  },
+  metricSub: {
+    fontSize: 11,
+    lineHeight: 14,
+  },
   criterionTag: { paddingHorizontal: 10, paddingVertical: 6, borderRadius: radius.md, backgroundColor: color.surfaceMuted, borderWidth: 1, gap: 2 },
   weightPillSmall: { backgroundColor: color.line, paddingHorizontal: 6, paddingVertical: 1, borderRadius: radius.full },
   scoreBadge: { alignItems: 'center', justifyContent: 'center', minWidth: 54, height: 46, borderRadius: radius.md, paddingHorizontal: 8 },

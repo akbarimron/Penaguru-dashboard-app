@@ -89,20 +89,25 @@ def main():
 
             print(f"Updated Android {folder} ({launcher_sz}px launcher, {fore_sz}px foreground)")
 
-        # Splash screen logo in drawable-*
-        drawable_sizes = {
-            'drawable-mdpi': 150,
-            'drawable-hdpi': 225,
-            'drawable-xhdpi': 300,
-            'drawable-xxhdpi': 450,
-            'drawable-xxxhdpi': 600,
+        # Splash screen logo in drawable-* (Android 12+ SplashScreen API: 288dp canvas, ~160dp centered icon)
+        drawable_multipliers = {
+            'drawable-mdpi': 1.0,
+            'drawable-hdpi': 1.5,
+            'drawable-xhdpi': 2.0,
+            'drawable-xxhdpi': 3.0,
+            'drawable-xxxhdpi': 4.0,
         }
-        for d_folder, d_size in drawable_sizes.items():
+        for d_folder, mult in drawable_multipliers.items():
             d_dir = os.path.join(android_res, d_folder)
             os.makedirs(d_dir, exist_ok=True)
-            sp_logo = color_mark.resize((d_size, d_size), Image.Resampling.LANCZOS)
-            sp_logo.save(os.path.join(d_dir, 'splashscreen_logo.png'), 'PNG')
-            print(f"Updated {d_folder}/splashscreen_logo.png ({d_size}px)")
+            canvas_sz = int(288 * mult)
+            logo_sz = int(156 * mult)
+            sp_canvas = Image.new('RGBA', (canvas_sz, canvas_sz), (0, 0, 0, 0))
+            sp_logo = color_mark.resize((logo_sz, logo_sz), Image.Resampling.LANCZOS)
+            offset = (canvas_sz - logo_sz) // 2
+            sp_canvas.paste(sp_logo, (offset, offset), sp_logo)
+            sp_canvas.save(os.path.join(d_dir, 'splashscreen_logo.png'), 'PNG')
+            print(f"Updated {d_folder}/splashscreen_logo.png ({canvas_sz}px canvas, {logo_sz}px logo)")
 
     print("All app icons successfully generated!")
 
