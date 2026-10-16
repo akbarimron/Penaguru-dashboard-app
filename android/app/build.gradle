@@ -90,7 +90,7 @@ android {
     namespace 'com.penaguru.app'
     externalNativeBuild {
         cmake {
-            buildStagingDirectory = file("C:/tmp/penaguru_cxx")
+            buildStagingDirectory = file("D:/cxx")
         }
     }
     defaultConfig {

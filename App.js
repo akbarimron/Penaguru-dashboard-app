@@ -18,9 +18,7 @@ import { RootNavigator } from './src/navigation/RootNavigator';
 import { useAppStore } from './src/store/useAppStore';
 import { color } from './src/theme/tokens';
 
-// Tahan native splash sesaat sampai komponen React siap mengambil alih animasi
-SplashScreen.preventAutoHideAsync().catch(() => undefined);
-
+// Konfigurasi tema navigasi default
 const navTheme = {
   ...DefaultTheme,
   colors: { ...DefaultTheme.colors, background: color.bg, primary: color.brand, card: color.surface, text: color.ink, border: color.line },
