@@ -35,7 +35,7 @@ export default function App() {
     PlusJakartaSans_800ExtraBold,
   });
   const boot = useAppStore((s) => s.boot);
-  const bootState = useAppStore((s) => s.bootState);
+  const status = useAppStore((s) => s.status);
   const [showSplash, setShowSplash] = useState(true);
 
   useEffect(() => {
@@ -43,7 +43,7 @@ export default function App() {
   }, [boot]);
 
   const fontsReady = Boolean(fontsLoaded || fontError);
-  const appReady = fontsReady && bootState !== 'booting';
+  const appReady = fontsReady && status !== 'booting';
 
   useEffect(() => {
     if (fontsReady) {

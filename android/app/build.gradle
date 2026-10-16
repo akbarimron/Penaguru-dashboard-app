@@ -88,6 +88,11 @@ android {
     compileSdk rootProject.ext.compileSdkVersion
 
     namespace 'com.penaguru.app'
+    externalNativeBuild {
+        cmake {
+            buildStagingDirectory = file("C:/tmp/penaguru_cxx")
+        }
+    }
     defaultConfig {
         applicationId 'com.penaguru.app'
         minSdkVersion rootProject.ext.minSdkVersion
