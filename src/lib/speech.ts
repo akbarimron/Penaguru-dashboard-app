@@ -1,4 +1,4 @@
-import { Audio } from 'expo-av';
+import { AudioModule, AudioRecorder, RecordingPresets, requestRecordingPermissionsAsync } from 'expo-audio';
 import { Platform } from 'react-native';
 import { transcribeAudioWithGemini } from '../api/gemini';
 
@@ -20,7 +20,7 @@ export interface VoiceListener {
 
 class SpeechManager {
   private webRecognition: any = null;
-  private expoRecording: Audio.Recording | null = null;
+  private expoRecorder: AudioRecorder | null = null;
   private isListening: boolean = false;
   private mediaRecorder: any = null;
   private audioChunks: any[] = [];
@@ -106,9 +106,9 @@ class SpeechManager {
       }
     }
 
-    // 3. Fallback Native Mobile (Android / iOS via expo-av)
+    // 3. Fallback Native Mobile (Android / iOS via expo-audio)
     try {
-      const permission = await Audio.requestPermissionsAsync();
+      const permission = await requestRecordingPermissionsAsync();
       if (!permission.granted) {
         this.isListening = false;
         listener.onStatusChange?.(false);
@@ -116,15 +116,15 @@ class SpeechManager {
         return;
       }
 
-      await Audio.setAudioModeAsync({
-        allowsRecordingIOS: true,
-        playsInSilentModeIOS: true,
+      await AudioModule.setAudioModeAsync({
+        allowsRecording: true,
+        playsInSilentMode: true,
       });
 
-      const { recording } = await Audio.Recording.createAsync(
-        Audio.RecordingOptionsPresets.HIGH_QUALITY
-      );
-      this.expoRecording = recording;
+      const recorder = new AudioModule.AudioRecorder(RecordingPresets.HIGH_QUALITY);
+      await recorder.prepareToRecordAsync();
+      recorder.record();
+      this.expoRecorder = recorder;
       listener.onInterim?.('Merekam suara... Silakan berbicara');
     } catch (err: any) {
       this.isListening = false;
@@ -186,12 +186,12 @@ class SpeechManager {
       });
     }
 
-    // Jika menggunakan expo-av (Native)
-    if (this.expoRecording) {
+    // Jika menggunakan expo-audio (Native)
+    if (this.expoRecorder) {
       try {
-        await this.expoRecording.stopAndUnloadAsync();
-        const uri = this.expoRecording.getURI();
-        this.expoRecording = null;
+        await this.expoRecorder.stop();
+        const uri = this.expoRecorder.uri;
+        this.expoRecorder = null;
 
         if (uri) {
           // Baca file rekaman sebagai base64
@@ -212,7 +212,7 @@ class SpeechManager {
           });
         }
       } catch (err) {
-        console.warn('Gagal menghentikan expo-av recording:', err);
+        console.warn('Gagal menghentikan expo-audio recording:', err);
       }
     }
 
