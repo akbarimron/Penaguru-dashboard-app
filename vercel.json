@@ -2,9 +2,20 @@
   "framework": null,
   "buildCommand": "npm run build",
   "outputDirectory": "dist",
+  "redirects": [
+    {
+      "source": "/showcase",
+      "destination": "/showcase/",
+      "permanent": true
+    }
+  ],
   "rewrites": [
     {
-      "source": "/(.*)",
+      "source": "/showcase/",
+      "destination": "/showcase/index.html"
+    },
+    {
+      "source": "/((?!showcase/).*)",
       "destination": "/index.html"
     }
   ]

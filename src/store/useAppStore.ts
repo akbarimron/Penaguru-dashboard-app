@@ -239,24 +239,19 @@ export function buildWorkspaceSummary(ws: Workspace | null): string {
       const asgCriteria = gradeItems.filter((gi) => gi.assignment_id === a.id);
       const submission = gradeSubmissions.find((gs) => gs.assignment_id === a.id);
 
-      text += `\n▶ MAPEL: ${subj?.nama || 'Mapel'} | KELAS: ${cls?.nama_kelas || '-'} (${cls?.tingkat || '-'}) | ${studentsInClass.length} Siswa\n`;
-      text += `  Materi Aktif: "${a.materi_aktif || 'Belum diisi'}"\n`;
-      text += `  Status Pengajuan Semester ke Wali Kelas: ${submission?.status || 'Draft'}${
-        submission?.catatan ? ` (Catatan pengantar: "${submission.catatan}")` : ''
-      }\n`;
+      text += `\n▶ ${subj?.nama || 'Mapel'} | ${cls?.nama_kelas || '-'} (${studentsInClass.length} siswa) | Materi: ${
+        a.materi_aktif || '-'
+      } | Pengajuan: ${submission?.status || 'Draft'}\n`;
 
-      // Kriteria Penilaian
       if (asgCriteria.length === 0) {
-        text += `  Kriteria Penilaian: Belum ada kriteria penilaian yang dibuat untuk mapel ini.\n`;
+        text += `  Nilai: Belum ada kriteria penilaian.\n`;
       } else {
-        text += `  Kriteria Penilaian (${asgCriteria.length} Komponen):\n`;
-        asgCriteria.forEach((crit, cIdx) => {
-          text += `    ${cIdx + 1}. ${crit.judul} [Kategori: ${crit.kategori}, Bobot: ${crit.bobot}x, Tanggal: ${crit.tanggal}] - Deskripsi: "${crit.deskripsi || 'Tidak ada deskripsi'}"\n`;
-        });
+        text += `  Kriteria: ${asgCriteria.map((c) => `${c.judul}(${c.bobot}x)`).join(', ')}\n`;
 
-        // Rekapitulasi Nilai Siswa
-        text += `  Daftar Nilai Lengkap Siswa di Mapel Ini:\n`;
-        studentsInClass.forEach((st, sIdx) => {
+        const gradedList: { name: string; avg: number; status: string; detail: string }[] = [];
+        let ungradedCount = 0;
+
+        studentsInClass.forEach((st) => {
           const scoresDetails: string[] = [];
           let totalScore = 0;
           let totalWeight = 0;
@@ -269,78 +264,70 @@ export function buildWorkspaceSummary(ws: Workspace | null): string {
               totalScore += entry.nilai * (crit.bobot || 1);
               totalWeight += crit.bobot || 1;
               gradedCount++;
-            } else {
-              scoresDetails.push(`${crit.judul}=(belum dinilai)`);
             }
           });
 
-          const finalAverage = totalWeight > 0 && gradedCount > 0 ? Math.round(totalScore / totalWeight) : null;
-          const statusTuntas =
-            finalAverage !== null ? (finalAverage >= 75 ? 'TUNTAS' : 'PERLU REMEDIAL') : 'BELUM LENGKAP';
-
-          // Ambil catatan rapor mapel untuk siswa ini jika ada
-          const rep = reports.find((r) => r.assignment_id === a.id && r.student_id === st.id);
-          const repNote = rep
-            ? ` | Rapor Mapel: Keunggulan="${rep.keunggulan}", Rekomendasi="${rep.rekomendasi}"`
-            : '';
-
-          text += `    ${sIdx + 1}. ${st.nama_lengkap} (NISN: ${st.nisn}): [${scoresDetails.join(', ')}] -> Rata-rata Akhir: ${
-            finalAverage !== null ? finalAverage : '-'
-          } (${statusTuntas})${repNote}\n`;
+          if (totalWeight > 0 && gradedCount > 0) {
+            const avg = Math.round(totalScore / totalWeight);
+            gradedList.push({
+              name: st.nama_lengkap,
+              avg,
+              status: avg >= 75 ? 'TUNTAS' : 'REMEDIAL',
+              detail: scoresDetails.join(', '),
+            });
+          } else {
+            ungradedCount++;
+          }
         });
+
+        gradedList.sort((x, y) => y.avg - x.avg);
+        if (gradedList.length > 0) {
+          text += `  Nilai Siswa (${gradedList.length} dinilai, ${ungradedCount} belum):\n`;
+          gradedList.forEach((g, idx) => {
+            text += `    ${idx + 1}. ${g.name}: ${g.avg} (${g.status}) [${g.detail}]\n`;
+          });
+        } else {
+          text += `  Nilai Siswa: ${ungradedCount} siswa belum dinilai.\n`;
+        }
       }
 
-      // Kelompok belajar di mapel ini
       const asgGroups = groups.filter((g) => g.assignment_id === a.id);
       if (asgGroups.length > 0) {
-        text += `  Pembagian Kelompok Belajar Aktif:\n`;
-        asgGroups.forEach((g) => {
-          const memberDetails = g.members
-            .map((m) => {
-              const st = ws.students.find((s) => s.id === m.student_id);
-              return `${st?.nama_lengkap || 'Siswa'} (${m.peran})`;
-            })
-            .join(', ');
-          text += `    • ${g.nama_kelompok}: ${memberDetails}\n`;
-        });
+        text += `  Kelompok: ${asgGroups
+          .map((g) => {
+            const names = g.members
+              .map((m) => ws.students.find((s) => s.id === m.student_id)?.nama_lengkap?.split(' ')[0] || 'Siswa')
+              .join(', ');
+            return `${g.nama_kelompok}(${names})`;
+          })
+          .join('; ')}\n`;
       }
     }
   }
 
   // =========================================================================
-  // 2. DATA SEBAGAI WALI KELAS: KELAS PERWALIAN, LINTAS MAPEL, & RAPOR
+  // 2. DATA SEBAGAI WALI KELAS: RINGKASAN PERWALIAN
   // =========================================================================
-  text += `\n============================================================\n`;
-  text += `[BAGIAN 2: DATA SEBAGAI WALI KELAS]\n`;
-  text += `============================================================\n`;
+  text += `\n[BAGIAN 2: WALI KELAS]\n`;
 
   if (homeroomClasses.length === 0) {
-    text += `(Guru saat ini bukan wali kelas dari kelas mana pun.)\n`;
+    text += `(Bukan wali kelas.)\n`;
   } else {
     for (const hClass of homeroomClasses) {
       const hStudents = ws.students.filter((s) => s.class_id === hClass.id);
       const classAssignments = ws.assignments.filter((a) => a.class_id === hClass.id);
 
-      text += `\n★ KELAS PERWALIAN: ${hClass.nama_kelas} (${hClass.tingkat}) | Tahun Ajaran: ${hClass.tahun_ajaran} (${hClass.semester}) | Total ${hStudents.length} Siswa Perwalian\n`;
+      text += `★ ${hClass.nama_kelas} (${hClass.tahun_ajaran} ${hClass.semester}, ${hStudents.length} siswa)\n`;
+      text += `  Mapel: ${classAssignments
+        .map((ca) => {
+          const sub = ws.subjects.find((s) => s.id === ca.subject_id);
+          const subStatus = gradeSubmissions.find((gs) => gs.assignment_id === ca.id);
+          return `${sub?.nama || 'Mapel'}(${subStatus?.status || 'Draft'})`;
+        })
+        .join(', ')}\n`;
 
-      text += `  Mata Pelajaran di Kelas Ini (${classAssignments.length} Mapel):\n`;
-      classAssignments.forEach((ca) => {
-        const sub = ws.subjects.find((s) => s.id === ca.subject_id);
-        const t =
-          ws.colleagues.find((col) => col.id === ca.teacher_id) || (ca.teacher_id === teacher.id ? teacher : null);
-        const subStatus = gradeSubmissions.find((gs) => gs.assignment_id === ca.id);
-        text += `    • ${sub?.nama || 'Mapel'} - Guru Pengampu: ${t?.nama_lengkap || 'Guru'} | Status Pengajuan Nilai: ${
-          subStatus?.status || 'Draft'
-        }\n`;
-      });
-
-      text += `  Profil & Rekapitulasi Seluruh Siswa Perwalian:\n`;
-      hStudents.forEach((st, idx) => {
-        const wali = st.nama_wali
-          ? `Wali: ${st.nama_wali} (WA: ${st.no_whatsapp_wali || '-'})`
-          : 'Kontak wali belum diisi';
-
-        // Kumpulkan nilai siswa dari SEMUA mapel di kelas perwalian ini
+      const notedStudents: string[] = [];
+      hStudents.forEach((st) => {
         const subjectGradesSummary: string[] = [];
         classAssignments.forEach((ca) => {
           const sub = ws.subjects.find((s) => s.id === ca.subject_id);
@@ -358,64 +345,58 @@ export function buildWorkspaceSummary(ws: Workspace | null): string {
               }
             });
             if (count > 0 && weight > 0) {
-              const avg = Math.round(total / weight);
-              subjectGradesSummary.push(`${sub?.nama || 'Mapel'}=${avg}`);
+              subjectGradesSummary.push(`${sub?.nama || 'Mapel'}=${Math.round(total / weight)}`);
             }
           }
         });
-
-        // Catatan Rapor Wali Kelas
         const hrRep = homeroomReports.find((hr) => hr.class_id === hClass.id && hr.student_id === st.id);
-        const hrNote = hrRep?.catatan
-          ? ` | Catatan Rapor Wali Kelas: "${hrRep.catatan}" (${hrRep.status})`
-          : '';
-
-        const scoresStr =
-          subjectGradesSummary.length > 0
-            ? `Nilai Mapel: [${subjectGradesSummary.join(', ')}]`
-            : 'Belum ada nilai terinput';
-        text += `    ${idx + 1}. ${st.nama_lengkap} (${st.jenis_kelamin}, NISN ${st.nisn}) | ${wali} | ${scoresStr}${hrNote}\n`;
+        if (subjectGradesSummary.length > 0 || hrRep?.status) {
+          notedStudents.push(
+            `${st.nama_lengkap}${subjectGradesSummary.length ? ` [${subjectGradesSummary.join(',')}]` : ''}${
+              hrRep?.status ? ` (Rapor:${hrRep.status})` : ''
+            }`
+          );
+        }
       });
+
+      if (notedStudents.length > 0) {
+        text += `  Rekap: ${notedStudents.slice(0, 12).join('; ')}\n`;
+      } else {
+        text += `  Siswa: ${hStudents.map((s) => s.nama_lengkap.split(' ')[0]).join(', ')}\n`;
+      }
     }
   }
 
   // =========================================================================
-  // 3. RIWAYAT LENGKAP JURNAL HARIAN & OBSERVASI
+  // 3. JURNAL HARIAN TERBARU (DIBATASI AGAR RINGKAS & STABIL DI API)
   // =========================================================================
-  text += `\n============================================================\n`;
-  text += `[BAGIAN 3: CATATAN OBSERVASI HARIAN & JURNAL GURU]\n`;
-  text += `============================================================\n`;
+  text += `\n[BAGIAN 3: 6 JURNAL OBSERVASI TERBARU]\n`;
 
   if (ws.journals.length === 0) {
-    text += `(Belum ada catatan daily journal di sistem.)\n`;
+    text += `(Belum ada catatan jurnal.)\n`;
   } else {
-    const sortedJournals = [...ws.journals].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1));
+    const sortedJournals = [...ws.journals].sort((a, b) => (a.tanggal < b.tanggal ? 1 : -1)).slice(0, 6);
     for (const j of sortedJournals) {
       const student = ws.students.find((s) => s.id === j.student_id);
       const subject = ws.subjects.find((s) => s.id === j.subject_id);
-      const cls = student ? ws.classes.find((c) => c.id === student.class_id) : null;
-      const tagStr = j.tags && j.tags.length ? ` | Tag Karakter: [${j.tags.join(', ')}]` : '';
-      const scoreStr = ` | Skor: Kognitif=${j.nilai_kognitif}/5, Terampil=${j.nilai_keterampilan}/5, Sikap=${j.skor_sikap}/5`;
-      const noteStr = j.catatan ? ` | Catatan: "${j.catatan}"` : '';
-      text += `- [Tanggal ${j.tanggal}] Siswa: ${student?.nama_lengkap || 'Siswa'} (${cls?.nama_kelas || '-'}, Mapel: ${
-        subject?.nama || 'Mapel'
-      }) | Materi: "${j.materi}"${scoreStr}${tagStr}${noteStr}\n`;
+      const shortNote = j.catatan ? ` "${j.catatan.slice(0, 60)}"` : '';
+      text += `- [${j.tanggal}] ${student?.nama_lengkap || 'Siswa'} (${subject?.nama || 'Mapel'}): K${j.nilai_kognitif}/T${j.nilai_keterampilan}/S${j.skor_sikap}${shortNote}\n`;
     }
   }
 
   // =========================================================================
-  // 4. JADWAL ASESMEN & AGENDA
+  // 4. AGENDA ASESMEN TERDEKAT
   // =========================================================================
   if (assessments.length > 0) {
     text += `\n[AGENDA ASESMEN]:\n`;
-    assessments.forEach((ass) => {
+    assessments.slice(0, 4).forEach((ass) => {
       const sub = ws.subjects.find((s) => s.id === ass.subject_id);
       const cls = ws.classes.find((c) => c.id === ass.class_id);
-      text += `- [${ass.tanggal}] ${ass.jenis}: "${ass.judul}" untuk ${sub?.nama || 'Mapel'} di kelas ${cls?.nama_kelas || '-'}\n`;
+      text += `- [${ass.tanggal}] ${ass.jenis}: ${ass.judul} (${sub?.nama || 'Mapel'} - ${cls?.nama_kelas || '-'})\n`;
     });
   }
 
-  text += `\n[AKHIR DATA LENGKAP AKADEMIK PENAGURU]\n`;
+  text += `\n[AKHIR DATA PENAGURU]\n`;
   return text;
 }
 

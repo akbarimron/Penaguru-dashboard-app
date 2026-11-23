@@ -1,0 +1,900 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>PenaGuru — Tugas Besar Pengganti UAS IK300 Mobile Programming · Pendidikan Ilmu Komputer UPI</title>
+  <link rel="icon" href="assets/img/K03_logo.png" type="image/png" />
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+  <style>
+    :root {
+      --brand: #0F766E;
+      --brand-deep: #115E59;
+      --brand-dark: #083330;
+      --brand-soft: #CCFBF1;
+      --brand-tint: #F0FDFA;
+      --accent: #F59E0B;
+      --accent-soft: #FEF3C7;
+      --bg: #F8FAFC;
+      --surface: #FFFFFF;
+      --ink: #0F172A;
+      --ink-soft: #334155;
+      --muted: #64748B;
+      --line: #E2E8F0;
+      --radius: 18px;
+    }
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    html { scroll-behavior: smooth; }
+    body {
+      font-family: 'Plus Jakarta Sans', system-ui, -apple-system, sans-serif;
+      background: var(--bg);
+      color: var(--ink);
+      line-height: 1.6;
+      -webkit-font-smoothing: antialiased;
+    }
+    a { color: inherit; text-decoration: none; }
+    img { max-width: 100%; display: block; }
+    .container { width: min(1160px, 92%); margin: 0 auto; }
+
+    /* Top Institutional Ribbon */
+    .inst-bar {
+      background: var(--surface);
+      border-bottom: 1px solid var(--line);
+      padding: 14px 0;
+    }
+    .inst-inner {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 16px;
+    }
+    .inst-logos {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 18px;
+    }
+    .inst-logos img {
+      height: 38px;
+      width: auto;
+      object-fit: contain;
+    }
+    .inst-meta {
+      text-align: right;
+      font-size: 12.5px;
+      color: var(--ink-soft);
+      line-height: 1.4;
+    }
+    .inst-meta strong { color: var(--brand-deep); font-weight: 700; }
+
+    /* Sticky Navbar */
+    .nav {
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      background: rgba(255, 255, 255, 0.92);
+      backdrop-filter: blur(12px);
+      border-bottom: 1px solid var(--line);
+    }
+    .nav-inner {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      height: 64px;
+      gap: 16px;
+    }
+    .brand-link {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-weight: 800;
+      font-size: 19px;
+      color: var(--brand-deep);
+    }
+    .brand-link img { width: 34px; height: 34px; }
+    .nav-links {
+      display: flex;
+      align-items: center;
+      gap: 22px;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--ink-soft);
+    }
+    .nav-links a:hover { color: var(--brand); }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+      padding: 11px 20px;
+      border-radius: 12px;
+      font-weight: 700;
+      font-size: 14px;
+      transition: transform 0.15s ease, box-shadow 0.15s ease, background 0.15s ease;
+      cursor: pointer;
+      border: none;
+    }
+    .btn:hover { transform: translateY(-1px); }
+    .btn-primary {
+      background: var(--brand);
+      color: #fff;
+      box-shadow: 0 8px 20px -6px rgba(15, 118, 110, 0.45);
+    }
+    .btn-primary:hover { background: var(--brand-deep); }
+    .btn-amber {
+      background: var(--accent);
+      color: #0F172A;
+    }
+    .btn-outline {
+      background: var(--surface);
+      color: var(--brand-deep);
+      border: 1.5px solid var(--brand);
+    }
+    .btn-ghost {
+      background: rgba(255,255,255,0.12);
+      color: #fff;
+      border: 1.5px solid rgba(255,255,255,0.35);
+    }
+
+    /* Hero */
+    .hero {
+      background: linear-gradient(135deg, #083330 0%, #0F766E 58%, #115E59 100%);
+      color: #fff;
+      padding: 56px 0 68px;
+      position: relative;
+      overflow: hidden;
+    }
+    .hero::after {
+      content: "";
+      position: absolute;
+      inset: 0;
+      background-image: radial-gradient(rgba(255,255,255,0.08) 1px, transparent 1px);
+      background-size: 28px 28px;
+      pointer-events: none;
+    }
+    .hero-grid {
+      position: relative;
+      z-index: 2;
+      display: grid;
+      grid-template-columns: 1.15fr 0.85fr;
+      gap: 40px;
+      align-items: center;
+    }
+    .academic-box {
+      background: rgba(8, 51, 48, 0.55);
+      border: 1px solid rgba(153, 246, 228, 0.35);
+      border-radius: 14px;
+      padding: 14px 18px;
+      margin-bottom: 22px;
+      font-size: 13px;
+      line-height: 1.55;
+      color: #CCFBF1;
+    }
+    .academic-box .course-title {
+      font-weight: 800;
+      font-size: 14px;
+      color: #FEF3C7;
+      margin-bottom: 4px;
+    }
+    .hero h1 {
+      font-size: clamp(34px, 4.4vw, 52px);
+      font-weight: 800;
+      line-height: 1.12;
+      letter-spacing: -0.02em;
+      margin-bottom: 14px;
+    }
+    .hero .tagline {
+      font-size: 18px;
+      font-weight: 600;
+      color: #FEF3C7;
+      margin-bottom: 14px;
+    }
+    .hero .lead {
+      font-size: 15.5px;
+      color: #E2E8F0;
+      margin-bottom: 26px;
+      max-width: 58ch;
+    }
+    .hero-actions {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 12px;
+      margin-bottom: 24px;
+    }
+    .tech-badges {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+    }
+    .tech-badges span {
+      font-size: 12px;
+      font-weight: 600;
+      padding: 5px 11px;
+      border-radius: 999px;
+      background: rgba(255,255,255,0.12);
+      border: 1px solid rgba(255,255,255,0.2);
+      color: #F0FDFA;
+    }
+    .hero-cover-card {
+      background: rgba(255,255,255,0.08);
+      border: 1px solid rgba(255,255,255,0.22);
+      border-radius: 22px;
+      padding: 10px;
+      box-shadow: 0 24px 50px -12px rgba(0,0,0,0.45);
+    }
+    .hero-cover-card img {
+      border-radius: 14px;
+      width: 100%;
+    }
+
+    /* Sections */
+    section { padding: 64px 0; }
+    .section-alt { background: var(--surface); border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); }
+    .sec-head { max-width: 720px; margin-bottom: 34px; }
+    .sec-kicker {
+      display: inline-block;
+      font-size: 12px;
+      font-weight: 800;
+      letter-spacing: 0.08em;
+      text-transform: uppercase;
+      color: var(--brand);
+      background: var(--brand-tint);
+      border: 1px solid var(--brand-soft);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-bottom: 10px;
+    }
+    .sec-head h2 {
+      font-size: clamp(24px, 3vw, 32px);
+      font-weight: 800;
+      color: var(--ink);
+      margin-bottom: 8px;
+      letter-spacing: -0.015em;
+    }
+    .sec-head p { color: var(--muted); font-size: 15px; }
+
+    /* Cards Grid */
+    .grid-3 { display: grid; grid-template-columns: repeat(3, 1fr); gap: 20px; }
+    .grid-2 { display: grid; grid-template-columns: repeat(2, 1fr); gap: 22px; }
+    .grid-4 { display: grid; grid-template-columns: repeat(4, 1fr); gap: 18px; }
+    .card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: var(--radius);
+      padding: 22px;
+    }
+    .card h3 { font-size: 17px; font-weight: 700; margin-bottom: 8px; color: var(--ink); }
+    .card p { font-size: 14px; color: var(--ink-soft); }
+    .icon-badge {
+      width: 42px;
+      height: 42px;
+      border-radius: 12px;
+      background: var(--brand-tint);
+      color: var(--brand);
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      font-weight: 800;
+      font-size: 16px;
+      margin-bottom: 14px;
+      border: 1px solid var(--brand-soft);
+    }
+
+    /* Screenshots Gallery */
+    .ss-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 24px;
+    }
+    .ss-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 20px;
+      overflow: hidden;
+      transition: transform 0.18s ease, box-shadow 0.18s ease;
+    }
+    .ss-card:hover {
+      transform: translateY(-4px);
+      box-shadow: 0 18px 34px -12px rgba(15, 23, 42, 0.14);
+    }
+    .ss-frame {
+      background: #EEF2F6;
+      padding: 18px 26px 0;
+      display: flex;
+      justify-content: center;
+    }
+    .ss-frame img {
+      width: 100%;
+      max-width: 240px;
+      border-radius: 18px 18px 0 0;
+      box-shadow: 0 -4px 20px rgba(15, 23, 42, 0.12);
+      cursor: zoom-in;
+    }
+    .ss-body { padding: 16px 18px 18px; }
+    .ss-num {
+      font-size: 11.5px;
+      font-weight: 800;
+      color: var(--brand);
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      margin-bottom: 4px;
+    }
+    .ss-body h3 { font-size: 15.5px; font-weight: 700; margin-bottom: 4px; }
+    .ss-body p { font-size: 13.5px; color: var(--muted); }
+
+    /* Video Section */
+    .video-wrap {
+      display: grid;
+      grid-template-columns: 1.25fr 0.75fr;
+      gap: 26px;
+      align-items: stretch;
+    }
+    .video-box {
+      background: linear-gradient(135deg, #0F172A, #115E59);
+      border-radius: 20px;
+      padding: 36px;
+      color: #fff;
+      display: flex;
+      flex-direction: column;
+      justify-content: center;
+      align-items: center;
+      text-align: center;
+      min-height: 320px;
+      border: 1px solid rgba(255,255,255,0.12);
+    }
+    .play-circle {
+      width: 68px;
+      height: 68px;
+      border-radius: 999px;
+      background: var(--accent);
+      color: var(--ink);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 26px;
+      font-weight: 800;
+      margin-bottom: 16px;
+      box-shadow: 0 12px 26px rgba(245, 158, 11, 0.4);
+    }
+    .timeline-list { list-style: none; display: grid; gap: 10px; }
+    .timeline-list li {
+      display: flex;
+      gap: 12px;
+      align-items: flex-start;
+      padding: 10px 12px;
+      background: var(--bg);
+      border: 1px solid var(--line);
+      border-radius: 12px;
+      font-size: 13.5px;
+    }
+    .time-chip {
+      flex-shrink: 0;
+      background: var(--brand-tint);
+      color: var(--brand-deep);
+      border: 1px solid var(--brand-soft);
+      font-weight: 800;
+      font-size: 12px;
+      padding: 2px 8px;
+      border-radius: 8px;
+    }
+
+    /* Downloads Grid */
+    .doc-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 18px;
+      padding: 20px;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+      gap: 14px;
+    }
+    .doc-tag {
+      display: inline-block;
+      font-size: 11px;
+      font-weight: 800;
+      padding: 3px 9px;
+      border-radius: 6px;
+      background: var(--accent-soft);
+      color: #92400E;
+      margin-bottom: 8px;
+    }
+    .doc-actions { display: flex; flex-wrap: wrap; gap: 8px; }
+
+    /* Team */
+    .member-card {
+      background: var(--surface);
+      border: 1px solid var(--line);
+      border-radius: 16px;
+      padding: 20px;
+      text-align: center;
+    }
+    .avatar {
+      width: 56px;
+      height: 56px;
+      border-radius: 999px;
+      margin: 0 auto 12px;
+      background: linear-gradient(135deg, var(--brand), var(--brand-deep));
+      color: #fff;
+      font-weight: 800;
+      font-size: 18px;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .member-card h3 { font-size: 15px; font-weight: 700; margin-bottom: 4px; }
+    .member-card p { font-size: 12.5px; color: var(--muted); }
+
+    /* Footer */
+    footer {
+      background: var(--ink);
+      color: #CBD5E1;
+      padding: 44px 0 32px;
+      font-size: 13.5px;
+    }
+    .foot-grid {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 24px;
+      padding-bottom: 24px;
+      border-bottom: 1px solid rgba(255,255,255,0.12);
+      margin-bottom: 20px;
+    }
+    .foot-logos {
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      gap: 16px;
+      background: #fff;
+      padding: 10px 16px;
+      border-radius: 14px;
+    }
+    .foot-logos img { height: 34px; width: auto; object-fit: contain; }
+
+    /* Lightbox */
+    .lightbox {
+      position: fixed;
+      inset: 0;
+      background: rgba(15, 23, 42, 0.88);
+      display: none;
+      align-items: center;
+      justify-content: center;
+      z-index: 100;
+      padding: 24px;
+    }
+    .lightbox.open { display: flex; }
+    .lightbox img { max-height: 90vh; max-width: 92vw; border-radius: 18px; }
+
+    @media (max-width: 960px) {
+      .hero-grid, .video-wrap, .grid-3, .ss-grid { grid-template-columns: 1fr; }
+      .grid-2, .grid-4 { grid-template-columns: repeat(2, 1fr); }
+      .inst-meta { text-align: left; }
+      .nav-links { display: none; }
+    }
+    @media (max-width: 560px) {
+      .grid-2, .grid-4 { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Institutional Identity & Official Logos -->
+  <div class="inst-bar">
+    <div class="container inst-inner">
+      <div class="inst-logos" aria-label="Logo Resmi UPI, FPMIPA, Prodi Pendidikan Ilmu Komputer, dan Dikti Saintek Berdampak">
+        <img src="assets/logos/UPI-Logo-FPMIPA.png" alt="Logo UPI dan FPMIPA" />
+        <img src="assets/logos/UPI-Logo-CSE.png" alt="Logo Program Studi Pendidikan Ilmu Komputer UPI" />
+        <img src="assets/logos/Logo-Diktisaintek-Berdampak.png" alt="Logo Dikti Saintek Berdampak" />
+      </div>
+      <div class="inst-meta">
+        <strong>Tugas Besar Pengganti UAS — IK300 Mobile Programming</strong><br />
+        Pendidikan Ilmu Komputer 5A · FPMIPA · Universitas Pendidikan Indonesia
+      </div>
+    </div>
+  </div>
+
+  <!-- Navbar -->
+  <nav class="nav">
+    <div class="container nav-inner">
+      <a href="#beranda" class="brand-link">
+        <img src="assets/img/K03_logo.png" alt="Logo PenaGuru" />
+        <span>PenaGuru</span>
+      </a>
+      <div class="nav-links">
+        <a href="#tentang">Tentang</a>
+        <a href="#fitur">Fitur</a>
+        <a href="#galeri">Galeri</a>
+        <a href="#demo">Video Demo</a>
+        <a href="#dokumen">Unduhan &amp; Dokumen</a>
+        <a href="#tim">Kelompok 3</a>
+      </div>
+      <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-primary">Buka Demo Web</a>
+    </div>
+  </nav>
+
+  <!-- Hero Section -->
+  <header id="beranda" class="hero">
+    <div class="container hero-grid">
+      <div>
+        <div class="academic-box">
+          <div class="course-title">Tugas Besar Pengganti UAS - IK300 Mobile Programming Pendidikan Ilmu Komputer 5A</div>
+          Program Studi Pendidikan Ilmu Komputer<br />
+          Fakultas Pendidikan Matematika dan Ilmu Pengetahuan Alam<br />
+          Universitas Pendidikan Indonesia<br />
+          Dosen Pengampu : <strong>Erlangga, S.Kom., M.T.</strong>
+        </div>
+
+        <h1>PenaGuru</h1>
+        <p class="tagline">Ruang Kerja Cerdas &amp; Asisten AI Guru Indonesia</p>
+        <p class="lead">
+          Aplikasi mobile dan web berbasis <strong>React Native (Expo)</strong>, <strong>Supabase PostgreSQL</strong>, dan <strong>Google Gemini AI</strong>
+          untuk pencatatan jurnal observasi harian, analitik capaian tiga ranah, penyusunan narasi rapor personal (<em>Teacher-in-the-Loop</em>),
+          pembagian kelompok seimbang, dashboard wali kelas, dan asisten pedagogik berkonteks data kelas riil.
+        </p>
+
+        <div class="hero-actions">
+          <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-amber">Coba Aplikasi Web</a>
+          <a href="#dokumen" class="btn btn-ghost">Unduh APK &amp; Dokumen</a>
+          <a href="https://github.com/akbarimron/Penaguru-dashboard-app" target="_blank" rel="noopener" class="btn btn-ghost">Source Code GitHub</a>
+        </div>
+
+        <div class="tech-badges">
+          <span>React Native 0.86 · Expo SDK 57</span>
+          <span>TypeScript</span>
+          <span>Supabase + Row Level Security</span>
+          <span>Google Gemini AI</span>
+          <span>Offline-First Queue</span>
+          <span>v1.0.0 · Android &amp; Web</span>
+        </div>
+      </div>
+
+      <div class="hero-cover-card">
+        <img src="assets/img/K03_cover.png" alt="Cover Aplikasi PenaGuru Kelompok 3" />
+      </div>
+    </div>
+  </header>
+
+  <!-- Tentang & Masalah -->
+  <section id="tentang">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Identitas &amp; Latar Belakang</span>
+        <h2>Mengubah Beban Administrasi Guru Menjadi Umpan Balik Personal</h2>
+        <p>Dirancang khusus untuk guru mata pelajaran (Informatika/SMK/SMA) dan wali kelas agar fokus pada pendampingan peserta didik.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="icon-badge">01</div>
+          <h3>Masalah di Lapangan</h3>
+          <p>Guru kewalahan mencatat observasi puluhan siswa saat praktikum, deskripsi rapor akhir semester cenderung seragam, siswa tertinggal terlambat terdeteksi, dan pembagian kelompok praktikum sering tidak seimbang.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">02</div>
+          <h3>Solusi PenaGuru</h3>
+          <p>Pencatatan jurnal 1-klik dengan preset tag &amp; dikte suara AI (tetap berjalan luring), analitik tiga ranah (Pengetahuan, Keterampilan, Sikap), generator draf rapor AI berprinsip <em>Teacher-in-the-Loop</em>, dan Asisten Gemini berkonteks kelas.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">03</div>
+          <h3>Sasaran &amp; Dampak</h3>
+          <p>Guru mata pelajaran &amp; wali kelas menghemat waktu administrasi penilaian, siswa mendapat intervensi remedial/pengayaan tepat sasaran, dan wali murid menerima ringkasan perkembangan anak siap kirim via WhatsApp.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Fitur Unggulan -->
+  <section id="fitur" class="section-alt">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Fitur Utama Terimplementasi</span>
+        <h2>5 Pilar Modul Aktif di PenaGuru v1.0.0</h2>
+        <p>Seluruh fitur di bawah ini telah dibangun pada 72 berkas TypeScript dengan 16 tabel PostgreSQL Supabase dan diuji langsung.</p>
+      </div>
+      <div class="grid-3">
+        <div class="card">
+          <div class="icon-badge">J</div>
+          <h3>Quick Daily Journal &amp; Dikte Suara</h3>
+          <p>Pilih banyak siswa sekaligus, ketuk preset tag positif/perhatian, beri skor 1–5 (Pengetahuan, Keterampilan, Sikap), atau rekam suara yang otomatis dirapikan Gemini AI. Mendukung antrean simpan luring.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">A</div>
+          <h3>Dashboard Mapel &amp; Nilai Berbobot</h3>
+          <p>Dashboard terpisah per penugasan <em>mapel × kelas</em>: rata-rata kelas 3 ranah, deteksi dini status siswa (Aman, Perhatian, Kritis), kriteria nilai kustom berbobot (KKTP 75), dan profil detail siswa.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">R</div>
+          <h3>Generator Rapor AI &amp; Alur Tinjauan</h3>
+          <p>Google Gemini menyintesis riwayat jurnal menjadi keunggulan, rekomendasi, narasi rapor, dan pesan WhatsApp wali murid. Guru menyunting lalu mengajukan ke Wali Kelas (<em>Draft → Diajukan → Disetujui/Revisi</em>).</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">W</div>
+          <h3>Dashboard Wali Kelas Lintas Mapel</h3>
+          <p>Wali kelas memantau progres kelengkapan rapor semua guru mapel, meninjau &amp; menyetujui rapor via RPC aman, mengelola kontak orang tua (dilindungi RLS), dan mengirim pesan ringkasan via WhatsApp.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">K</div>
+          <h3>Balanced Grouping Generator</h3>
+          <p>Membagi siswa menjadi kelompok belajar heterogen yang adil berdasarkan capaian kompetensi dengan pembagian peran otomatis: <em>Ketua</em>, <em>Mentor Sebaya</em>, dan <em>Anggota</em>.</p>
+        </div>
+        <div class="card">
+          <div class="icon-badge">AI</div>
+          <h3>Asisten Pedagogik AI Berkonteks</h3>
+          <p>Chatbot Google Gemini yang membaca ringkasan riil data nilai, kelompok, perwalian, dan jurnal guru untuk membantu ranking, daftar siswa remedial, ide <em>ice-breaking</em>, hingga strategi diferensiasi.</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Galeri Screenshot -->
+  <section id="galeri">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Galeri Antarmuka Aktual</span>
+        <h2>Tangkapan Layar Aplikasi PenaGuru</h2>
+        <p>Diambil langsung dari aplikasi PenaGuru v1.0.0 berjalan (1080 × 2340 px). Klik gambar untuk memperbesar.</p>
+      </div>
+      <div class="ss-grid">
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss1.png" alt="Beranda PenaGuru" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 01 · Beranda</div>
+            <h3>Dashboard Utama Guru</h3>
+            <p>Jadwal sesi berikutnya, kartu kelas perwalian, daftar mapel × kelas berwarna, pencarian siswa, dan notifikasi cerdas.</p>
+          </div>
+        </article>
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss2.png" alt="Dashboard Mapel" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 02 · Dashboard Mapel</div>
+            <h3>Analitik Kelas, Nilai &amp; Kelompok</h3>
+            <p>Rata-rata Pengetahuan, Keterampilan, Sikap, status siswa (Aman/Perhatian/Kritis), nilai berbobot, rapor, dan kelompok belajar.</p>
+          </div>
+        </article>
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss3.png" alt="Catat Jurnal" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 03 · Quick Journal</div>
+            <h3>Catat Jurnal Cepat &amp; Dikte Suara</h3>
+            <p>Input observasi multi-siswa dengan preset tag karakter, skor 1–5 tiga ranah, dikte suara AI, dan antrean offline-first.</p>
+          </div>
+        </article>
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss4.png" alt="Detail Siswa" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 04 · Profil Siswa</div>
+            <h3>Rekam Jejak &amp; Rapor Personal</h3>
+            <p>Capaian 3 ranah per siswa, akumulasi tag perilaku, akses cepat ke editor Rapor AI, dan riwayat jurnal kronologis.</p>
+          </div>
+        </article>
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss5.png" alt="Dashboard Wali Kelas" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 05 · Wali Kelas</div>
+            <h3>Pantauan Lintas Mapel &amp; Tinjauan</h3>
+            <p>Progres persetujuan rapor semua guru pengampu, peringatan dini lintas mapel, dan pesan WhatsApp wali murid.</p>
+          </div>
+        </article>
+        <article class="ss-card">
+          <div class="ss-frame"><img src="assets/img/K03_ss6.png" alt="Asisten AI" onclick="openLightbox(this.src)" /></div>
+          <div class="ss-body">
+            <div class="ss-num">Layar 06 · Asisten AI</div>
+            <h3>Asisten Pedagogik Gemini Live</h3>
+            <p>Menjawab pertanyaan evaluasi nilai, daftar siswa remedial, dan rekomendasi diferensiasi berdasarkan data kelas aktual.</p>
+          </div>
+        </article>
+      </div>
+    </div>
+  </section>
+
+  <!-- Video Demo -->
+  <section id="demo" class="section-alt">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Demonstrasi Aplikasi</span>
+        <h2>Video Demo Aplikasi Mobile (± 10 Menit)</h2>
+        <p>Alur demonstrasi aplikasi PenaGuru v1.0.0 mengikuti struktur 5 segmen panduan resmi IK300 Mobile Programming.</p>
+      </div>
+      <div class="video-wrap">
+        <div class="video-box">
+          <div class="play-circle">&#9654;</div>
+          <h3 style="font-size:20px;margin-bottom:8px;">Video Demo PenaGuru v1.0.0</h3>
+          <p style="max-width:44ch;color:#CBD5E1;font-size:14px;margin-bottom:20px;">
+            Slot embed YouTube siap ditautkan setelah rekaman demo selesai diunggah (visibilitas Public / Unlisted). Sementara itu, aplikasi dapat langsung diuji interaktif melalui demo web live.
+          </p>
+          <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-amber">Coba Interaktif di Web Live</a>
+        </div>
+        <div class="card">
+          <h3 style="margin-bottom:14px;">Struktur Segmen Video Demo</h3>
+          <ul class="timeline-list">
+            <li><span class="time-chip">00:00 – 01:00</span><span>Masalah belajar, sasaran pengguna (guru &amp; wali kelas), dan tujuan PenaGuru.</span></li>
+            <li><span class="time-chip">01:00 – 02:00</span><span>Gambaran fitur utama, peran ganda (Guru Mapel &amp; Wali Kelas), dan struktur navigasi.</span></li>
+            <li><span class="time-chip">02:00 – 07:30</span><span>Demo live: Catat Jurnal Cepat &amp; Suara, Nilai &amp; Analitik, Rapor AI, Balanced Grouping, Wali Kelas, dan Asisten Gemini.</span></li>
+            <li><span class="time-chip">07:30 – 09:00</span><span>Hasil uji coba nyata di Android &amp; Web, sinkronisasi Supabase RLS, dan umpan balik AI.</span></li>
+            <li><span class="time-chip">09:00 – 10:00</span><span>Kesimpulan, keterbatasan sistem saat ini, dan rencana pengembangan lanjutan.</span></li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Unduhan & Dokumen (7 Luaran Wajib) -->
+  <section id="dokumen">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Luaran &amp; Berkas Resmi UAS</span>
+        <h2>Unduhan Aplikasi, Source Code, &amp; Dokumen Proyek</h2>
+        <p>Seluruh tautan dan berkas luaran Kelompok 3 tersedia terbuka untuk peninjauan dan pengujian.</p>
+      </div>
+      <div class="grid-3">
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 01 · ANDROID APK &amp; WEB</span>
+            <h3>Aplikasi PenaGuru v1.0.0</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Package <code>com.penaguru.app</code> (Android 8.0+ ARM64, ±38,7 MB) dan versi Web responsif siap pakai.</p>
+          </div>
+          <div class="doc-actions">
+            <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-primary">Buka Web App</a>
+            <a href="https://drive.google.com/drive/folders/1k88oimBoz6o7srRNwBwLSxlNRxhKSarw" target="_blank" rel="noopener" class="btn btn-outline">Folder Drive K03</a>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 02 · SOURCE CODE</span>
+            <h3>Repositori GitHub Publik</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Kode sumber lengkap React Native (Expo SDK 57), skema SQL Supabase, README, dan panduan build (bebas API key).</p>
+          </div>
+          <div class="doc-actions">
+            <a href="https://github.com/akbarimron/Penaguru-dashboard-app" target="_blank" rel="noopener" class="btn btn-primary">Buka GitHub</a>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 03 · DOKUMEN SKPL</span>
+            <h3>Dokumen SKPL (PDF)</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Spesifikasi Kebutuhan Perangkat Lunak berbasis kode aktual: FR-01–FR-14, NFR, Use Case, 16 tabel Supabase, &amp; uji penerimaan.</p>
+          </div>
+          <div class="doc-actions">
+            <a href="assets/docs/K03_SKPL.pdf" target="_blank" class="btn btn-primary">Unduh PDF</a>
+            <a href="https://drive.google.com/file/d/1PcOq1V3SbyM0EfiQMKGrrVced8Ks8aZq/view" target="_blank" rel="noopener" class="btn btn-outline">Google Drive</a>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 04 · USER MANUAL</span>
+            <h3>Panduan Pengguna (PDF)</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Persyaratan perangkat, cara instalasi APK, panduan tiap fitur bergambar screenshot asli, alur penggunaan, &amp; troubleshooting.</p>
+          </div>
+          <div class="doc-actions">
+            <a href="assets/docs/K03_PanduanPengguna.pdf" target="_blank" class="btn btn-primary">Unduh PDF</a>
+            <a href="https://drive.google.com/file/d/16rSiJrX39buo7BJhcJJ9IlFJrp2EtTyM/view" target="_blank" rel="noopener" class="btn btn-outline">Google Drive</a>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 05 · PRESENTASI</span>
+            <h3>Slide Presentasi (PDF)</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Materi paparan ide, arsitektur, inovasi, dan demonstrasi proyek PenaGuru oleh Kelompok 3.</p>
+          </div>
+          <div class="doc-actions">
+            <a href="assets/docs/K03_Slide.pdf" target="_blank" class="btn btn-primary">Unduh Slide PDF</a>
+            <a href="https://drive.google.com/file/d/1inZqIlt-RJIDpV_9KNDK5dRquXbjzFgm/view" target="_blank" rel="noopener" class="btn btn-outline">Google Drive</a>
+          </div>
+        </div>
+
+        <div class="doc-card">
+          <div>
+            <span class="doc-tag">LUARAN 06 · PORTOFOLIO KELAS</span>
+            <h3>Lembar Data Portofolio (DOCX)</h3>
+            <p style="font-size:13.5px;color:var(--muted);margin-top:6px;">Dokumen isian resmi portofolio Kelompok 3 untuk integrasi website showcase kelas IK300.</p>
+          </div>
+          <div class="doc-actions">
+            <a href="assets/docs/K03_DataPortofolio.docx" target="_blank" class="btn btn-primary">Unduh DOCX</a>
+            <a href="https://drive.google.com/file/d/1Sv4Kpsgd9lx_gVZ_FjgXdj3W99xrC1U1/view" target="_blank" rel="noopener" class="btn btn-outline">Google Drive</a>
+          </div>
+        </div>
+      </div>
+
+      <!-- Informasi Teknis & Instalasi -->
+      <div class="grid-2" style="margin-top:26px;">
+        <div class="card">
+          <h3>Cara Instalasi APK Android</h3>
+          <ol style="padding-left:18px;font-size:14px;color:var(--ink-soft);display:grid;gap:6px;margin-top:8px;">
+            <li>Unduh berkas APK rilis <code>K03_PenaGuru_v1.0.apk</code> ke perangkat Android.</li>
+            <li>Buka berkas APK lewat File Manager, lalu aktifkan izin <em>Instal aplikasi dari sumber ini</em> jika diminta.</li>
+            <li>Tekan <strong>Instal</strong> dan buka aplikasi <strong>PenaGuru</strong>.</li>
+            <li>Alternatif tanpa instalasi: akses langsung <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" style="color:var(--brand);font-weight:700;">penaguruku.vercel.app</a> di browser HP/laptop.</li>
+          </ol>
+        </div>
+        <div class="card">
+          <h3>Spesifikasi Perangkat &amp; Versi</h3>
+          <ul style="padding-left:18px;font-size:14px;color:var(--ink-soft);display:grid;gap:6px;margin-top:8px;">
+            <li><strong>Versi Aplikasi:</strong> v1.0.0 (Android <code>versionCode 1</code>, Expo SDK 57)</li>
+            <li><strong>OS Minimum:</strong> Android 8.0 (Oreo) · ARM64 (<code>arm64-v8a</code>)</li>
+            <li><strong>Memori &amp; Penyimpanan:</strong> RAM minimal 2 GB, ruang kosong minimal 120 MB</li>
+            <li><strong>Keamanan:</strong> Isolasi Row Level Security (RLS) Supabase &amp; tanpa kunci rahasia di klien</li>
+          </ul>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Tim Pengembang -->
+  <section id="tim" class="section-alt">
+    <div class="container">
+      <div class="sec-head">
+        <span class="sec-kicker">Kelompok 3 · Kelas 5A</span>
+        <h2>Tim Pengembang PenaGuru</h2>
+        <p>Program Studi Pendidikan Ilmu Komputer, Fakultas Pendidikan Matematika dan Ilmu Pengetahuan Alam, Universitas Pendidikan Indonesia.</p>
+      </div>
+      <div class="grid-4">
+        <div class="member-card">
+          <div class="avatar">MA</div>
+          <h3>Muhamad Akbar Imron</h3>
+          <p>Project Lead &amp; AI/Backend Engineer</p>
+        </div>
+        <div class="member-card">
+          <div class="avatar">NA</div>
+          <h3>Nasywah Aqila Vadrian</h3>
+          <p>UI/UX Designer &amp; Frontend Mobile Developer</p>
+        </div>
+        <div class="member-card">
+          <div class="avatar">ND</div>
+          <h3>Naufal Dzaky</h3>
+          <p>Frontend Mobile &amp; Media/Audio Engineer</p>
+        </div>
+        <div class="member-card">
+          <div class="avatar">SR</div>
+          <h3>Salsabila Ramadhani Hasan</h3>
+          <p>Frontend Developer, QA &amp; Educational Analyst</p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- Footer -->
+  <footer>
+    <div class="container">
+      <div class="foot-grid">
+        <div>
+          <strong style="color:#fff;font-size:15px;">Tugas Besar Pengganti UAS - IK300 Mobile Programming Pendidikan Ilmu Komputer 5A</strong><br />
+          Program Studi Pendidikan Ilmu Komputer · Fakultas Pendidikan Matematika dan Ilmu Pengetahuan Alam<br />
+          Universitas Pendidikan Indonesia · Dosen Pengampu : <strong style="color:#FEF3C7;">Erlangga, S.Kom., M.T.</strong>
+        </div>
+        <div class="foot-logos">
+          <img src="assets/logos/UPI-Logo-FPMIPA.png" alt="Logo UPI FPMIPA" />
+          <img src="assets/logos/UPI-Logo-CSE.png" alt="Logo Prodi Pendidikan Ilmu Komputer" />
+          <img src="assets/logos/Logo-Diktisaintek-Berdampak.png" alt="Logo Dikti Saintek Berdampak" />
+        </div>
+      </div>
+      <div style="display:flex;flex-wrap:wrap;justify-content:space-between;gap:12px;color:#94A3B8;font-size:12.5px;">
+        <span>© 2026 Kelompok 3 PenaGuru · Universitas Pendidikan Indonesia</span>
+        <span>Kontak Perwakilan: akbarimrons@gmail.com · GitHub: akbarimron/Penaguru-dashboard-app</span>
+      </div>
+    </div>
+  </footer>
+
+  <!-- Lightbox Modal -->
+  <div id="lightbox" class="lightbox" onclick="this.classList.remove('open')">
+    <img id="lightbox-img" src="" alt="Pratinjau Screenshot PenaGuru" />
+  </div>
+
+  <script>
+    function openLightbox(src) {
+      document.getElementById('lightbox-img').src = src;
+      document.getElementById('lightbox').classList.add('open');
+    }
+    document.addEventListener('keydown', (e) => {
+      if (e.key === 'Escape') document.getElementById('lightbox').classList.remove('open');
+    });
+  </script>
+</body>
+</html>

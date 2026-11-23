@@ -13,40 +13,113 @@ export const isGeminiConfigured = Boolean(
   !rawKey.includes('placeholder')
 );
 
+// Daftar model aktif berurutan dari yang paling stabil/tersedia ke cadangan
+const GEMINI_MODELS = [
+  'gemini-flash-lite-latest',
+  'gemini-3.5-flash-lite',
+  'gemini-3.8-flash',
+  'gemini-3.6-flash',
+  'gemini-flash-latest',
+] as const;
+
+const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
+const SKIP_MODEL_STATUSES = new Set([400, 404]);
+
+const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
+
+function parseGeminiJson<T>(rawText: string): T {
+  const cleaned = rawText
+    .trim()
+    .replace(/^```(?:json)?\s*/i, '')
+    .replace(/\s*```$/, '')
+    .trim();
+  return JSON.parse(cleaned) as T;
+}
+
+/**
+ * Mengirim request ke Gemini REST API dengan retry singkat pada error sementara (503/429)
+ * serta fallback otomatis ke daftar model aktif.
+ */
+async function callGeminiWithFallback(
+  payload: Record<string, unknown>,
+  models: readonly string[] = GEMINI_MODELS
+): Promise<string> {
+  if (!isGeminiConfigured) {
+    throw new Error('Kunci Gemini API belum dikonfigurasi di file .env.');
+  }
+
+  const apiKey = rawKey!.trim();
+  let lastError: Error | null = null;
+
+  for (let i = 0; i < models.length; i++) {
+    const model = models[i];
+    const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
+    // 2 model utama diberi 1x retry tambahan jika mengalami lonjakan trafik sementara (503/429)
+    const maxAttempts = i < 2 ? 2 : 1;
+
+    for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      try {
+        const res = await fetch(endpoint, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify(payload),
+        });
+
+        if (!res.ok) {
+          const errorText = await res.text();
+          lastError = new Error(`Gemini ${model} error (${res.status}): ${errorText}`);
+
+          if (RETRYABLE_STATUSES.has(res.status)) {
+            if (attempt + 1 < maxAttempts) {
+              await sleep(600);
+              continue;
+            }
+            break; // lanjut ke model fallback berikutnya
+          }
+
+          if (SKIP_MODEL_STATUSES.has(res.status)) {
+            break; // model tidak tersedia/invalid, lanjut ke model berikutnya
+          }
+
+          throw lastError;
+        }
+
+        const data = await res.json();
+        const parts = data?.candidates?.[0]?.content?.parts;
+        const reply = Array.isArray(parts)
+          ? parts
+              .filter((p: any) => !p?.thought && typeof p?.text === 'string')
+              .map((p: any) => p.text)
+              .join('')
+          : '';
+        if (reply.trim()) {
+          return reply.trim();
+        }
+        lastError = new Error(`Gemini ${model} mengembalikan respons kosong.`);
+        break;
+      } catch (err: any) {
+        lastError = err instanceof Error ? err : new Error(String(err));
+        if (attempt + 1 < maxAttempts) {
+          await sleep(400);
+          continue;
+        }
+      }
+    }
+
+    if (i + 1 < models.length) {
+      await sleep(200);
+    }
+  }
+
+  throw lastError || new Error('Gagal mendapatkan respon dari Google Gemini API.');
+}
+
 const GEMINI_SYSTEM_PROMPT = `
-Kamu adalah Asisten Pedagogik AI resmi di aplikasi PenaGuru (pendamping guru Indonesia).
-Karakteristik & Prinsip:
-1. Berorientasi pada Kurikulum Merdeka, pembelajaran berdiferensiasi, asesmen autentik, dan pembinaan karakter profil pelajar Pancasila.
-2. Memberikan jawaban yang praktis, aplikatif di kelas, terstruktur (poin-poin jelas), dan empatik terhadap beban kerja guru.
-3. Fokus pada solusi nyata: strategi mengajar, diferensiasi siswa tertinggal (remedial/pengayaan), ide ice-breaking 5 menit yang relevan, manajemen kelompok kooperatif, perumusan umpan balik asesmen, dan komunikasi dengan orang tua/wali murid.
-4. AKSES LENGKAP KE DATA KELAS, SISWA, NILAI, & JURNAL HARIAN (GURU MAPEL & WALI KELAS):
-   Kamu diberikan data riil akademik langsung dari sistem PenaGuru pada bagian konteks, yang mencakup:
-   - PERAN GURU MATA PELAJARAN:
-     * Kriteria Penilaian Custom Guru (misalnya: Ulangan 1, Ulangan 2, Tugas Kelompok, Kuis, dll., beserta bobot persentase & deskripsi asesmennya).
-     * Nilai Asesmen Riil per Siswa untuk setiap kriteria penilaian, rata-rata akhir terbobot, status kelulusan (TUNTAS >= 75 vs PERLU REMEDIAL < 75), dan catatan narasi rapor guru mapel.
-     * Kelompok belajar kooperatif aktif per mata pelajaran.
-     * Status pengajuan nilai semester ke Wali Kelas (Draft, Diajukan, Disetujui/Revisi).
-   - PERAN WALI KELAS:
-     * Profil lengkap seluruh siswa perwalian beserta kontak orang tua/wali.
-     * Rekapitulasi nilai siswa dari SEMUA MATA PELAJARAN yang diajarkan di kelas perwalian (lintas mapel).
-     * Catatan rapor wali kelas dan status verifikasi pengajuan nilai semester dari guru mapel rekan sejawat.
-   - CATATAN OBSERVASI HARIAN & JURNAL GURU (DAILY JOURNAL):
-     * Riwayat tanggal mengajar, materi spesifik, nilai harian (kognitif, terampil, sikap), tag karakter, dan catatan kualitatif observasi guru.
-
-5. PANDUAN MENJAWAB PERTANYAAN TENTANG NILAI & SISWA:
-   - Jika guru bertanya tentang evaluasi nilai, siswa tertinggal, remedial, ranking, atau rekap kelas:
-     * WAJIB MEMBACA DAN MENGANALISIS DATA NILAI RIIL YANG TERSEDIA!
-     * Sebutkan nama siswa secara spesifik beserta angka nilai riil dan kriteria penilaiannya (contoh: "Berdasarkan data, pada Ulangan 1 materi Eksponen, Budi memperoleh nilai 60 dan Siti 65, keduanya di bawah KKM 75 sehingga memerlukan remedial...").
-     * Berikan rekomendasi pembelajaran remedial atau materi pengayaan yang tepat sasaran berdasarkan deskripsi kriteria penilaian tersebut.
-   - Jika guru meminta ranking atau rekapitulasi nilai:
-     * Urutkan siswa berdasarkan rata-rata akhir nilai yang tertera dalam data konteks secara akurat dan rapi.
-   - Jika guru bertanya sebagai Wali Kelas (rekap kelas perwalian):
-     * Analisis capaian siswa secara holistik lintas mapel. Identifikasi siswa yang berprestasi maupun siswa yang memerlukan intervensi atau komunikasi khusus dengan orang tua.
-   - Jika guru meminta membagi kelompok:
-     * GUNAKAN NAMA-NAMA SISWA ASLI dari kelas yang dimaksud, susun kelompok yang seimbang berdasarkan kemampuan atau heterogenitas karakter.
-   - Jika belum ada data nilai atau kriteria yang dibuat, arahkan guru dengan ramah cara membuatnya di menu Penilaian / Nilai Kelas.
-
-6. Gunakan bahasa Indonesia yang santun, profesional, lugas, menginspirasi, dan menyemangati guru.
+Kamu Asisten Pedagogik AI PenaGuru untuk guru Indonesia (Kurikulum Merdeka, diferensiasi, remedial/pengayaan, asesmen autentik).
+Aturan jawaban:
+1. Praktis, terstruktur (poin singkat), santun, dan langsung aplikatif di kelas.
+2. WAJIB analisis & sebutkan nama siswa, nilai riil, kriteria, kelompok, atau jurnal dari [DATA PENAGURU] bila tersedia (untuk ranking/remedial/wali kelas/pembagian kelompok).
+3. Jika data belum lengkap, arahkan ke menu Penilaian/Nilai Kelas.
 `.trim();
 
 /**
@@ -57,81 +130,52 @@ export async function askGeminiPedagogy(
   history?: { sender: 'user' | 'assistant'; text: string }[],
   context?: { teacherName?: string; schoolName?: string; subjectName?: string; workspaceSummary?: string }
 ): Promise<string> {
-  if (!isGeminiConfigured) {
-    throw new Error('Kunci Gemini API belum dikonfigurasi di file .env.');
-  }
+  const buildContextNote = (maxChars: number): string => {
+    if (context?.workspaceSummary) {
+      const trimmed = context.workspaceSummary.trim();
+      return trimmed.length > maxChars ? `\n${trimmed.slice(0, maxChars)}\n...(ringkas)` : `\n${trimmed}`;
+    }
+    if (context) {
+      return `\nKonteks: Guru ${context.teacherName || 'Guru'}, Sekolah ${context.schoolName || '-'}, Mapel ${context.subjectName || '-'}.`;
+    }
+    return '';
+  };
 
-  const apiKey = rawKey!.trim();
-  let contextNote = '';
-  if (context?.workspaceSummary) {
-    contextNote += `\n${context.workspaceSummary}`;
-  } else if (context) {
-    contextNote += `\nKonteks Pengguna: Guru: ${context.teacherName || 'Bapak/Ibu Guru'}, Sekolah: ${context.schoolName || '-'}, Mata Pelajaran: ${context.subjectName || '-'}.`;
-  }
-
-  // Format riwayat percakapan sebelumnya (ambil 6 pesan terakhir agar ingatan konteks tajam)
+  // Batasi riwayat percakapan agar ukuran payload tetap di bawah ambang batas gateway API
   const conversationTurns = (history || [])
     .filter((h) => h.text && h.text.trim().length > 0 && h.text !== question && !h.text.startsWith('Halo! Saya bisa membantu'))
-    .slice(-6)
+    .slice(-4)
     .map((h) => ({
       role: h.sender === 'user' ? 'user' : 'model',
-      parts: [{ text: h.text }],
+      parts: [{ text: h.text.length > 220 ? `${h.text.slice(0, 220)}...` : h.text }],
     }));
 
-  const contents = [
-    ...conversationTurns,
-    {
-      role: 'user',
-      parts: [{ text: `${question}${contextNote}` }],
+  const makePayload = (maxSummaryChars: number, includeHistory: boolean) => ({
+    contents: [
+      ...(includeHistory ? conversationTurns : []),
+      {
+        role: 'user',
+        parts: [{ text: `${question}${buildContextNote(maxSummaryChars)}` }],
+      },
+    ],
+    systemInstruction: {
+      parts: [{ text: GEMINI_SYSTEM_PROMPT }],
     },
-  ];
+    generationConfig: {
+      temperature: 0.7,
+      maxOutputTokens: 900,
+    },
+  });
 
-  // Menggunakan model Gemini terbaru: gemini-3.5-flash-lite (cepat & stabil) dan gemini-3.8-flash
-  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash', 'gemini-2.5-flash'];
-
-  let lastError: Error | null = null;
-
-  for (const model of models) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents,
-        systemInstruction: {
-          parts: [{ text: GEMINI_SYSTEM_PROMPT }],
-        },
-        generationConfig: {
-          temperature: 0.7,
-          maxOutputTokens: 1024,
-        },
-      };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (!res.ok) {
-        const errorText = await res.text();
-        // Bila model tidak ditemukan atau kuota model habis, coba model berikutnya
-        if (res.status === 404 || res.status === 400) {
-          lastError = new Error(`Gemini ${model} error (${res.status}): ${errorText}`);
-          continue;
-        }
-        throw new Error(`Gemini API error (${res.status}): ${errorText}`);
-      }
-
-      const data = await res.json();
-      const reply = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (reply) {
-        return reply.trim();
-      }
-    } catch (err: any) {
-      lastError = err;
+  try {
+    return await callGeminiWithFallback(makePayload(2000, true));
+  } catch (err) {
+    // Jika masih terkena limit kapasitas saat trafik padat, coba ulang dengan ringkasan ultra-padat tanpa riwayat chat
+    if (context?.workspaceSummary && context.workspaceSummary.length > 700) {
+      return callGeminiWithFallback(makePayload(700, false));
     }
+    throw err;
   }
-
-  throw lastError || new Error('Gagal mendapatkan respon dari Google Gemini API.');
 }
 
 /**
@@ -180,28 +224,15 @@ Berikan output HANYA dalam format JSON valid tanpa tag markdown lain, dengan str
 }
 `.trim();
 
-  const apiKey = rawKey!.trim();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-
-  const res = await fetch(endpoint, {
-    method: 'POST',
-    headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      contents: [{ role: 'user', parts: [{ text: prompt }] }],
-      generationConfig: {
-        temperature: 0.4,
-        responseMimeType: 'application/json',
-      },
-    }),
+  const rawJson = await callGeminiWithFallback({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: {
+      temperature: 0.4,
+      responseMimeType: 'application/json',
+    },
   });
 
-  if (!res.ok) {
-    throw new Error(`Gemini API error (${res.status})`);
-  }
-
-  const data = await res.json();
-  const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-  return JSON.parse(rawJson);
+  return parseGeminiJson(rawJson);
 }
 
 /**
@@ -240,32 +271,10 @@ INSTRUKSI PENTING:
 4. Berikan HANYA teks narasi catatan, tanpa tanda kutip atau kalimat pembuka/penutup.
 `.trim();
 
-  const apiKey = rawKey!.trim();
-  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
-
-  for (const model of models) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text.trim();
-      }
-    } catch {
-      // coba model berikutnya
-    }
-  }
-
-  throw new Error('Gagal menghasilkan catatan wali kelas dari Gemini AI.');
+  return callGeminiWithFallback({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.5, maxOutputTokens: 800 },
+  });
 }
 
 /**
@@ -300,32 +309,10 @@ INSTRUKSI PENTING:
 5. Berikan HANYA teks pesan WhatsApp lengkap (boleh gunakan emotikon ramah yang wajar).
 `.trim();
 
-  const apiKey = rawKey!.trim();
-  const models = ['gemini-3.5-flash-lite', 'gemini-3.8-flash'];
-
-  for (const model of models) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          contents: [{ role: 'user', parts: [{ text: prompt }] }],
-          generationConfig: { temperature: 0.6, maxOutputTokens: 600 },
-        }),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text.trim();
-      }
-    } catch {
-      // coba model berikutnya
-    }
-  }
-
-  throw new Error('Gagal menghasilkan pesan untuk orang tua dari Gemini AI.');
+  return callGeminiWithFallback({
+    contents: [{ role: 'user', parts: [{ text: prompt }] }],
+    generationConfig: { temperature: 0.6, maxOutputTokens: 600 },
+  });
 }
 
 /**
@@ -341,50 +328,26 @@ export async function transcribeAudioWithGemini(
 
   const prompt = `Transkripsikan rekaman suara guru ini ke dalam teks catatan pengamatan kelas/jurnal harian bahasa Indonesia yang rapi dan akurat. Perbaiki sedikit jika ada kata yang terputus, tanpa mengubah maksud guru. Berikan HANYA teks transkripsi tanpa basa-basi atau tanda kutip.`;
 
-  const apiKey = rawKey!.trim();
-  const models = ['gemini-2.5-flash', 'gemini-3.5-flash-lite', 'gemini-3.8-flash'];
-
-  for (const model of models) {
-    try {
-      const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/${model}:generateContent?key=${apiKey}`;
-      const payload = {
-        contents: [
+  return callGeminiWithFallback({
+    contents: [
+      {
+        role: 'user',
+        parts: [
           {
-            role: 'user',
-            parts: [
-              {
-                inlineData: {
-                  mimeType,
-                  data: base64Audio,
-                },
-              },
-              { text: prompt },
-            ],
+            inlineData: {
+              mimeType,
+              data: base64Audio,
+            },
           },
+          { text: prompt },
         ],
-        generationConfig: {
-          temperature: 0.2,
-          maxOutputTokens: 600,
-        },
-      };
-
-      const res = await fetch(endpoint, {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify(payload),
-      });
-
-      if (res.ok) {
-        const data = await res.json();
-        const text = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-        if (text) return text.trim();
-      }
-    } catch {
-      // coba model berikutnya
-    }
-  }
-
-  throw new Error('Gagal mentranskripsikan rekaman suara.');
+      },
+    ],
+    generationConfig: {
+      temperature: 0.2,
+      maxOutputTokens: 600,
+    },
+  });
 }
 
 /**
@@ -436,29 +399,15 @@ Keluarkan HANYA JSON valid:
 }
 `.trim();
 
-  const apiKey = rawKey!.trim();
-  const endpoint = `https://generativelanguage.googleapis.com/v1beta/models/gemini-3.5-flash-lite:generateContent?key=${apiKey}`;
-
   try {
-    const res = await fetch(endpoint, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({
-        contents: [{ role: 'user', parts: [{ text: prompt }] }],
-        generationConfig: {
-          temperature: 0.2,
-          responseMimeType: 'application/json',
-        },
-      }),
+    const rawJson = await callGeminiWithFallback({
+      contents: [{ role: 'user', parts: [{ text: prompt }] }],
+      generationConfig: {
+        temperature: 0.2,
+        responseMimeType: 'application/json',
+      },
     });
-
-    if (res.ok) {
-      const data = await res.json();
-      const rawJson = data?.candidates?.[0]?.content?.parts?.[0]?.text;
-      if (rawJson) {
-        return JSON.parse(rawJson);
-      }
-    }
+    return parseGeminiJson(rawJson);
   } catch (err) {
     console.warn('AI Voice parse failed:', err);
   }
@@ -469,4 +418,3 @@ Keluarkan HANYA JSON valid:
     tags: [],
   };
 }
-
