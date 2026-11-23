@@ -13,17 +13,17 @@ export const isGeminiConfigured = Boolean(
   !rawKey.includes('placeholder')
 );
 
-// Daftar model aktif berurutan dari yang paling stabil/tersedia ke cadangan
+// Daftar model aktif berurutan dari yang paling cepat & stabil ke cadangan
 const GEMINI_MODELS = [
   'gemini-flash-lite-latest',
   'gemini-3.5-flash-lite',
   'gemini-3.8-flash',
-  'gemini-3.6-flash',
   'gemini-flash-latest',
 ] as const;
 
 const RETRYABLE_STATUSES = new Set([429, 500, 502, 503, 504]);
 const SKIP_MODEL_STATUSES = new Set([400, 404]);
+const REQUEST_TIMEOUT_MS = 12000;
 
 const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(() => resolve(), ms));
 
@@ -58,12 +58,16 @@ async function callGeminiWithFallback(
     const maxAttempts = i < 2 ? 2 : 1;
 
     for (let attempt = 0; attempt < maxAttempts; attempt++) {
+      const controller = typeof AbortController !== 'undefined' ? new AbortController() : null;
+      const timer = controller ? setTimeout(() => controller.abort(), REQUEST_TIMEOUT_MS) : null;
       try {
         const res = await fetch(endpoint, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify(payload),
+          ...(controller ? { signal: controller.signal } : {}),
         });
+        if (timer) clearTimeout(timer);
 
         if (!res.ok) {
           const errorText = await res.text();
@@ -98,6 +102,7 @@ async function callGeminiWithFallback(
         lastError = new Error(`Gemini ${model} mengembalikan respons kosong.`);
         break;
       } catch (err: any) {
+        if (timer) clearTimeout(timer);
         lastError = err instanceof Error ? err : new Error(String(err));
         if (attempt + 1 < maxAttempts) {
           await sleep(400);
@@ -168,11 +173,11 @@ export async function askGeminiPedagogy(
   });
 
   try {
-    return await callGeminiWithFallback(makePayload(2000, true));
+    return await callGeminiWithFallback(makePayload(1500, true));
   } catch (err) {
     // Jika masih terkena limit kapasitas saat trafik padat, coba ulang dengan ringkasan ultra-padat tanpa riwayat chat
     if (context?.workspaceSummary && context.workspaceSummary.length > 700) {
-      return callGeminiWithFallback(makePayload(700, false));
+      return callGeminiWithFallback(makePayload(700, false), ['gemini-flash-lite-latest', 'gemini-3.5-flash-lite']);
     }
     throw err;
   }
