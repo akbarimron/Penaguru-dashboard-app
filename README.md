@@ -67,30 +67,58 @@ Trigger `fill_from_assignment` selalu mengisi `class_id`, `subject_id`, dan `tea
 
 ```
 src/
-  api/supabase.ts          klien Supabase (dibuat hanya bila .env terisi)
+  api/
+    supabase.ts            klien Supabase (dibuat hanya bila .env terisi)
+    gemini.ts              integrasi Google Gemini REST API v1beta (retry, fallback multi-model, timeout 12 detik)
   data/                    repository: demo (lokal) & Supabase, seed demo, aturan akses
   lib/                     analitik status siswa, penyusun draf rapor, jadwal, kelompok, gerak, layout
-  store/                   Zustand: sesi, data ruang kerja, antrean luring, toast & dialog
+  store/                   Zustand: sesi, data ruang kerja, ringkasan konteks AI, antrean luring, toast & dialog
   navigation/              stack auth/setup/main + tab bar (pil melayang / sidebar)
-  components/              komponen UI dasar, kartu mapel, input skor, radar
-  screens/                 semua layar
-supabase-schema.sql        skema, trigger, RPC, RLS
-legacy-ui-lama/            kode UI versi sebelumnya (tidak dipakai, boleh dihapus)
+  components/              komponen UI dasar, kartu mapel, input skor, radar chart, voice journal modal
+  screens/                 16 layar (Auth, Setup, Beranda, Catat, Agenda, Asisten, Profil, Mapel, Wali Kelas, Siswa, Rapor, Admin)
+supabase/migrations/       skema PostgreSQL (16 tabel, 14 fungsi RPC/trigger, RLS)
+showcase/                  halaman landing page showcase UAS IK300 (/showcase/)
 ```
+
+## Daftar Dependency Utama
+
+- **Core & Mobile:** `expo` (~57.0.30), `react` (19.2.3), `react-native` (0.86.3), `react-native-web` (^0.21.2), `typescript` (~6.0.3)
+- **Navigasi:** `@react-navigation/native` (^7.5.0), `@react-navigation/bottom-tabs` (^7.20.0), `@react-navigation/native-stack` (^7.20.0), `react-native-screens` (~4.26.0), `react-native-safe-area-context` (~5.7.0)
+- **State & Offline Storage:** `zustand` (^5.0.15), `@react-native-async-storage/async-storage` (2.2.0)
+- **Backend & Media:** `@supabase/supabase-js` (^2.117.3), `expo-audio` (~57.0.5), `expo-image-picker` (~57.0.20), `expo-clipboard` (~57.0.2), `expo-crypto` (~57.0.4)
+- **UI & Visualisasi:** `@expo/vector-icons` (^15.1.1), `@expo-google-fonts/plus-jakarta-sans` (^0.4.2), `react-native-svg` (15.15.4)
+
+## Petunjuk Build (Web & Android APK)
+
+1. Salin `.env.example` menjadi `.env`, isi `EXPO_PUBLIC_SUPABASE_URL`, `EXPO_PUBLIC_SUPABASE_ANON_KEY` (publishable key), dan `EXPO_PUBLIC_GEMINI_API_KEY` (jangan pernah commit `.env` ke Git).
+2. Verifikasi tipe TypeScript:
+   ```bash
+   npx tsc --noEmit
+   ```
+3. Build Web produksi (termasuk halaman showcase `/showcase/`):
+   ```bash
+   npm run build
+   ```
+4. Build Android Release APK (`arm64-v8a`):
+   ```bash
+   npm run build:apk:release
+   # Output: android/app/build/outputs/apk/release/app-release.apk
+   ```
 
 ## Keputusan desain
 
 - **Warna brand teal `#0F766E`**: dari proposal Bab 4.4, satu tingkat lebih gelap dari `#0D9488` karena teks putih di `#0D9488` hanya 3.74:1 (gagal WCAG AA).
 - **Warna per mapel**: penanda kategori agar konteks mapel x kelas langsung dikenali. Teal tidak dipakai sebagai warna mapel supaya tetap milik brand dan perwalian.
-- **Amber**: satu-satunya aksen, khusus sinyal "perlu perhatian".
-- **Kartu mapel bertakik**: motif dari gambar referensi. Takik di kanan menampung penanda buka.
+- **Amber (`#F59E0B`)**: aksen khusus sinyal "perlu perhatian".
 - **Plus Jakarta Sans**: ditetapkan di proposal dan dirancang untuk konteks Indonesia.
-- **Tata letak**: tiga keadaan. Di bawah 640px satu kolom dengan nav bawah melayang. Di 640-1023px konten dibatasi 760px. Di 1024px ke atas nav pindah ke sidebar, dan konten dibagi dua kolom mulai 1200px.
-- **Gerak**: tekan (skala 0.97, 120ms), kartu masuk bertahap (260ms, maksimal 240ms stagger), penanda tab/segmen bergeser, bilah progres terisi, getar saat form salah. Tidak ada animasi berulang, dan semuanya mati bila "kurangi gerakan" aktif.
-- Semua pasangan teks lolos WCAG AA (dicek dengan skrip kontras). Fokus keyboard terlihat, dan dialog bisa ditutup dengan Escape.
+- **Tata letak adaptif**: di bawah 640px satu kolom dengan nav bawah melayang; di 640–1023px konten dibatasi 760px; di 1024px ke atas nav pindah ke sidebar kiri.
+- Semua pasangan teks memenuhi kontras WCAG AA.
 
-## Belum dikerjakan
+## Riwayat Versi
 
-- **Rekam suara ke teks**: versi sebelumnya membuat transkrip palsu, jadi fitur itu dihapus. Saat ini guru dapat memakai tombol dikte di keyboard ponsel. Rekaman asli butuh `expo-audio` + Edge Function transkripsi.
-- **Edge Function Gemini** (`generate-feedback`, `pedagogy-assistant`): pemanggilnya sudah ada di `supabaseRepository.ts` dan aktif bila `EXPO_PUBLIC_AI_EDGE_FUNCTIONS=true`, tetapi kode fungsinya belum ditulis.
-- Logo: belum ditetapkan, jadi untuk sementara dipakai wordmark teks "PenaGuru".
+- **v1.0.0 (24 November 2026)** — Rilis Tugas Besar Pengganti UAS IK300 Mobile Programming (Kelompok 3, Pendidikan Ilmu Komputer 5A, FPMIPA UPI):
+  - 16 layar lengkap untuk Guru Mapel, Wali Kelas, dan Admin Sekolah dengan isolasi Row Level Security (16 tabel & 14 RPC Supabase).
+  - Quick Daily Journal dengan preset tag, skor 3 ranah, dikte suara AI (`expo-audio` + Gemini), dan antrean offline-first (`AsyncStorage`).
+  - Sistem kriteria & nilai berbobot (`grade_items`, `student_grades`, `grade_submissions`), analitik capaian kelas, profil siswa, dan Balanced Grouping.
+  - Asisten Pedagogik AI & Generator Rapor AI (Teacher-in-the-Loop) berbasis Google Gemini dengan fallback multi-model, kompresi konteks, dan timeout 12 detik.
+  - Build Android Release APK (`com.penaguru.app`, `arm64-v8a`), deployment Web Vercel (`https://penaguruku.vercel.app/`), dan Website Showcase (`/showcase/`).
