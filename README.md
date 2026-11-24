@@ -1,7 +1,12 @@
 # PenaGuru
 
 Aplikasi pencatatan jurnal kelas dan rapor untuk guru SMA/SMK.
-Tugas Besar Pengganti UTS IK300 Mobile Programming, Pendidikan Ilmu Komputer UPI 2026.
+Tugas Besar Pengganti UAS IK300 Mobile Programming, Pendidikan Ilmu Komputer UPI 2026 (Kelompok 3).
+
+- **Web App Live:** https://penaguruku.vercel.app/
+- **Website Showcase UAS:** https://penaguruku.vercel.app/showcase/
+- **Video Demo (YouTube, 05:00):** https://youtu.be/i6YzKEwpZQ8
+- **Android APK rilis (`v1.0.0`):** https://drive.google.com/file/d/1a269pUXx2eCLtVTUqA0P_I7GpR6nJ0wP/view
 
 Dibangun dengan Expo SDK 57 (React Native 0.86, TypeScript), berjalan di Android, iOS, dan web.
 

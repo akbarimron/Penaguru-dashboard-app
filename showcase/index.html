@@ -696,26 +696,36 @@
     <div class="container">
       <div class="sec-head">
         <span class="sec-kicker">Demonstrasi Aplikasi</span>
-        <h2>Video Demo Aplikasi Mobile (± 10 Menit)</h2>
-        <p>Alur demonstrasi aplikasi PenaGuru v1.0.0 mengikuti struktur 5 segmen panduan resmi IK300 Mobile Programming.</p>
+        <h2>Video Demo Aplikasi Mobile (05:00 · English Motion Graphics)</h2>
+        <p>Demonstrasi interaktif PenaGuru v1.0.0 dalam bahasa Inggris dengan 16 scene motion graphics mengikuti 5 segmen resmi IK300 Mobile Programming.</p>
       </div>
       <div class="video-wrap">
-        <div class="video-box">
-          <div class="play-circle">&#9654;</div>
-          <h3 style="font-size:20px;margin-bottom:8px;">Video Demo PenaGuru v1.0.0</h3>
-          <p style="max-width:44ch;color:#CBD5E1;font-size:14px;margin-bottom:20px;">
-            Slot embed YouTube siap ditautkan setelah rekaman demo selesai diunggah (visibilitas Public / Unlisted). Sementara itu, aplikasi dapat langsung diuji interaktif melalui demo web live.
-          </p>
-          <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-amber">Coba Interaktif di Web Live</a>
+        <div class="video-box" style="padding:0;overflow:hidden;background:#072624;display:flex;flex-direction:column;">
+          <div style="position:relative;width:100%;aspect-ratio:16/9;">
+            <iframe
+              src="https://www.youtube.com/embed/i6YzKEwpZQ8?rel=0"
+              title="PenaGuru v1.0.0 - Mobile & Web Teacher Workspace Demo (IK300 Group 3 UPI)"
+              allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture; web-share"
+              allowfullscreen
+              style="position:absolute;inset:0;width:100%;height:100%;border:0;"
+            ></iframe>
+          </div>
+          <div style="padding:14px 20px;display:flex;flex-wrap:wrap;gap:10px;justify-content:space-between;align-items:center;background:#083330;">
+            <span style="color:#CCFBF1;font-size:13.5px;font-weight:600;">PenaGuru v1.0.0 · 1080p 30fps · English Dub</span>
+            <div style="display:flex;gap:10px;">
+              <a href="https://youtu.be/i6YzKEwpZQ8" target="_blank" rel="noopener" class="btn btn-amber" style="padding:8px 14px;font-size:13px;">Buka di YouTube</a>
+              <a href="https://penaguruku.vercel.app/" target="_blank" rel="noopener" class="btn btn-outline" style="padding:8px 14px;font-size:13px;color:#fff;border-color:rgba(255,255,255,0.35);">Coba Web Live</a>
+            </div>
+          </div>
         </div>
         <div class="card">
-          <h3 style="margin-bottom:14px;">Struktur Segmen Video Demo</h3>
+          <h3 style="margin-bottom:14px;">Struktur Segmen Video Demo (05:00)</h3>
           <ul class="timeline-list">
-            <li><span class="time-chip">00:00 – 01:00</span><span>Masalah belajar, sasaran pengguna (guru &amp; wali kelas), dan tujuan PenaGuru.</span></li>
-            <li><span class="time-chip">01:00 – 02:00</span><span>Gambaran fitur utama, peran ganda (Guru Mapel &amp; Wali Kelas), dan struktur navigasi.</span></li>
-            <li><span class="time-chip">02:00 – 07:30</span><span>Demo live: Catat Jurnal Cepat &amp; Suara, Nilai &amp; Analitik, Rapor AI, Balanced Grouping, Wali Kelas, dan Asisten Gemini.</span></li>
-            <li><span class="time-chip">07:30 – 09:00</span><span>Hasil uji coba nyata di Android &amp; Web, sinkronisasi Supabase RLS, dan umpan balik AI.</span></li>
-            <li><span class="time-chip">09:00 – 10:00</span><span>Kesimpulan, keterbatasan sistem saat ini, dan rencana pengembangan lanjutan.</span></li>
+            <li><span class="time-chip">00:00 – 00:36</span><span>Masalah pencatatan guru SMA/SMK, sasaran pengguna, dan tujuan PenaGuru.</span></li>
+            <li><span class="time-chip">00:36 – 01:16</span><span>Peran ganda (Guru Mapel &amp; Wali Kelas) dan navigasi adaptif 5 tab.</span></li>
+            <li><span class="time-chip">01:16 – 03:45</span><span>Demo fitur inti: Jurnal Cepat &amp; Dikte Suara Offline, Analitik, Nilai Berbobot (KKTP 75), Radar Siswa, Rapor AI, Kelompok Seimbang, Agenda, Wali Kelas, &amp; Asisten Gemini.</span></li>
+            <li><span class="time-chip">03:45 – 04:26</span><span>Arsitektur 4 lapis, keamanan Supabase Row Level Security (RLS), &amp; hasil verifikasi produksi.</span></li>
+            <li><span class="time-chip">04:26 – 05:00</span><span>Keterbatasan saat ini, roadmap pengembangan lanjutan, dan penutup Kelompok 3 UPI.</span></li>
           </ul>
         </div>
       </div>
